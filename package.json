@@ -21,7 +21,7 @@
     "@mui/icons-material": "^7.1.2",
     "@mui/lab": "6.0.0-beta.19",
     "@mui/material": "^6.3.0",
-    "@mui/material-nextjs": "^6.2.1",
+    "@mui/material-nextjs": "^6.3.0",
     "classnames": "^2.5.1",
     "next": "^15.1.2",
     "next-auth": "^4.24.11",
@@ -33,7 +33,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.286",
+    "@iconify/json": "^2.2.288",
     "@iconify/tools": "^4.1.1",
     "@iconify/types": "^2.0.0",
     "@iconify/utils": "^2.2.1",
