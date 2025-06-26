@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // Next Imports
 import { useRouter } from 'next/navigation'
@@ -38,7 +38,7 @@ import themeConfig from '@configs/themeConfig'
 import { useImageVariant } from '@core/hooks/useImageVariant'
 import { useSettings } from '@core/hooks/useSettings'
 
-const LoginV2 = ({ mode }: { mode: Mode }) => {
+const Login = ({ mode }: { mode: Mode }) => {
   // States
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [username, setUsername] = useState('')
@@ -95,9 +95,23 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
   }
 
   // Redirect if already authenticated
-  if (status === 'authenticated' && session) {
-    router.push('/')
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/')
+    }
+  }, [status, session, router])
 
+  // Show loading while checking authentication status
+  if (status === 'loading') {
+    return (
+      <div className='flex bs-full justify-center items-center'>
+        <CircularProgress />
+      </div>
+    )
+  }
+
+  // Don't render login form if already authenticated
+  if (status === 'authenticated' && session) {
     return null
   }
 
@@ -211,4 +225,4 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
   )
 }
 
-export default LoginV2
+export default Login

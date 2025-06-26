@@ -9,6 +9,8 @@ import ThemeProvider from '@components/theme'
 // Util Imports
 import { getMode, getSettingsFromCookie, getSystemMode } from '@core/utils/serverHelpers'
 import { SessionProvider } from '@/context/sessionContext'
+import { SessionExpiredProvider } from '@/context/SessionExpiredContext'
+import SessionExpiredModal from './SessionExpiredModal'
 
 type Props = ChildrenType & {
   direction: Direction
@@ -27,7 +29,12 @@ const Providers = async (props: Props) => {
     <VerticalNavProvider>
       <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
         <ThemeProvider direction={direction} systemMode={systemMode}>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <SessionExpiredProvider>
+              <SessionExpiredModal />
+              {children}
+            </SessionExpiredProvider>
+          </SessionProvider>
         </ThemeProvider>
       </SettingsProvider>
     </VerticalNavProvider>
