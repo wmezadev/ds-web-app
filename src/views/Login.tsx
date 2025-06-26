@@ -6,6 +6,9 @@ import { useState } from 'react'
 // Next Imports
 import { useRouter } from 'next/navigation'
 
+// NextAuth Imports
+import { signIn, useSession } from 'next-auth/react'
+
 // MUI Imports
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
@@ -15,6 +18,8 @@ import Checkbox from '@mui/material/Checkbox'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Divider from '@mui/material/Divider'
+import Alert from '@mui/material/Alert'
+import CircularProgress from '@mui/material/CircularProgress'
 
 // Third-party Imports
 import classnames from 'classnames'
@@ -36,6 +41,10 @@ import { useSettings } from '@core/hooks/useSettings'
 const LoginV2 = ({ mode }: { mode: Mode }) => {
   // States
   const [isPasswordShown, setIsPasswordShown] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Vars
   const darkImg = '/images/pages/auth-v2-mask-1-dark.png'
@@ -47,6 +56,7 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
 
   // Hooks
   const router = useRouter()
+  const { data: session, status } = useSession()
   const { settings } = useSettings()
   const authBackground = useImageVariant(mode, lightImg, darkImg)
 
@@ -59,6 +69,37 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
   )
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const result = await signIn('credentials', {
+        username,
+        password,
+        redirect: false
+      })
+
+      if (result?.error) {
+        setError('Invalid username or password')
+      } else {
+        router.push('/')
+      }
+    } catch (error) {
+      setError('An error occurred during login')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Redirect if already authenticated
+  if (status === 'authenticated' && session) {
+    router.push('/')
+
+    return null
+  }
 
   return (
     <div className='flex bs-full justify-center'>
@@ -88,20 +129,27 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
             <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}! 👋🏻`}</Typography>
             <Typography className='mbs-1'>Please sign-in to your account and start the adventure</Typography>
           </div>
-          <form
-            noValidate
-            autoComplete='off'
-            onSubmit={e => {
-              e.preventDefault()
-              router.push('/')
-            }}
-            className='flex flex-col gap-5'
-          >
-            <TextField autoFocus fullWidth label='Email' />
+          {error && (
+            <Alert severity='error' onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
+          <form noValidate autoComplete='off' onSubmit={handleSubmit} className='flex flex-col gap-5'>
+            <TextField
+              autoFocus
+              fullWidth
+              label='Username'
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              disabled={isLoading}
+            />
             <TextField
               fullWidth
               label='Password'
               type={isPasswordShown ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              disabled={isLoading}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -111,6 +159,7 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
                         edge='end'
                         onClick={handleClickShowPassword}
                         onMouseDown={e => e.preventDefault()}
+                        disabled={isLoading}
                       >
                         <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
@@ -125,8 +174,14 @@ const LoginV2 = ({ mode }: { mode: Mode }) => {
                 Forgot password?
               </Typography>
             </div>
-            <Button fullWidth variant='contained' type='submit'>
-              Log In
+            <Button
+              fullWidth
+              variant='contained'
+              type='submit'
+              disabled={isLoading || !username || !password}
+              startIcon={isLoading ? <CircularProgress size={20} /> : null}
+            >
+              {isLoading ? 'Logging In...' : 'Log In'}
             </Button>
             <div className='flex justify-center items-center flex-wrap gap-2'>
               <Typography>New on our platform?</Typography>

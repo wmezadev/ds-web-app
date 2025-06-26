@@ -1,5 +1,7 @@
 export const API_BASE_URL = process.env?.API_BASE_URL || ''
 
+export const API_PROXY_PATH = '/api/proxy'
+
 export const API_ROUTES = {
   HEALTH: 'health',
   AUTH: {
