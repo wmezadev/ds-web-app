@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 // NextAuth Imports
+import Image from 'next/image'
+
 import { signIn, useSession } from 'next-auth/react'
 
 // MUI Imports
@@ -31,14 +33,13 @@ import type { Mode } from '@core/types'
 import Link from '@components/Link'
 import Logo from '@components/layout/shared/Logo'
 
-// Config Imports
-import themeConfig from '@configs/themeConfig'
-
 // Hook Imports
-import { useImageVariant } from '@core/hooks/useImageVariant'
 import { useSettings } from '@core/hooks/useSettings'
+import { LOGIN } from '@/constants/texts'
 
 const Login = ({ mode }: { mode: Mode }) => {
+  console.log('mode', mode)
+
   // States
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [username, setUsername] = useState('')
@@ -46,27 +47,10 @@ const Login = ({ mode }: { mode: Mode }) => {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Vars
-  const darkImg = '/images/pages/auth-v2-mask-1-dark.png'
-  const lightImg = '/images/pages/auth-v2-mask-1-light.png'
-  const darkIllustration = '/images/illustrations/auth/v2-login-dark.png'
-  const lightIllustration = '/images/illustrations/auth/v2-login-light.png'
-  const borderedDarkIllustration = '/images/illustrations/auth/v2-login-dark-border.png'
-  const borderedLightIllustration = '/images/illustrations/auth/v2-login-light-border.png'
-
   // Hooks
   const router = useRouter()
   const { data: session, status } = useSession()
   const { settings } = useSettings()
-  const authBackground = useImageVariant(mode, lightImg, darkImg)
-
-  const characterIllustration = useImageVariant(
-    mode,
-    lightIllustration,
-    darkIllustration,
-    borderedLightIllustration,
-    borderedDarkIllustration
-  )
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show)
 
@@ -83,12 +67,12 @@ const Login = ({ mode }: { mode: Mode }) => {
       })
 
       if (result?.error) {
-        setError('Invalid username or password')
+        setError(LOGIN.invalidUsernameOrPassword)
       } else {
         router.push('/')
       }
     } catch (error) {
-      setError('An error occurred during login')
+      setError(LOGIN.anErrorOccurredDuringLogin)
     } finally {
       setIsLoading(false)
     }
@@ -126,13 +110,14 @@ const Login = ({ mode }: { mode: Mode }) => {
         )}
       >
         <div className='pli-6 max-lg:mbs-40 lg:mbe-24'>
-          <img
-            src={characterIllustration}
+          <Image
+            src='/images/people-group.png'
+            width={390}
+            height={466}
             alt='character-illustration'
             className='max-bs-[673px] max-is-full bs-auto'
           />
         </div>
-        <img src={authBackground} className='absolute bottom-[4%] z-[-1] is-full max-md:hidden' />
       </div>
       <div className='flex justify-center items-center bs-full bg-backgroundPaper !min-is-full p-6 md:!min-is-[unset] md:p-12 md:is-[480px]'>
         <Link className='absolute block-start-5 sm:block-start-[38px] inline-start-6 sm:inline-start-[38px]'>
@@ -140,8 +125,8 @@ const Login = ({ mode }: { mode: Mode }) => {
         </Link>
         <div className='flex flex-col gap-5 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-11 sm:mbs-14 md:mbs-0'>
           <div>
-            <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}! 👋🏻`}</Typography>
-            <Typography className='mbs-1'>Please sign-in to your account and start the adventure</Typography>
+            <Typography variant='h4'>{LOGIN.welcome}</Typography>
+            <Typography className='mbs-1'>{LOGIN.pleaseSignIn}</Typography>
           </div>
           {error && (
             <Alert severity='error' onClose={() => setError('')}>
@@ -152,14 +137,14 @@ const Login = ({ mode }: { mode: Mode }) => {
             <TextField
               autoFocus
               fullWidth
-              label='Username'
+              label={LOGIN.username}
               value={username}
               onChange={e => setUsername(e.target.value)}
               disabled={isLoading}
             />
             <TextField
               fullWidth
-              label='Password'
+              label={LOGIN.password}
               type={isPasswordShown ? 'text' : 'password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -183,9 +168,9 @@ const Login = ({ mode }: { mode: Mode }) => {
               }}
             />
             <div className='flex justify-between items-center flex-wrap gap-x-3 gap-y-1'>
-              <FormControlLabel control={<Checkbox />} label='Remember me' />
+              <FormControlLabel control={<Checkbox />} label={LOGIN.rememberMe} />
               <Typography className='text-end' color='primary.main' component={Link}>
-                Forgot password?
+                {LOGIN.forgotPassword}
               </Typography>
             </div>
             <Button
@@ -195,15 +180,15 @@ const Login = ({ mode }: { mode: Mode }) => {
               disabled={isLoading || !username || !password}
               startIcon={isLoading ? <CircularProgress size={20} /> : null}
             >
-              {isLoading ? 'Logging In...' : 'Log In'}
+              {isLoading ? LOGIN.loggingIn : LOGIN.logIn}
             </Button>
             <div className='flex justify-center items-center flex-wrap gap-2'>
-              <Typography>New on our platform?</Typography>
+              <Typography>{LOGIN.newOnOurPlatform}</Typography>
               <Typography component={Link} color='primary.main'>
-                Create an account
+                {LOGIN.signUp}
               </Typography>
             </div>
-            <Divider className='gap-3 text-textPrimary'>or</Divider>
+            <Divider className='gap-3 text-textPrimary'>{LOGIN.or}</Divider>
             <div className='flex justify-center items-center gap-2'>
               <IconButton size='small' className='text-facebook'>
                 <i className='ri-facebook-fill' />
