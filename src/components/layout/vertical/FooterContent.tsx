@@ -30,7 +30,7 @@ const FooterContent = () => {
       </p>
       {!isBreakpointReached && (
         <div className='flex items-center gap-4'>
-          <Link href='https://themeforest.net/licenses/standard' target='_blank' className='text-primary'>
+          <Link href='https://themeforest.net/licenses/standard' target='_blank' className='text-textPrimary'>
             License
           </Link>
           <Link href='https://themeforest.net/user/pixinvent/portfolio' target='_blank' className='text-primary'>

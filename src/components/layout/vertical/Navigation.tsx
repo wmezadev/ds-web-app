@@ -78,7 +78,7 @@ const Navigation = (props: Props) => {
 
   // Vars
   const { isCollapsed, isHovered, collapseVerticalNav, isBreakpointReached } = verticalNavOptions
-  const isSemiDark = settings.semiDark
+  const isSemiDark = true
 
   const currentMode = muiMode === 'system' ? muiSystemMode : muiMode || mode
 

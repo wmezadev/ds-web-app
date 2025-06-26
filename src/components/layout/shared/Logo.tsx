@@ -5,13 +5,11 @@ import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 
 // Third-party Imports
+import Image from 'next/image'
+
 import styled from '@emotion/styled'
 
-// Type Imports
 import type { VerticalNavContextProps } from '@menu/contexts/verticalNavContext'
-
-// Component Imports
-import MaterializeLogo from '@core/svg/Logo'
 
 // Config Imports
 import themeConfig from '@configs/themeConfig'
@@ -73,7 +71,7 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
 
   return (
     <div className='flex items-center min-bs-[24px]'>
-      <MaterializeLogo />
+      <Image src='/images/ds-logo.png' alt='Data Seguro' width={45} height={32} />
       <LogoText
         color={color}
         ref={logoTextRef}
