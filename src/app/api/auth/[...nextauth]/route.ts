@@ -1,7 +1,8 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
-import { API_BASE_URL, API_ROUTES } from '@/constants/routes'
+import { API_BASE_URL } from '@/constants/server/serverRoutes'
+import { API_ROUTES } from '@/constants/routes'
 
 const handler = NextAuth({
   providers: [

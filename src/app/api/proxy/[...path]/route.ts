@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
 // Constants
-import { API_BASE_URL } from '@/constants/routes'
+import { API_BASE_URL } from '@/constants/server/serverRoutes'
 
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')

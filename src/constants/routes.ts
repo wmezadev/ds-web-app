@@ -1,5 +1,4 @@
-export const API_BASE_URL = process.env?.API_BASE_URL || ''
-
+// Client-side safe constants
 export const API_PROXY_PATH = '/api/proxy'
 
 export const API_ROUTES = {
