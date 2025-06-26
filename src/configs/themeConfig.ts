@@ -17,6 +17,7 @@
  */
 
 // Type Imports
+import { ROUTES } from '@/constants/routes'
 import type { Mode, Skin, Layout, LayoutComponentPosition, LayoutComponentWidth } from '@core/types'
 
 type Navbar = {
@@ -51,7 +52,7 @@ export type Config = {
 
 const themeConfig: Config = {
   templateName: 'Data Seguro',
-  homePageUrl: '/home',
+  homePageUrl: ROUTES.HOME,
   settingsCookieName: 'ds-admin-app',
   mode: 'light', // 'system', 'light', 'dark'
   skin: 'default', // 'default', 'bordered'

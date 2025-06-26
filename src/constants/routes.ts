@@ -19,3 +19,8 @@ export const API_ROUTES = {
     GET: 'clients/:id'
   }
 }
+
+export const ROUTES = {
+  HOME: '/home',
+  LOGIN: '/login'
+}

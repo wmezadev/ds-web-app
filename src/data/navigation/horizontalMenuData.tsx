@@ -1,10 +1,11 @@
 // Type Imports
+import { ROUTES } from '@/constants/routes'
 import type { HorizontalMenuDataType } from '@/types/menuTypes'
 
 const horizontalMenuData = (): HorizontalMenuDataType[] => [
   {
     label: 'Home',
-    href: '/home',
+    href: ROUTES.HOME,
     icon: 'ri-home-smile-line'
   },
   {

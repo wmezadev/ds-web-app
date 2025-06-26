@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
 import { API_BASE_URL } from '@/constants/server/serverRoutes'
-import { API_ROUTES } from '@/constants/routes'
+import { API_ROUTES, ROUTES } from '@/constants/routes'
 
 const handler = NextAuth({
   providers: [
@@ -74,6 +74,20 @@ const handler = NextAuth({
       }
 
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      // If the url is relative, prefix it with the base url
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`
+      }
+
+      // If the url is on the same origin, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url
+      }
+
+      // Default to home page
+      return `${baseUrl}${ROUTES.HOME}`
     }
   },
   pages: {

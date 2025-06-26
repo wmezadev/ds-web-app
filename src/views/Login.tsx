@@ -36,6 +36,7 @@ import Logo from '@components/layout/shared/Logo'
 // Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
 import { LOGIN } from '@/constants/texts'
+import { ROUTES } from '@/constants/routes'
 
 const Login = ({ mode }: { mode: Mode }) => {
   console.log('mode', mode)
@@ -69,7 +70,7 @@ const Login = ({ mode }: { mode: Mode }) => {
       if (result?.error) {
         setError(LOGIN.invalidUsernameOrPassword)
       } else {
-        router.push('/')
+        router.push(ROUTES.HOME)
       }
     } catch (error) {
       setError(LOGIN.anErrorOccurredDuringLogin)
@@ -81,7 +82,7 @@ const Login = ({ mode }: { mode: Mode }) => {
   // Redirect if already authenticated
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      router.push('/')
+      router.push(ROUTES.HOME)
     }
   }, [status, session, router])
 
