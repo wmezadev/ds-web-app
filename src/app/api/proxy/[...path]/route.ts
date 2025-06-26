@@ -6,24 +6,34 @@ import { getToken } from 'next-auth/jwt'
 // Constants
 import { API_BASE_URL } from '@/constants/routes'
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
-  return handleRequest(request, params.path, 'GET')
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+
+  return handleRequest(request, path, 'GET')
 }
 
-export async function POST(request: NextRequest, { params }: { params: { path: string[] } }) {
-  return handleRequest(request, params.path, 'POST')
+export async function POST(request: NextRequest) {
+  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+
+  return handleRequest(request, path, 'POST')
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { path: string[] } }) {
-  return handleRequest(request, params.path, 'PUT')
+export async function PUT(request: NextRequest) {
+  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+
+  return handleRequest(request, path, 'PUT')
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { path: string[] } }) {
-  return handleRequest(request, params.path, 'DELETE')
+export async function DELETE(request: NextRequest) {
+  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+
+  return handleRequest(request, path, 'DELETE')
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { path: string[] } }) {
-  return handleRequest(request, params.path, 'PATCH')
+export async function PATCH(request: NextRequest) {
+  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+
+  return handleRequest(request, path, 'PATCH')
 }
 
 async function handleRequest(request: NextRequest, pathSegments: string[], method: string) {

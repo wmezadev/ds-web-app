@@ -17,7 +17,7 @@ const handler = NextAuth({
         }
 
         try {
-          const response = await fetch(API_BASE_URL + API_ROUTES.AUTH.LOGIN, {
+          const response = await fetch(`${API_BASE_URL}/${API_ROUTES.AUTH.LOGIN}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
