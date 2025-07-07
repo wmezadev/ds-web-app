@@ -5,6 +5,12 @@ export const METADATA = {
   }
 }
 
+export const VERTICAL_MENU = {
+  HOME: 'Inicio',
+  CLIENTS: 'Clientes',
+  ABOUT: 'Info'
+}
+
 export const LOGIN = {
   metadata: { title: 'Bienvenido', description: 'Inicia sesión para continuar' },
   welcome: '¡Bienvenido a Data Seguro!',

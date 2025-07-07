@@ -20,6 +20,7 @@ import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNav
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 import { ROUTES } from '@/constants/routes'
+import { VERTICAL_MENU } from '@/constants/texts'
 
 type RenderExpandIconProps = {
   open?: boolean
@@ -70,10 +71,13 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
         <MenuItem href={ROUTES.HOME} icon={<i className='ri-home-smile-line' />}>
-          Home
+          {VERTICAL_MENU.HOME}
         </MenuItem>
-        <MenuItem href='/about' icon={<i className='ri-information-line' />}>
-          About
+        <MenuItem href={ROUTES.CLIENTS} icon={<i className='ri-home-smile-line' />}>
+          {VERTICAL_MENU.CLIENTS}
+        </MenuItem>
+        <MenuItem href={ROUTES.ABOUT} icon={<i className='ri-information-line' />}>
+          {VERTICAL_MENU.ABOUT}
         </MenuItem>
       </Menu>
       {/* <Menu

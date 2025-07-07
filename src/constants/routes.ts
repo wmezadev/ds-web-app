@@ -22,5 +22,7 @@ export const API_ROUTES = {
 
 export const ROUTES = {
   HOME: '/home',
-  LOGIN: '/login'
+  LOGIN: '/login',
+  CLIENTS: '/clients',
+  ABOUT: '/about'
 }
