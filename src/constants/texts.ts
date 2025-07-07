@@ -22,3 +22,7 @@ export const LOGIN = {
   invalidUsernameOrPassword: 'Nombre de usuario o contraseña inválidos',
   anErrorOccurredDuringLogin: 'Ocurrió un error durante el inicio de sesión'
 }
+
+export const LOGOUT = {
+  signout: 'Cerrar sesión'
+}
