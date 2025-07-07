@@ -44,11 +44,11 @@ Use the `useApi` hook to make authenticated API calls:
 import { useApi } from '@/hooks/useApi'
 
 const MyComponent = () => {
-  const { apiCall, isAuthenticated, isLoading } = useApi()
+  const { fetchApi, isAuthenticated, isLoading } = useApi()
 
   const fetchData = async () => {
     try {
-      const data = await apiCall('users/profile')
+      const data = await fetchApi('users/profile')
       console.log(data)
     } catch (error) {
       console.error('API Error:', error)

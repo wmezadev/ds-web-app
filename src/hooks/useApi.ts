@@ -40,7 +40,7 @@ export const useApi = () => {
     }
   }
 
-  const apiCall = async (endpoint: string, options: ApiOptions = {}, retry = true) => {
+  const fetchApi = async (endpoint: string, options: ApiOptions = {}, retry = true) => {
     if (status === 'loading') {
       throw new Error('Session is loading')
     }
@@ -89,8 +89,54 @@ export const useApi = () => {
     return response.json()
   }
 
+  // Upload file using multipart/form-data with field name "file"
+  const uploadFile = async (endpoint: string, file: File) => {
+    if (status === 'loading') {
+      throw new Error('Session is loading')
+    }
+
+    if (status === 'unauthenticated') {
+      throw new Error('User not authenticated')
+    }
+
+    const formData = new FormData()
+
+    formData.append('file', file)
+
+    let response = await fetch(`${API_PROXY_PATH}/${endpoint}`, {
+      method: 'POST',
+      body: formData
+
+      // Do not set Content-Type; browser will set it
+    })
+
+    if (response.status === 401) {
+      const newAccessToken = await refreshAccessToken()
+
+      if (newAccessToken) {
+        // Retry original request
+        response = await fetch(`${API_PROXY_PATH}/${endpoint}`, {
+          method: 'POST',
+          body: formData
+        })
+        if (!response.ok) throw new Error('File upload failed after retry')
+
+        return response.json()
+      } else {
+        showModal()
+        await signOut({ redirect: false })
+        throw new Error('Session expired. Please log in again.')
+      }
+    }
+
+    if (!response.ok) throw new Error('File upload failed')
+
+    return response.json()
+  }
+
   return {
-    apiCall,
+    fetchApi,
+    uploadFile,
     isAuthenticated: status === 'authenticated',
     isLoading: status === 'loading',
     session

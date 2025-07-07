@@ -10,7 +10,7 @@ import { useApi } from '@/hooks/useApi'
 
 const UserProfile = () => {
   const { data: session } = useSession()
-  const { apiCall, isAuthenticated } = useApi()
+  const { fetchApi, isAuthenticated } = useApi()
   const [profileData, setProfileData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +22,7 @@ const UserProfile = () => {
     try {
       // Example API call to get user profile
       // Replace 'users/profile' with your actual DS API endpoint
-      const data = await apiCall('auth/me')
+      const data = await fetchApi('auth/me')
 
       setProfileData(data)
     } catch (err) {

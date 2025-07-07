@@ -2,21 +2,23 @@
 
 import React, { useState } from 'react'
 
-import { useRouter } from 'next/navigation'
-
 import { Box, Typography, TextField, Paper, Button, Stack } from '@mui/material'
 
+import { useApi } from '@/hooks/useApi'
+
 const initialState = {
-  name: '',
-  email: '',
-  phone: '',
+  full_name: '',
+  document_number: '',
+  birthdate: '',
+  nationality: '',
   doc: null as File | null
 }
 
 type FormFields = {
-  name: string
-  email: string
-  phone: string
+  full_name: string
+  document_number: string
+  birthdate: string
+  nationality: string
   doc: File | null
 }
 
@@ -25,7 +27,7 @@ type FormErrors = Partial<Record<keyof FormFields, string>>
 const ClientCreatePage = () => {
   const [form, setForm] = useState<FormFields>(initialState)
   const [errors, setErrors] = useState<FormErrors>({})
-  const router = useRouter()
+  const { fetchApi, uploadFile } = useApi()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target
@@ -40,10 +42,10 @@ const ClientCreatePage = () => {
   const validate = () => {
     const errs: any = {}
 
-    if (!form.name) errs.name = 'Nombre requerido'
+    /*     if (!form.name) errs.name = 'Nombre requerido'
     if (!form.email) errs.email = 'Email requerido'
     if (!form.phone) errs.phone = 'Teléfono requerido'
-
+ */
     // Optionally require doc
     // if (!form.doc) errs.doc = 'Documento requerido'
     setErrors(errs)
@@ -51,14 +53,38 @@ const ClientCreatePage = () => {
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
 
-    // TODO: Replace with real API call
-    alert('Cliente creado!')
+    try {
+      if (form.doc) {
+        const file = await uploadFile('aws/s3/upload', form.doc)
 
-    router.push('/clients')
+        const data = await fetchApi('clients/extract-data', {
+          method: 'POST',
+          body: {
+            s3_key: file?.key,
+            document_type: 'cedula'
+          }
+        })
+
+        if (data?.fields) {
+          setForm(prev => ({
+            ...prev,
+            full_name: data.fields.full_name || '',
+            document_number: data.fields.document_number || '',
+            birthdate: data.fields.birthdate || '',
+            nationality: data.fields.nationality || ''
+          }))
+        }
+      } else {
+        // Optionally handle case where no file is selected
+        console.warn('No file selected for upload')
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   return (
@@ -70,33 +96,43 @@ const ClientCreatePage = () => {
         <form onSubmit={handleSubmit} noValidate>
           <Stack spacing={3}>
             <TextField
-              label='Nombre'
-              name='name'
-              value={form.name}
+              label='Nombre completo'
+              name='full_name'
+              value={form.full_name}
               onChange={handleChange}
-              error={!!errors.name}
-              helperText={errors.name}
+              error={!!errors.full_name}
+              helperText={errors.full_name}
               fullWidth
               required
             />
             <TextField
-              label='Email'
-              name='email'
-              value={form.email}
+              label='Número de documento'
+              name='document_number'
+              value={form.document_number}
               onChange={handleChange}
-              error={!!errors.email}
-              helperText={errors.email}
+              error={!!errors.document_number}
+              helperText={errors.document_number}
               fullWidth
               required
-              type='email'
             />
             <TextField
-              label='Teléfono'
-              name='phone'
-              value={form.phone}
+              label='Fecha de nacimiento'
+              name='birthdate'
+              value={form.birthdate}
               onChange={handleChange}
-              error={!!errors.phone}
-              helperText={errors.phone}
+              error={!!errors.birthdate}
+              helperText={errors.birthdate}
+              fullWidth
+              required
+              placeholder='DD-MM-YY'
+            />
+            <TextField
+              label='Nacionalidad'
+              name='nationality'
+              value={form.nationality}
+              onChange={handleChange}
+              error={!!errors.nationality}
+              helperText={errors.nationality}
               fullWidth
               required
             />

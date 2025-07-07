@@ -49,11 +49,11 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
     const path = pathSegments.join('/')
     const targetUrl = `${API_BASE_URL}/${path}`
 
-    // Get the request body if it exists
-    let body: string | undefined
+    // Prepare body for proxying: stream for non-GET/DELETE, undefined otherwise
+    let body: any = undefined
 
     if (method !== 'GET' && method !== 'DELETE') {
-      body = await request.text()
+      body = request.body
     }
 
     // Get query parameters
@@ -62,20 +62,25 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
 
     const fullTargetUrl = queryParams ? `${targetUrl}?${queryParams}` : targetUrl
 
-    // Forward the request to the DS API
-    const response = await fetch(fullTargetUrl, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.accessToken}`,
+    // Prepare headers: forward all except host, set Authorization
+    const headers = new Headers(request.headers)
 
-        // Forward other headers that might be needed
-        ...(request.headers.get('accept') && {
-          Accept: request.headers.get('accept')!
-        })
-      },
+    headers.set('Authorization', `Bearer ${token.accessToken}`)
+    headers.delete('host')
+
+    // Required for Node.js/Edge when streaming a body
+    const fetchOptions: RequestInit = {
+      method,
+      headers,
       body
-    })
+    }
+
+    if (body) {
+      // @ts-ignore
+      fetchOptions.duplex = 'half'
+    }
+
+    const response = await fetch(fullTargetUrl, fetchOptions)
 
     // Get the response data
     const responseData = await response.text()
