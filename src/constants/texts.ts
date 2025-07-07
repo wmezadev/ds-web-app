@@ -32,3 +32,14 @@ export const LOGIN = {
 export const LOGOUT = {
   signout: 'Cerrar sesión'
 }
+
+export const CLIENTS_PAGE = {
+  metadata: {
+    title: 'Clientes',
+    description: 'Búsqueda de clientes'
+  },
+  TITLE: 'Clientes',
+  SEARCH_PLACEHOLDER: 'Buscar clientes...',
+  NO_RESULTS: 'No se encontraron clientes.',
+  CREATE_CLIENT: 'Crear cliente'
+}

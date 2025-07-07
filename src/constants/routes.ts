@@ -23,6 +23,9 @@ export const API_ROUTES = {
 export const ROUTES = {
   HOME: '/home',
   LOGIN: '/login',
-  CLIENTS: '/clients',
+  CLIENTS: {
+    INDEX: '/clients',
+    CREATE: '/clients/create'
+  },
   ABOUT: '/about'
 }

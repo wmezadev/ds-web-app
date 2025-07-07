@@ -73,7 +73,7 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         <MenuItem href={ROUTES.HOME} icon={<i className='ri-home-smile-line' />}>
           {VERTICAL_MENU.HOME}
         </MenuItem>
-        <MenuItem href={ROUTES.CLIENTS} icon={<i className='ri-home-smile-line' />}>
+        <MenuItem href={ROUTES.CLIENTS.INDEX} icon={<i className='ri-home-smile-line' />}>
           {VERTICAL_MENU.CLIENTS}
         </MenuItem>
         <MenuItem href={ROUTES.ABOUT} icon={<i className='ri-information-line' />}>
