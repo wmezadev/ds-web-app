@@ -137,6 +137,7 @@ const Login = ({ mode }: { mode: Mode }) => {
             <TextField
               autoFocus
               fullWidth
+              name='username'
               label={LOGIN.username}
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -144,6 +145,7 @@ const Login = ({ mode }: { mode: Mode }) => {
             />
             <TextField
               fullWidth
+              name='password'
               label={LOGIN.password}
               type={isPasswordShown ? 'text' : 'password'}
               value={password}
