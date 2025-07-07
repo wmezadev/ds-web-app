@@ -1,7 +1,7 @@
 {
-  "name": "materialize-mui-nextjs-admin-template",
-  "version": "5.0.0",
-  "license": "Commercial",
+  "name": "ds-web-app",
+  "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
