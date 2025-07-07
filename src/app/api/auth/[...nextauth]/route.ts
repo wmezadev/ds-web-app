@@ -57,6 +57,8 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log('JWT CALLBACK:', { token, user })
+
       if (user) {
         token.accessToken = user.accessToken
         token.refreshToken = user.refreshToken
