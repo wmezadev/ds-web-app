@@ -1,5 +1,12 @@
+export const METADATA = {
+  layout: {
+    title: 'Data Seguro',
+    description: 'Applicacion de gestion de datos seguros'
+  }
+}
+
 export const LOGIN = {
-  welcome: 'Bienvenido a Data Seguro! 👋🏻',
+  welcome: '¡Bienvenido a Data Seguro!',
   pleaseSignIn: 'Por favor, inicie sesión para continuar',
   username: 'Nombre de usuario',
   password: 'Contraseña',

@@ -19,7 +19,6 @@ import InputAdornment from '@mui/material/InputAdornment'
 import Checkbox from '@mui/material/Checkbox'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
-import Divider from '@mui/material/Divider'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
@@ -112,9 +111,9 @@ const Login = ({ mode }: { mode: Mode }) => {
       >
         <div className='pli-6 max-lg:mbs-40 lg:mbe-24'>
           <Image
-            src='/images/people-group.png'
-            width={390}
-            height={466}
+            src='/images/wm-people-trans.png'
+            width={612}
+            height={408}
             alt='character-illustration'
             className='max-bs-[673px] max-is-full bs-auto'
           />
@@ -183,27 +182,6 @@ const Login = ({ mode }: { mode: Mode }) => {
             >
               {isLoading ? LOGIN.loggingIn : LOGIN.logIn}
             </Button>
-            <div className='flex justify-center items-center flex-wrap gap-2'>
-              <Typography>{LOGIN.newOnOurPlatform}</Typography>
-              <Typography component={Link} color='primary.main'>
-                {LOGIN.signUp}
-              </Typography>
-            </div>
-            <Divider className='gap-3 text-textPrimary'>{LOGIN.or}</Divider>
-            <div className='flex justify-center items-center gap-2'>
-              <IconButton size='small' className='text-facebook'>
-                <i className='ri-facebook-fill' />
-              </IconButton>
-              <IconButton size='small' className='text-twitter'>
-                <i className='ri-twitter-fill' />
-              </IconButton>
-              <IconButton size='small' className='text-textPrimary'>
-                <i className='ri-github-fill' />
-              </IconButton>
-              <IconButton size='small' className='text-googlePlus'>
-                <i className='ri-google-fill' />
-              </IconButton>
-            </div>
           </form>
         </div>
       </div>

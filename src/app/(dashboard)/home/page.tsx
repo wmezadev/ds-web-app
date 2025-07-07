@@ -1,5 +1,9 @@
 import UserProfile from '@/components/UserProfile'
 
+export const metadata = {
+  title: 'Home'
+}
+
 export default function Page() {
   return (
     <div style={{ padding: 24 }}>

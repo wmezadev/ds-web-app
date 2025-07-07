@@ -9,6 +9,7 @@ import type { ChildrenType } from '@core/types'
 
 // Util Imports
 import { getSystemMode } from '@core/utils/serverHelpers'
+import { METADATA } from '@/constants/texts'
 
 // Style Imports
 import '@/app/globals.css'
@@ -17,8 +18,11 @@ import '@/app/globals.css'
 import '@assets/iconify-icons/generated-icons.css'
 
 export const metadata = {
-  title: 'Materialize - Material Next.js Admin Template',
-  description: 'Materialize - Material Next.js Admin Template'
+  title: {
+    template: `%s | ${METADATA.layout.title}`,
+    default: METADATA.layout.title // a default is required when creating a template
+  },
+  description: METADATA.layout.description
 }
 
 const RootLayout = async (props: ChildrenType) => {
