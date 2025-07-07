@@ -73,9 +73,9 @@ const Login = ({ mode }: { mode: Mode }) => {
       if (result?.error) {
         setError(LOGIN.invalidUsernameOrPassword)
         console.error('Login error:', result.error)
-      } else {
-        router.push(ROUTES.HOME)
       }
+
+      // No redirigir aquí, solo cuando status sea 'authenticated' en el useEffect
     } catch (error) {
       setError(LOGIN.anErrorOccurredDuringLogin)
       console.error('Login exception:', error)
