@@ -60,19 +60,25 @@ const Login = ({ mode }: { mode: Mode }) => {
     setIsLoading(true)
 
     try {
+      console.log('Login attempt:', { username, password })
+
       const result = await signIn('credentials', {
         username,
         password,
         redirect: false
       })
 
+      console.log('signIn result:', result)
+
       if (result?.error) {
         setError(LOGIN.invalidUsernameOrPassword)
+        console.error('Login error:', result.error)
       } else {
         router.push(ROUTES.HOME)
       }
     } catch (error) {
       setError(LOGIN.anErrorOccurredDuringLogin)
+      console.error('Login exception:', error)
     } finally {
       setIsLoading(false)
     }
@@ -80,6 +86,8 @@ const Login = ({ mode }: { mode: Mode }) => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Session status:', status, 'Session:', session)
+
     if (status === 'authenticated' && session) {
       router.push(ROUTES.HOME)
     }
