@@ -76,17 +76,14 @@ const handler = NextAuth({
       return session
     },
     async redirect({ url, baseUrl }) {
-      // If the url is relative, prefix it with the base url
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`
       }
 
-      // If the url is on the same origin, allow it
       if (new URL(url).origin === baseUrl) {
         return url
       }
 
-      // Default to home page
       return `${baseUrl}${ROUTES.HOME}`
     }
   },
@@ -96,6 +93,7 @@ const handler = NextAuth({
   session: {
     strategy: 'jwt'
   },
+  secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
