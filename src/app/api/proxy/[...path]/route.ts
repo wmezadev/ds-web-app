@@ -86,9 +86,12 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
       statusText: response.statusText
     })
 
+    // Disable caching for all proxied API responses
+    newResponse.headers.set('Cache-Control', 'no-store, max-age=0')
+
     // Copy relevant headers from the original response
     response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'content-encoding') {
+      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'cache-control') {
         newResponse.headers.set(key, value)
       }
     })
