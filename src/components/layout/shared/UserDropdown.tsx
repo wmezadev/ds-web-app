@@ -49,7 +49,9 @@ const UserDropdown = () => {
 
   // Hooks
   const router = useRouter()
-  const { profileData } = useProfileData()
+  const { profileData, loading, error } = useProfileData()
+
+  console.log('useProfileData', { profileData, loading, error })
 
   const { settings } = useSettings()
 
@@ -72,6 +74,8 @@ const UserDropdown = () => {
   const handleUserLogout = async () => {
     signOut()
   }
+
+  if (loading || error) return <></>
 
   return (
     <>
