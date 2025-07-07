@@ -95,7 +95,6 @@ const handler = NextAuth({
   session: {
     strategy: 'jwt'
   },
-  secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
