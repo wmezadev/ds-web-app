@@ -51,8 +51,6 @@ const UserDropdown = () => {
   const router = useRouter()
   const { profileData, loading, error } = useProfileData()
 
-  console.log('useProfileData', { profileData, loading, error })
-
   const { settings } = useSettings()
 
   const handleDropdownOpen = () => {

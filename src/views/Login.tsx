@@ -37,9 +37,7 @@ import { useSettings } from '@core/hooks/useSettings'
 import { LOGIN } from '@/constants/texts'
 import { ROUTES } from '@/constants/routes'
 
-const Login = ({ mode }: { mode: Mode }) => {
-  console.log('mode', mode)
-
+const Login = ({}: { mode: Mode }) => {
   // States
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [username, setUsername] = useState('')
@@ -60,15 +58,11 @@ const Login = ({ mode }: { mode: Mode }) => {
     setIsLoading(true)
 
     try {
-      console.log('Login attempt:', { username, password })
-
       const result = await signIn('credentials', {
         username,
         password,
         redirect: false
       })
-
-      console.log('signIn result:', result)
 
       if (result?.error) {
         setError(LOGIN.invalidUsernameOrPassword)
@@ -86,8 +80,6 @@ const Login = ({ mode }: { mode: Mode }) => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log('Session status:', status, 'Session:', session)
-
     if (status === 'authenticated' && session) {
       router.push(ROUTES.HOME)
     }
