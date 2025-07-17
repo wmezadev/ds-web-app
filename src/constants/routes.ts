@@ -17,6 +17,10 @@ export const API_ROUTES = {
   CLIENTS: {
     LIST: 'clients',
     GET: 'clients/:id'
+  },
+  QUOTATIONS: {
+    LIST: '/quotations',
+    GET: '/quotations/:id'
   }
 }
 
@@ -28,7 +32,8 @@ export const ROUTES = {
     CREATE: '/clients/create'
   },
   QUOTATIONS: {
-    INDEX: '/quotations'
+    INDEX: '/quotations',
+    CREATE: '/quotations/create'
   },
   POLICIES: {
     INDEX: '/policies'

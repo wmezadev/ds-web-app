@@ -39,6 +39,17 @@ export const LOGOUT = {
   signout: 'Cerrar sesión'
 }
 
+export const QUOTATIONS_PAGE = {
+  metadata: {
+    title: 'Cotizaciones',
+    description: 'Búsqueda de cotizaciones'
+  },
+  TITLE: 'Cotizaciones',
+  SEARCH_PLACEHOLDER: 'Buscar cotizaciones...',
+  NO_RESULTS: 'No se encontraron cotizaciones.',
+  CREATE_QUOTATION: 'Crear cotización'
+}
+
 export const CLIENTS_PAGE = {
   metadata: {
     title: 'Clientes',
