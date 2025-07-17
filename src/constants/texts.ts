@@ -8,6 +8,12 @@ export const METADATA = {
 export const VERTICAL_MENU = {
   HOME: 'Inicio',
   CLIENTS: 'Clientes',
+  QUOTATIONS: 'Cotizaciones',
+  POLICIES: 'Polizas',
+  CERTIFICATES: 'Certificados',
+  RECEIPTS: 'Recibos',
+  SINISTERS: 'Siniestros',
+  REPORTS: 'Reportes',
   ABOUT: 'Info'
 }
 

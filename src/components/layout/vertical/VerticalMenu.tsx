@@ -73,8 +73,26 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         <MenuItem href={ROUTES.HOME} icon={<i className='ri-home-smile-line' />}>
           {VERTICAL_MENU.HOME}
         </MenuItem>
-        <MenuItem href={ROUTES.CLIENTS.INDEX} icon={<i className='ri-home-smile-line' />}>
+        <MenuItem href={ROUTES.CLIENTS.INDEX} icon={<i className='ri-user-line' />}>
           {VERTICAL_MENU.CLIENTS}
+        </MenuItem>
+        <MenuItem href={ROUTES.QUOTATIONS.INDEX} icon={<i className='ri-file-text-line' />}>
+          {VERTICAL_MENU.QUOTATIONS}
+        </MenuItem>
+        <MenuItem href={ROUTES.POLICIES.INDEX} icon={<i className='ri-shield-check-line' />}>
+          {VERTICAL_MENU.POLICIES}
+        </MenuItem>
+        <MenuItem href={ROUTES.CERTIFICATES.INDEX} icon={<i className='ri-shield-star-line' />}>
+          {VERTICAL_MENU.CERTIFICATES}
+        </MenuItem>
+        <MenuItem href={ROUTES.RECEIPTS.INDEX} icon={<i className='ri-receipt-line' />}>
+          {VERTICAL_MENU.RECEIPTS}
+        </MenuItem>
+        <MenuItem href={ROUTES.SINISTERS.INDEX} icon={<i className='ri-fire-line' />}>
+          {VERTICAL_MENU.SINISTERS}
+        </MenuItem>
+        <MenuItem href={ROUTES.REPORTS.INDEX} icon={<i className='ri-bar-chart-line' />}>
+          {VERTICAL_MENU.REPORTS}
         </MenuItem>
         <MenuItem href={ROUTES.ABOUT} icon={<i className='ri-information-line' />}>
           {VERTICAL_MENU.ABOUT}

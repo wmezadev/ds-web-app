@@ -27,9 +27,30 @@ import { ROUTES } from '@/constants/routes'
 
 // Example data (replace with real data/fetch logic)
 const mockClients = [
-  { id: 1, name: 'Acme Corp', email: 'info@acme.com', phone: '555-1234' },
-  { id: 2, name: 'Globex Inc', email: 'contact@globex.com', phone: '555-5678' },
-  { id: 3, name: 'Soylent Co', email: 'hello@soylent.com', phone: '555-8765' }
+  {
+    codigo: 'C001',
+    cedula: '10784524',
+    cliente: 'Acme Corp',
+    persona: 'N',
+    fechaNacimiento: '1990-05-12',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C002',
+    cedula: '001180343',
+    cliente: 'Globex Inc',
+    persona: 'J',
+    fechaNacimiento: '1985-09-20',
+    estado: 'Inactivo'
+  },
+  {
+    codigo: 'C003',
+    cedula: '8745551',
+    cliente: 'Soylent Co',
+    persona: 'N',
+    fechaNacimiento: '1978-11-03',
+    estado: 'Activo'
+  }
 ]
 
 const ClientsPage = () => {
@@ -42,9 +63,12 @@ const ClientsPage = () => {
     setClients(
       mockClients.filter(
         client =>
-          client.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
-          client.email.toLowerCase().includes(e.target.value.toLowerCase()) ||
-          client.phone.includes(e.target.value)
+          client.codigo.toLowerCase().includes(e.target.value.toLowerCase()) ||
+          client.cedula.toLowerCase().includes(e.target.value.toLowerCase()) ||
+          client.cliente.toLowerCase().includes(e.target.value.toLowerCase()) ||
+          client.persona.toLowerCase().includes(e.target.value.toLowerCase()) ||
+          client.fechaNacimiento.toLowerCase().includes(e.target.value.toLowerCase()) ||
+          client.estado.toLowerCase().includes(e.target.value.toLowerCase())
       )
     )
   }
@@ -93,9 +117,12 @@ const ClientsPage = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ background: theme.palette.background.default }}>
-              <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Phone</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Cédula</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Persona</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Fecha de Nac./Fund.</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -107,10 +134,15 @@ const ClientsPage = () => {
               </TableRow>
             ) : (
               clients.map(client => (
-                <TableRow key={client.id} hover>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
+                <TableRow key={client.codigo} hover>
+                  <TableCell>{client.codigo}</TableCell>
+                  <TableCell>{client.cedula}</TableCell>
+                  <TableCell>{client.cliente}</TableCell>
+                  <TableCell>{client.persona}</TableCell>
+                  <TableCell>{client.fechaNacimiento}</TableCell>
+                  <TableCell>
+                    <span style={{ color: client.estado === 'Activo' ? 'green' : 'red' }}>{client.estado}</span>
+                  </TableCell>
                 </TableRow>
               ))
             )}

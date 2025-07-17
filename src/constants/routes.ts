@@ -27,5 +27,23 @@ export const ROUTES = {
     INDEX: '/clients',
     CREATE: '/clients/create'
   },
+  QUOTATIONS: {
+    INDEX: '/quotations'
+  },
+  POLICIES: {
+    INDEX: '/policies'
+  },
+  CERTIFICATES: {
+    INDEX: '/certificates'
+  },
+  RECEIPTS: {
+    INDEX: '/receipts'
+  },
+  SINISTERS: {
+    INDEX: '/sinisters'
+  },
+  REPORTS: {
+    INDEX: '/reports'
+  },
   ABOUT: '/about'
 }
