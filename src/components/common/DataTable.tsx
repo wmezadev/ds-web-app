@@ -29,8 +29,10 @@ const DataTable = <T extends Record<string, any>>({
     setPage(newPage)
   }
 
-  const totalPages = Math.ceil(rows.length / itemsPerPage)
-  const paginatedRows = rows.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+  // Asegurarse de que rows sea un array
+  const safeRows = Array.isArray(rows) ? rows : []
+  const totalPages = Math.max(1, Math.ceil(safeRows.length / itemsPerPage))
+  const paginatedRows = safeRows.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
   return (
     <Box>
