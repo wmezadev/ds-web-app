@@ -17,6 +17,22 @@ export const VERTICAL_MENU = {
   ABOUT: 'Info'
 }
 
+export const POLICIES_PAGE = {
+  title: 'Pólizas',
+  searchPlaceholder: 'Buscar pólizas...',
+  createPolicy: 'Crear Póliza',
+  noResults: 'No se encontraron pólizas',
+  tableHeaders: {
+    nroPoliza: 'N° Póliza',
+    cliente: 'Cliente',
+    ramo: 'Ramo',
+    aseguradora: 'Aseguradora',
+    fechaEmision: 'Fecha Emisión',
+    estado: 'Estado',
+    estadoGestion: 'Estado Gestión'
+  }
+}
+
 export const LOGIN = {
   metadata: { title: 'Bienvenido', description: 'Inicia sesión para continuar' },
   welcome: '¡Bienvenido a Data Seguro!',
@@ -59,4 +75,15 @@ export const CLIENTS_PAGE = {
   SEARCH_PLACEHOLDER: 'Buscar clientes...',
   NO_RESULTS: 'No se encontraron clientes.',
   CREATE_CLIENT: 'Crear cliente'
+}
+
+export const CERTIFICATES_PAGE = {
+  metadata: {
+    title: 'Certificados',
+    description: 'Búsqueda de certificados'
+  },
+  TITLE: 'Certificados',
+  SEARCH_PLACEHOLDER: 'Buscar certificados...',
+  NO_RESULTS: 'No se encontraron certificados.',
+  CREATE_CERTIFICATE: 'Crear certificado'
 }

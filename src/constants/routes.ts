@@ -36,10 +36,12 @@ export const ROUTES = {
     CREATE: '/quotations/create'
   },
   POLICIES: {
-    INDEX: '/policies'
+    INDEX: '/policies',
+    CREATE: '/policies/create'
   },
   CERTIFICATES: {
-    INDEX: '/certificates'
+    INDEX: '/certificates',
+    CREATE: '/certificates/create'
   },
   RECEIPTS: {
     INDEX: '/receipts'

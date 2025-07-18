@@ -16,19 +16,18 @@ const mockQuotations: Quotation[] = [
     cliente: 'Acme Corporation',
     ramo: 'Riesgos',
     aseguradora: 'Mapfre',
-    estado: 'Pendiente',
     asignadoA: 'Juan Pérez',
-    estadoGestion: 'En proceso'
+    estadoGestion: 'Cotizada'
   },
+
   {
     nroCotizacion: 'Q002',
     fecha: '2025-07-16',
     cliente: 'Globex Inc',
     ramo: 'Vida',
     aseguradora: 'La Positiva',
-    estado: 'Aprobada',
     asignadoA: 'María López',
-    estadoGestion: 'Completada'
+    estadoGestion: 'Emitida'
   },
   {
     nroCotizacion: 'Q003',
@@ -36,9 +35,8 @@ const mockQuotations: Quotation[] = [
     cliente: 'Soylent Co',
     ramo: 'Automóvil',
     aseguradora: 'Pacifico',
-    estado: 'Rechazada',
     asignadoA: 'Carlos Gómez',
-    estadoGestion: 'Pendiente'
+    estadoGestion: 'Cotizada'
   }
 ]
 
@@ -48,12 +46,13 @@ const columns = [
   { key: 'cliente' as const, label: 'Cliente' },
   { key: 'ramo' as const, label: 'Ramo' },
   { key: 'aseguradora' as const, label: 'Aseguradora' },
-  { key: 'estado' as const, label: 'Estado' },
   { key: 'asignadoA' as const, label: 'Asignado a' },
   {
     key: 'estadoGestion' as const,
     label: 'Estado Gestión',
-    render: (value: string) => <span style={{ color: value === 'Completada' ? 'green' : value === 'Pendiente' ? 'orange' : 'black' }}>{value}</span>
+    render: (value: string) => (
+      <span style={{ color: value === 'Cotizada' ? 'green' : value === 'Emitida' ? 'blue' : 'black' }}>{value}</span>
+    )
   }
 ]
 
@@ -66,7 +65,9 @@ const QuotationsPage = () => {
     setSearch(value)
     const lower = value.toLowerCase()
     setQuotations(
-      mockQuotations.filter(quotation => Object.values(quotation).some(v => v?.toString().toLowerCase().includes(lower)))
+      mockQuotations.filter(quotation =>
+        Object.values(quotation).some(v => v?.toString().toLowerCase().includes(lower))
+      )
     )
   }
 
