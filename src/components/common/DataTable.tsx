@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material'
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box } from '@mui/material'
+import Pagination from '@mui/material/Pagination'
+import Stack from '@mui/material/Stack'
 
 interface Column<T> {
-  key: keyof T
+  key: string | number
   label: string
   render?: (value: any, row: T) => React.ReactNode
 }
@@ -18,41 +20,61 @@ interface DataTableProps<T> {
 const DataTable = <T extends Record<string, any>>({
   columns,
   rows,
-  emptyMessage = 'No hay datos disponibles'
-}: DataTableProps<T>) => {
+  emptyMessage = 'No hay datos disponibles',
+  itemsPerPage = 10
+}: DataTableProps<T> & { itemsPerPage?: number }) => {
+  const [page, setPage] = React.useState(1)
+
+  const handleChangePage = (event: React.ChangeEvent<unknown>, newPage: number) => {
+    setPage(newPage)
+  }
+
+  const totalPages = Math.ceil(rows.length / itemsPerPage)
+  const paginatedRows = rows.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            {columns.map(col => (
-              <TableCell key={String(col.key)} sx={{ fontWeight: 600 }}>
-                {col.label}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.length === 0 ? (
+    <Box>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={columns.length} align='center'>
-                {emptyMessage}
-              </TableCell>
+              {columns.map(column => (
+                <TableCell key={column.key}>{column.label}</TableCell>
+              ))}
             </TableRow>
-          ) : (
-            rows.map((row, idx) => (
-              <TableRow key={idx} hover>
-                {columns.map(col => (
-                  <TableCell key={String(col.key)}>
-                    {col.render ? col.render(row[col.key], row) : row[col.key]}
-                  </TableCell>
-                ))}
+          </TableHead>
+          <TableBody>
+            {paginatedRows.length > 0 ? (
+              paginatedRows.map((row, index) => (
+                <TableRow key={index}>
+                  {columns.map(column => (
+                    <TableCell key={column.key}>
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} align='center'>
+                  {emptyMessage}
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={handleChangePage}
+          color='primary'
+          showFirstButton
+          showLastButton
+        />
+      </Box>
+    </Box>
   )
 }
 

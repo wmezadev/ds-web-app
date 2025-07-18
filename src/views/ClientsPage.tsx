@@ -33,6 +33,78 @@ const mockClients: Client[] = [
     persona: 'N',
     fechaNacimiento: '1978-11-03',
     estado: 'Activo'
+  },
+  {
+    codigo: 'C001',
+    cedula: '10784524',
+    cliente: 'Acme Corporation',
+    persona: 'N',
+    fechaNacimiento: '1990-05-12',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C002',
+    cedula: '001180343',
+    cliente: 'Globex Inc',
+    persona: 'J',
+    fechaNacimiento: '1985-09-20',
+    estado: 'Inactivo'
+  },
+  {
+    codigo: 'C003',
+    cedula: '8745551',
+    cliente: 'Soylent Co',
+    persona: 'N',
+    fechaNacimiento: '1978-11-03',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C001',
+    cedula: '10784524',
+    cliente: 'Acme Corporation',
+    persona: 'N',
+    fechaNacimiento: '1990-05-12',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C002',
+    cedula: '001180343',
+    cliente: 'Globex Inc',
+    persona: 'J',
+    fechaNacimiento: '1985-09-20',
+    estado: 'Inactivo'
+  },
+  {
+    codigo: 'C003',
+    cedula: '8745551',
+    cliente: 'Soylent Co',
+    persona: 'N',
+    fechaNacimiento: '1978-11-03',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C001',
+    cedula: '10784524',
+    cliente: 'Acme Corporation',
+    persona: 'N',
+    fechaNacimiento: '1990-05-12',
+    estado: 'Activo'
+  },
+  {
+    codigo: 'C002',
+    cedula: '001180343',
+    cliente: 'Globex Inc',
+    persona: 'J',
+    fechaNacimiento: '1985-09-20',
+    estado: 'Inactivo'
+  },
+  {
+    codigo: 'C003',
+    cedula: '8745551',
+    cliente: 'Soylent Co',
+    persona: 'N',
+    fechaNacimiento: '1978-11-03',
+    estado: 'Activo'
   }
 ]
 
