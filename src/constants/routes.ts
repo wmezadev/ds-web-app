@@ -16,7 +16,8 @@ export const API_ROUTES = {
   },
   CLIENTS: {
     LIST: 'clients',
-    GET: 'clients/:id'
+    GET: 'clients/:id',
+    SEARCH: 'clients/search'
   },
   QUOTATIONS: {
     LIST: '/quotations',

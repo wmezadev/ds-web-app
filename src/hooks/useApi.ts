@@ -55,6 +55,7 @@ export const useApi = () => {
       method,
       headers: {
         'Content-Type': 'application/json',
+        ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         ...headers
       }
     }

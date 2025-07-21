@@ -1,20 +1,24 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { Box, Typography, Button, Paper, CircularProgress } from '@mui/material'
+import React, { useEffect, useState, useCallback } from 'react'
+
 import Link from 'next/link'
+
+import { Box, Typography, Button, Paper, CircularProgress } from '@mui/material'
+
+import { useSession } from 'next-auth/react'
 
 import { SearchBar, DataTable } from '@/components/common'
 import { CLIENTS_PAGE } from '@/constants/texts'
 import { ROUTES, API_ROUTES } from '@/constants/routes'
-import { Client } from '@/types/client'
+import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
-import { useSession } from 'next-auth/react'
 
 const formatFullName = (client: any) => {
   if (client.client_type === 'J') {
     return client.last_name || ''
   }
+
   return `${client.first_name || ''} ${client.last_name || ''}`.trim()
 }
 
@@ -87,16 +91,27 @@ const columns = [
   }
 ]
 
+const DEFAULT_LIMIT = 50
+
 const ClientsPage = () => {
   const { data: session, status: sessionStatus } = useSession()
   const { fetchApi } = useApi()
+
+  // datos base cargados al inicio (para reset al limpiar search)
   const [clients, setClients] = useState<Client[]>([])
+
+  // datos visibles (búsqueda o lista completa)
   const [filteredClients, setFilteredClients] = useState<Client[]>([])
   const [search, setSearch] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // loading específico de búsqueda remota
+  const [searchLoading, setSearchLoading] = useState(false)
+
+  // ---- CARGA INICIAL ----
   useEffect(() => {
     console.log('Session status:', sessionStatus)
     console.log('Initial load:', initialLoad)
@@ -105,6 +120,7 @@ const ClientsPage = () => {
     const loadClients = async () => {
       if (sessionStatus === 'loading') {
         console.log('Session is still loading, waiting...')
+
         return
       }
 
@@ -112,6 +128,8 @@ const ClientsPage = () => {
         console.log('User is not authenticated')
         setError('Por favor inicie sesión para ver los clientes')
         setLoading(false)
+        setInitialLoad(false) // evita loops
+
         return
       }
 
@@ -122,15 +140,16 @@ const ClientsPage = () => {
           setError(null)
 
           const response = await fetchApi(API_ROUTES.CLIENTS.LIST)
+
           console.log('API Response:', response)
 
-          // Extraer el array de clientes de la respuesta
+          // Ajusta según formato real de respuesta
           const clientsData = Array.isArray(response?.clients) ? response.clients : []
+
           console.log('Extracted clients:', clientsData)
 
           setClients(clientsData)
           setFilteredClients(clientsData)
-          setInitialLoad(false)
         } catch (err: any) {
           console.error('Error loading clients:', err)
           setError(err.message || 'Error al cargar los clientes')
@@ -139,27 +158,59 @@ const ClientsPage = () => {
         } finally {
           console.log('Finished loading attempt')
           setLoading(false)
+          setInitialLoad(false)
         }
       }
     }
 
     loadClients()
-  }, [sessionStatus, initialLoad, fetchApi, session])
+  }, [sessionStatus, initialLoad, fetchApi, session, clients.length])
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearch(value)
-    const lower = value.toLowerCase()
-    setFilteredClients(
-      clients.filter(client => Object.values(client).some(v => v?.toString().toLowerCase().includes(lower)))
-    )
-  }
+  // ---- BÚSQUEDA REMOTA ----
+  const handleSearch = useCallback(
+    async (query: string) => {
+      // El SearchBar ya nos entrega query debounced
+      setSearch(query)
 
+      // si está vacío → restaurar lista inicial sin llamar search
+      if (!query.trim()) {
+        setFilteredClients(clients)
+
+        return
+      }
+
+      setSearchLoading(true)
+
+      try {
+        const params = new URLSearchParams({
+          query,
+          skip: '0',
+          limit: String(DEFAULT_LIMIT)
+        })
+
+        const response = await fetchApi(`${API_ROUTES.CLIENTS.SEARCH}?${params.toString()}`)
+
+        // Ajusta al formato real de la respuesta
+        const results = Array.isArray(response?.clients) ? response.clients : []
+
+        setFilteredClients(results)
+      } catch (err) {
+        console.error('Client search failed:', err)
+        setFilteredClients([])
+      } finally {
+        setSearchLoading(false)
+      }
+    },
+    [clients, fetchApi]
+  )
+
+  // ---- CLEAR ----
   const handleClear = () => {
     setSearch('')
     setFilteredClients(clients)
   }
 
+  // ---- LOADING / ERROR ----
   if (loading)
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
@@ -167,8 +218,10 @@ const ClientsPage = () => {
         <Typography sx={{ ml: 2 }}>Cargando clientes...</Typography>
       </Box>
     )
+
   if (error) return <Typography color='error'>{error}</Typography>
 
+  // ---- RENDER ----
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
@@ -179,7 +232,7 @@ const ClientsPage = () => {
         <SearchBar
           placeholder={CLIENTS_PAGE.SEARCH_PLACEHOLDER}
           value={search}
-          onChange={handleSearch}
+          onChange={handleSearch} // <- ahora recibe string (debounced)
           onClear={handleClear}
           extraActions={
             <Link href={ROUTES.CLIENTS.CREATE} passHref>
@@ -188,8 +241,13 @@ const ClientsPage = () => {
               </Button>
             </Link>
           }
+          delay={400}
         />
       </Paper>
+
+      {searchLoading && (
+        <Typography sx={{ mb: 1, fontSize: '0.85rem', color: 'text.secondary' }}>Buscando “{search}”...</Typography>
+      )}
 
       <Box sx={{ mt: 2 }}>
         <DataTable columns={columns} rows={filteredClients} emptyMessage={CLIENTS_PAGE.NO_RESULTS} />
