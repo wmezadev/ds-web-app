@@ -1,34 +1,27 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import Link from 'next/link'
 
 import { Box, Typography, Button, Paper, CircularProgress } from '@mui/material'
-
 import { useSession } from 'next-auth/react'
 
 import { SearchBar, DataTable } from '@/components/common'
 import { CLIENTS_PAGE } from '@/constants/texts'
-import { ROUTES, API_ROUTES } from '@/constants/routes'
+import { ROUTES } from '@/constants/routes'
+import { useClients } from '@/hooks/useClients'
 import type { Client } from '@/types/client'
-import { useApi } from '@/hooks/useApi'
 
-const formatFullName = (client: any) => {
-  if (client.client_type === 'J') {
-    return client.last_name || ''
-  }
+const formatFullName = (client: Client) => {
+  if (client.client_type === 'J') return client.last_name || ''
 
   return `${client.first_name || ''} ${client.last_name || ''}`.trim()
 }
 
-const formatPersonType = (client: any) => {
-  return client.client_type === 'V' ? 'Natural' : 'Jurídico'
-}
+const formatPersonType = (client: Client) => (client.client_type === 'V' ? 'Natural' : 'Jurídico')
 
-const formatStatus = (status: boolean) => {
-  return status ? 'Activo' : 'Inactivo'
-}
+const formatStatus = (status: boolean) => (status ? 'Activo' : 'Inactivo')
 
 const columns = [
   {
@@ -39,17 +32,12 @@ const columns = [
   {
     key: 'document_number' as const,
     label: 'Documento',
-    render: (value: string, row: any) => (
-      <Box>
-        <div>{value}</div>
-        {/* <div style={{ fontSize: '0.8em', color: '#666' }}>{row.phone || 'Sin teléfono'}</div> */}
-      </Box>
-    )
+    render: (value: string) => <Box>{value}</Box>
   },
   {
     key: 'client' as const,
     label: 'Cliente',
-    render: (_: any, client: any) => (
+    render: (_: any, client: Client) => (
       <Box>
         <div style={{ fontWeight: 500 }}>{formatFullName(client)}</div>
         <div style={{ fontSize: '0.8em', color: '#666' }}>{client.email_1 || 'Sin correo'}</div>
@@ -59,7 +47,7 @@ const columns = [
   {
     key: 'type' as const,
     label: 'Tipo',
-    render: (_: any, client: any) => formatPersonType(client)
+    render: (_: any, client: Client) => formatPersonType(client)
   },
   {
     key: 'birth_date' as const,
@@ -91,137 +79,42 @@ const columns = [
   }
 ]
 
-const DEFAULT_LIMIT = 50
-
 const ClientsPage = () => {
-  const { data: session, status: sessionStatus } = useSession()
-  const { fetchApi } = useApi()
-
-  // datos base cargados al inicio (para reset al limpiar search)
-  const [clients, setClients] = useState<Client[]>([])
-
-  // datos visibles (búsqueda o lista completa)
-  const [filteredClients, setFilteredClients] = useState<Client[]>([])
+  const { status: sessionStatus } = useSession()
+  const apiEnabled = sessionStatus === 'authenticated'
+  const { data: clients, loading, error, setParams } = useClients(2, apiEnabled)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
 
-  const [loading, setLoading] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // loading específico de búsqueda remota
-  const [searchLoading, setSearchLoading] = useState(false)
-
-  // ---- CARGA INICIAL ----
-  useEffect(() => {
-    console.log('Session status:', sessionStatus)
-    console.log('Initial load:', initialLoad)
-    console.log('Current clients:', clients.length)
-
-    const loadClients = async () => {
-      if (sessionStatus === 'loading') {
-        console.log('Session is still loading, waiting...')
-
-        return
-      }
-
-      if (sessionStatus === 'unauthenticated') {
-        console.log('User is not authenticated')
-        setError('Por favor inicie sesión para ver los clientes')
-        setLoading(false)
-        setInitialLoad(false) // evita loops
-
-        return
-      }
-
-      if (session && initialLoad) {
-        try {
-          console.log('Starting to load clients...')
-          setLoading(true)
-          setError(null)
-
-          const response = await fetchApi(API_ROUTES.CLIENTS.LIST)
-
-          console.log('API Response:', response)
-
-          // Ajusta según formato real de respuesta
-          const clientsData = Array.isArray(response?.clients) ? response.clients : []
-
-          console.log('Extracted clients:', clientsData)
-
-          setClients(clientsData)
-          setFilteredClients(clientsData)
-        } catch (err: any) {
-          console.error('Error loading clients:', err)
-          setError(err.message || 'Error al cargar los clientes')
-          setClients([])
-          setFilteredClients([])
-        } finally {
-          console.log('Finished loading attempt')
-          setLoading(false)
-          setInitialLoad(false)
-        }
-      }
-    }
-
-    loadClients()
-  }, [sessionStatus, initialLoad, fetchApi, session, clients.length])
-
-  // ---- BÚSQUEDA REMOTA ----
   const handleSearch = useCallback(
-    async (query: string) => {
-      // El SearchBar ya nos entrega query debounced
+    (query: string) => {
       setSearch(query)
-
-      // si está vacío → restaurar lista inicial sin llamar search
-      if (!query.trim()) {
-        setFilteredClients(clients)
-
-        return
-      }
-
-      setSearchLoading(true)
-
-      try {
-        const params = new URLSearchParams({
-          query,
-          skip: '0',
-          limit: String(DEFAULT_LIMIT)
-        })
-
-        const response = await fetchApi(`${API_ROUTES.CLIENTS.SEARCH}?${params.toString()}`)
-
-        // Ajusta al formato real de la respuesta
-        const results = Array.isArray(response?.clients) ? response.clients : []
-
-        setFilteredClients(results)
-      } catch (err) {
-        console.error('Client search failed:', err)
-        setFilteredClients([])
-      } finally {
-        setSearchLoading(false)
-      }
+      setParams({ query })
+      setPage(1)
     },
-    [clients, fetchApi]
+    [setParams]
   )
 
-  // ---- CLEAR ----
-  const handleClear = () => {
-    setSearch('')
-    setFilteredClients(clients)
+  if (sessionStatus === 'loading') {
+    return (
+      <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Cargando sesión...</Typography>
+      </Box>
+    )
   }
 
-  // ---- LOADING / ERROR ----
-  if (loading)
+  if (loading) {
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
         <CircularProgress />
         <Typography sx={{ ml: 2 }}>Cargando clientes...</Typography>
       </Box>
     )
+  }
 
   if (error) return <Typography color='error'>{error}</Typography>
 
-  // ---- RENDER ----
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
@@ -232,8 +125,11 @@ const ClientsPage = () => {
         <SearchBar
           placeholder={CLIENTS_PAGE.SEARCH_PLACEHOLDER}
           value={search}
-          onChange={handleSearch} // <- ahora recibe string (debounced)
-          onClear={handleClear}
+          onChange={handleSearch}
+          onClear={() => {
+            setSearch('')
+            setParams({ query: '' })
+          }}
           extraActions={
             <Link href={ROUTES.CLIENTS.CREATE} passHref>
               <Button variant='contained' color='primary' sx={{ whiteSpace: 'nowrap', minWidth: 140 }}>
@@ -245,12 +141,15 @@ const ClientsPage = () => {
         />
       </Paper>
 
-      {searchLoading && (
-        <Typography sx={{ mb: 1, fontSize: '0.85rem', color: 'text.secondary' }}>Buscando “{search}”...</Typography>
-      )}
-
       <Box sx={{ mt: 2 }}>
-        <DataTable columns={columns} rows={filteredClients} emptyMessage={CLIENTS_PAGE.NO_RESULTS} />
+        <DataTable
+          columns={columns}
+          rows={clients}
+          emptyMessage={CLIENTS_PAGE.NO_RESULTS}
+          page={page}
+          onPageChange={setPage}
+          itemsPerPage={2}
+        />
       </Box>
     </Box>
   )
