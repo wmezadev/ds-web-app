@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 import Pagination from '@mui/material/Pagination'
 
 interface Column<T> {
-  key: string | number
+  key: keyof T | string
   label: string
   render?: (value: any, row: T) => React.ReactNode
 }
@@ -43,7 +43,7 @@ const DataTable = <T extends Record<string, any>>({
           <TableHead>
             <TableRow>
               {columns.map(column => (
-                <TableCell key={column.key}>{column.label}</TableCell>
+                <TableCell key={String(column.key)}>{column.label}</TableCell>
               ))}
             </TableRow>
           </TableHead>
@@ -52,8 +52,10 @@ const DataTable = <T extends Record<string, any>>({
               paginatedRows.map((row, index) => (
                 <TableRow key={index}>
                   {columns.map(column => (
-                    <TableCell key={column.key}>
-                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    <TableCell key={String(column.key)}>
+                      {column.render
+                        ? column.render((row as any)[column.key as keyof T], row)
+                        : (row as any)[column.key as keyof T]}
                     </TableCell>
                   ))}
                 </TableRow>

@@ -5,10 +5,10 @@ import { useApi } from './useApi'
 interface UsePaginatedResourceOptions {
   endpoint: string // 'clients'
   dataKey: string // 'clients'
-  initialPerPage?: number // default 10
-  enabled?: boolean // control externo (ej: esperar sesión)
-  pageParamName?: string // default 'page'
-  perPageParamName?: string // default 'per_page'
+  initialPerPage?: number
+  enabled?: boolean
+  pageParamName?: string
+  perPageParamName?: string
 }
 
 interface RawPaginatedResponse {

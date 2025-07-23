@@ -37,7 +37,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }, delay)
 
     return () => clearTimeout(handler)
-  }, [internalValue, delay])
+  }, [internalValue, delay, onChange, value])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInternalValue(e.target.value)
