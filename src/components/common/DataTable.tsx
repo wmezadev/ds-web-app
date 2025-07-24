@@ -19,6 +19,7 @@ interface DataTableProps<T> {
   totalPages?: number
   onPageChange?: (page: number) => void
   itemsPerPage?: number
+  paginateLocally?: boolean // Nuevo prop para elegir tipo de paginación
 }
 
 const DataTable = <T extends Record<string, any>>({
@@ -28,13 +29,17 @@ const DataTable = <T extends Record<string, any>>({
   page,
   totalPages,
   onPageChange,
-  itemsPerPage = 10
+  itemsPerPage = 10,
+  paginateLocally = true // por defecto paginación local para compatibilidad
 }: DataTableProps<T>) => {
   const safeRows = Array.isArray(rows) ? rows : []
 
-  // Paginación en memoria
-  const paginatedRows = safeRows.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-  const localTotalPages = totalPages ?? Math.max(1, Math.ceil(safeRows.length / itemsPerPage))
+  // Decidir qué filas mostrar según paginación
+  const paginatedRows = paginateLocally ? safeRows.slice((page - 1) * itemsPerPage, page * itemsPerPage) : safeRows
+
+  // Calcular total de páginas según tipo de paginación
+  const computedTotalPages =
+    totalPages ?? (paginateLocally ? Math.max(1, Math.ceil(safeRows.length / itemsPerPage)) : 1)
 
   return (
     <Box>
@@ -70,12 +75,13 @@ const DataTable = <T extends Record<string, any>>({
           </TableBody>
         </Table>
       </TableContainer>
+
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        {localTotalPages > 1 && (
+        {computedTotalPages > 1 && onPageChange && (
           <Pagination
-            count={localTotalPages}
+            count={computedTotalPages}
             page={page}
-            onChange={(_, value) => onPageChange && onPageChange(value)}
+            onChange={(_, value) => onPageChange(value)}
             color='primary'
             shape='rounded'
           />

@@ -7,15 +7,12 @@ interface UsePaginatedResourceOptions {
   dataKey: string // 'clients'
   initialPerPage?: number
   enabled?: boolean
-  pageParamName?: string
-  perPageParamName?: string
+  skipParamName?: string
+  limitParamName?: string
 }
 
 interface RawPaginatedResponse {
   total?: number
-  page?: number
-  per_page?: number
-  pages?: number
   [key: string]: any
 }
 
@@ -24,8 +21,8 @@ export function usePaginatedResource<T>({
   dataKey,
   initialPerPage = 2,
   enabled = true,
-  pageParamName = 'page',
-  perPageParamName = 'per_page'
+  skipParamName = 'skip',
+  limitParamName = 'limit'
 }: UsePaginatedResourceOptions) {
   const { fetchApi } = useApi()
 
@@ -56,9 +53,11 @@ export function usePaginatedResource<T>({
       try {
         const searchParams = new URLSearchParams()
 
-        // paginación
-        searchParams.set(pageParamName, String(currentPage))
-        searchParams.set(perPageParamName, String(perPage))
+        // paginación usando skip y limit
+        const skip = (currentPage - 1) * perPage
+
+        searchParams.set(skipParamName, String(skip))
+        searchParams.set(limitParamName, String(perPage))
 
         // filtros
         Object.entries(currentParams).forEach(([k, v]) => {
@@ -75,21 +74,16 @@ export function usePaginatedResource<T>({
 
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
-        const apiPage = typeof raw.page === 'number' ? raw.page : currentPage
-        const normalizedPage = apiPage < 1 ? apiPage + 1 : apiPage
-
-        const apiPerPage = perPage
         const apiTotal = typeof raw.total === 'number' ? raw.total : items.length
-
-        const apiPages =
-          typeof raw.pages === 'number' ? raw.pages : Math.max(1, Math.ceil(apiTotal / (apiPerPage || 1)))
+        const apiPages = Math.max(1, Math.ceil(apiTotal / perPage))
 
         setData(items)
         setTotal(apiTotal)
         setTotalPages(apiPages)
 
-        if (normalizedPage !== page) setPage(normalizedPage)
-        if (apiPerPage !== perPage) setPerPage(apiPerPage)
+        // actualizar página solo si cambió
+        if (currentPage !== page) setPage(currentPage)
+        if (perPage !== perPage) setPerPage(perPage)
       } catch (err: any) {
         console.error('[usePaginatedResource] fetch error:', err)
         setError(err?.message || 'Error al cargar datos.')
@@ -98,7 +92,7 @@ export function usePaginatedResource<T>({
         setLoading(false)
       }
     },
-    [fetchApi, enabled, pageParamName, perPageParamName, perPage, page, dataKey, endpoint]
+    [fetchApi, enabled, skipParamName, limitParamName, perPage, page, dataKey, endpoint]
   )
 
   useEffect(() => {

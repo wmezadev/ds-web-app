@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -25,17 +25,13 @@ const ClientsPage = () => {
   const { status: sessionStatus } = useSession()
   const router = useRouter()
 
-  // habilitar fetch cuando hay sesión
   const apiEnabled = sessionStatus === 'authenticated'
 
-  // Traemos datos (aunque la API no pagine bien, los usamos como fuente)
-  const { data: clients, loading, error, setParams } = useClients(2, apiEnabled)
+  // Usamos paginación backend
+  const { data: clients, loading, error, page, perPage, totalPages, setPage, setParams } = useClients(10, apiEnabled) // 10 por página por ejemplo
 
-  // Estado local de UI
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1) // paginación en memoria
 
-  // Columnas (memo para evitar recrearlas en cada render)
   const columns = useMemo(
     () => [
       {
@@ -108,17 +104,15 @@ const ClientsPage = () => {
     [router]
   )
 
-  // Handler de búsqueda
   const handleSearch = useCallback(
     (query: string) => {
       setSearch(query)
-      setParams({ query })
-      setPage(1) // reset vista local
+      setParams({ query }) // actualiza parámetros del hook
+      setPage(1) // reset paginación a página 1
     },
-    [setParams]
+    [setParams, setPage]
   )
 
-  // Carga sesión
   if (sessionStatus === 'loading') {
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
@@ -128,7 +122,6 @@ const ClientsPage = () => {
     )
   }
 
-  // Carga datos
   if (loading) {
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
@@ -174,7 +167,9 @@ const ClientsPage = () => {
           emptyMessage={CLIENTS_PAGE.NO_RESULTS}
           page={page}
           onPageChange={setPage}
-          itemsPerPage={2} // paginación en memoria (prueba)
+          itemsPerPage={perPage}
+          totalPages={totalPages}
+          paginateLocally={false} // paginación backend
         />
       </Box>
     </Box>
