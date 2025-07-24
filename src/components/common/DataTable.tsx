@@ -19,7 +19,7 @@ interface DataTableProps<T> {
   totalPages?: number
   onPageChange?: (page: number) => void
   itemsPerPage?: number
-  paginateLocally?: boolean // Nuevo prop para elegir tipo de paginación
+  paginateLocally?: boolean
 }
 
 const DataTable = <T extends Record<string, any>>({
@@ -30,14 +30,13 @@ const DataTable = <T extends Record<string, any>>({
   totalPages,
   onPageChange,
   itemsPerPage = 10,
-  paginateLocally = true // por defecto paginación local para compatibilidad
+  paginateLocally = true
 }: DataTableProps<T>) => {
   const safeRows = Array.isArray(rows) ? rows : []
 
-  // Decidir qué filas mostrar según paginación
+  // Paginación local o backend
   const paginatedRows = paginateLocally ? safeRows.slice((page - 1) * itemsPerPage, page * itemsPerPage) : safeRows
 
-  // Calcular total de páginas según tipo de paginación
   const computedTotalPages =
     totalPages ?? (paginateLocally ? Math.max(1, Math.ceil(safeRows.length / itemsPerPage)) : 1)
 

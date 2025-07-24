@@ -12,9 +12,9 @@ import { SearchBar, DataTable } from '@/components/common'
 import { CLIENTS_PAGE } from '@/constants/texts'
 import { ROUTES } from '@/constants/routes'
 import { useClients } from '@/hooks/useClients'
+import { useClientSearch } from '@/hooks/useClientSearch'
 import type { Client } from '@/types/client'
 
-// --- helpers de formato ---
 const formatFullName = (client: Client) =>
   client.client_type === 'J' ? client.last_name || '' : `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
@@ -24,13 +24,18 @@ const formatStatus = (status: boolean) => (status ? 'Activo' : 'Inactivo')
 const ClientsPage = () => {
   const { status: sessionStatus } = useSession()
   const router = useRouter()
-
   const apiEnabled = sessionStatus === 'authenticated'
 
-  // Usamos paginación backend
-  const { data: clients, loading, error, page, perPage, totalPages, setPage, setParams } = useClients(10, apiEnabled) // 10 por página por ejemplo
-
   const [search, setSearch] = useState('')
+
+  const { data: clientsPaginated, loading, error, page, perPage, totalPages, setPage } = useClients(10, apiEnabled)
+  const { results: searchResults, loading: searchLoading, error: searchError } = useClientSearch(search, apiEnabled)
+
+  const showingSearch = search.trim().length > 0
+  const clientsToShow = showingSearch ? searchResults : clientsPaginated
+
+  // Para búsqueda, paginación local
+  const localTotalPages = showingSearch ? Math.max(1, Math.ceil(searchResults.length / perPage)) : totalPages || 1
 
   const columns = useMemo(
     () => [
@@ -107,10 +112,9 @@ const ClientsPage = () => {
   const handleSearch = useCallback(
     (query: string) => {
       setSearch(query)
-      setParams({ query }) // actualiza parámetros del hook
-      setPage(1) // reset paginación a página 1
+      setPage(1)
     },
-    [setParams, setPage]
+    [setPage]
   )
 
   if (sessionStatus === 'loading') {
@@ -122,16 +126,18 @@ const ClientsPage = () => {
     )
   }
 
-  if (loading) {
+  if (loading || searchLoading) {
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
         <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Cargando clientes...</Typography>
+        <Typography sx={{ ml: 2 }}>{showingSearch ? 'Buscando clientes...' : 'Cargando clientes...'}</Typography>
       </Box>
     )
   }
 
-  if (error) return <Typography color='error'>{error}</Typography>
+  if (error || searchError) {
+    return <Typography color='error'>{error || searchError}</Typography>
+  }
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
@@ -146,7 +152,6 @@ const ClientsPage = () => {
           onChange={handleSearch}
           onClear={() => {
             setSearch('')
-            setParams({ query: '' })
             setPage(1)
           }}
           extraActions={
@@ -163,13 +168,13 @@ const ClientsPage = () => {
       <Box sx={{ mt: 2 }}>
         <DataTable
           columns={columns}
-          rows={clients}
+          rows={clientsToShow}
           emptyMessage={CLIENTS_PAGE.NO_RESULTS}
           page={page}
           onPageChange={setPage}
           itemsPerPage={perPage}
-          totalPages={totalPages}
-          paginateLocally={false} // paginación backend
+          totalPages={localTotalPages}
+          paginateLocally={showingSearch}
         />
       </Box>
     </Box>
