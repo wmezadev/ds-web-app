@@ -97,7 +97,7 @@ export function usePaginatedResource<T>({
 
   useEffect(() => {
     runFetch(page, params)
-  }, [page, perPage, params, enabled])
+  }, [page, perPage, params, enabled, runFetch])
 
   return {
     data,
