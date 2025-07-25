@@ -5,7 +5,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { Box, Typography, Button, Paper, CircularProgress } from '@mui/material'
+// Asegúrate de importar Tooltip aquí
+import { Box, Typography, Button, Paper, CircularProgress, Tooltip } from '@mui/material'
 import { useSession } from 'next-auth/react'
 
 import { SearchBar, DataTable } from '@/components/common'
@@ -53,9 +54,48 @@ const ClientsPage = () => {
         key: 'client' as const,
         label: 'Cliente',
         render: (_: any, client: Client) => (
-          <Box>
-            <div style={{ fontWeight: 500 }}>{formatFullName(client)}</div>
-            <div style={{ fontSize: '0.8em', color: '#666' }}>{client.email_1 || 'Sin correo'}</div>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              // Control de ancho para la columna Cliente
+              // Este ancho es clave para que todas las filas sean uniformes.
+              // Ajusta '250px' según la longitud típica de tus nombres y el diseño general.
+              width: '250px',
+              minWidth: '250px'
+            }}
+          >
+            {/* Contenido del nombre completo del cliente (CON Tooltip y Elipsis) */}
+            <Tooltip title={formatFullName(client)} placement='top-start' arrow>
+              <Typography
+                variant='body2' // Tipo de letra para el nombre
+                sx={{
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap', // Mantiene el texto en una sola línea
+                  overflow: 'hidden', // Oculta el texto que se desborda
+                  textOverflow: 'ellipsis', // Muestra los "..." al final
+                  maxWidth: '100%' // Asegura que el texto no se desborde del Box padre
+                }}
+              >
+                {formatFullName(client)}
+              </Typography>
+            </Tooltip>
+
+            {/* Contenido del correo electrónico del cliente (SIN Tooltip, pero con Elipsis) */}
+            <Typography
+              variant='caption' // Tipo de letra para el correo (más pequeño)
+              sx={{
+                fontSize: '0.8em',
+                color: '#666',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%' // Asegura que el texto no se desborde del Box padre
+              }}
+            >
+              {client.email_1 || 'Sin correo'}
+            </Typography>
           </Box>
         )
       },

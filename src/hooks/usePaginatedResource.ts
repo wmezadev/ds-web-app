@@ -38,13 +38,21 @@ export function usePaginatedResource<T>({
 
   // Cuando cambian los filtros → reset a page 1
   const setParams = useCallback((newParams: Record<string, any>) => {
-    setParamsState(prev => ({ ...prev, ...newParams }))
-    setPage(1)
+    setParamsState(prev => {
+      // Usar JSON.stringify para comparar objetos si son complejos y evitar renderizados innecesarios
+      if (JSON.stringify(prev) === JSON.stringify({ ...prev, ...newParams })) {
+        return prev
+      }
+
+      return { ...prev, ...newParams }
+    })
+    setPage(1) // Siempre resetear a la página 1 cuando los parámetros cambian
   }, [])
 
   // ---- FETCH ----
   const runFetch = useCallback(
-    async (currentPage: number, currentParams: Record<string, any>) => {
+    async (currentPage: number, currentPerPage: number, currentParams: Record<string, any>) => {
+      // Añade currentPerPage aquí
       if (!enabled) return
 
       setLoading(true)
@@ -54,10 +62,10 @@ export function usePaginatedResource<T>({
         const searchParams = new URLSearchParams()
 
         // paginación usando skip y limit
-        const skip = (currentPage - 1) * perPage
+        const skip = (currentPage - 1) * currentPerPage // Usa currentPerPage aquí
 
         searchParams.set(skipParamName, String(skip))
-        searchParams.set(limitParamName, String(perPage))
+        searchParams.set(limitParamName, String(currentPerPage)) // Usa currentPerPage aquí
 
         // filtros
         Object.entries(currentParams).forEach(([k, v]) => {
@@ -75,15 +83,15 @@ export function usePaginatedResource<T>({
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
         const apiTotal = typeof raw.total === 'number' ? raw.total : items.length
-        const apiPages = Math.max(1, Math.ceil(apiTotal / perPage))
+        const apiPages = Math.max(1, Math.ceil(apiTotal / currentPerPage)) // Usa currentPerPage aquí
 
         setData(items)
         setTotal(apiTotal)
         setTotalPages(apiPages)
 
-        // actualizar página solo si cambió
-        if (currentPage !== page) setPage(currentPage)
-        if (perPage !== perPage) setPerPage(perPage)
+        // IMPORTANTE: NO LLAMAR A setPage o setPerPage aquí si sus valores no son diferentes
+        // Y aún mejor, si ya los pasas como argumentos al runFetch, no necesitas actualizar el estado interno
+        // aquí, ya que el estado que provocó esta ejecución ya es la "fuente de verdad"
       } catch (err: any) {
         console.error('[usePaginatedResource] fetch error:', err)
         setError(err?.message || 'Error al cargar datos.')
@@ -92,12 +100,18 @@ export function usePaginatedResource<T>({
         setLoading(false)
       }
     },
-    [fetchApi, enabled, skipParamName, limitParamName, perPage, page, dataKey, endpoint]
+    [fetchApi, enabled, skipParamName, limitParamName, dataKey, endpoint] // Remueve page y perPage de las dependencias
   )
 
+  // useEffect que dispara la petición
   useEffect(() => {
-    runFetch(page, params)
-  }, [page, perPage, params, enabled, runFetch])
+    // Si enabled es false, no disparamos la petición
+    if (!enabled) return
+
+    // Ejecuta la búsqueda cuando 'page', 'perPage', 'params' o 'enabled' cambian
+    // runFetch ahora recibe estos como argumentos
+    runFetch(page, perPage, params)
+  }, [page, perPage, params, enabled, runFetch]) // Las dependencias del useEffect son correctas ahora
 
   return {
     data,
@@ -110,6 +124,8 @@ export function usePaginatedResource<T>({
     setPage,
     setPerPage,
     setParams,
-    refetch: () => runFetch(page, params)
+
+    // Asegúrate de que refetch llame a runFetch con los estados actuales
+    refetch: useCallback(() => runFetch(page, perPage, params), [runFetch, page, perPage, params])
   }
 }
