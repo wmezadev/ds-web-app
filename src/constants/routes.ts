@@ -16,7 +16,12 @@ export const API_ROUTES = {
   },
   CLIENTS: {
     LIST: 'clients',
-    GET: 'clients/:id'
+    GET: (id: string | number) => `clients/${id}`,
+    SEARCH: 'clients/search'
+  },
+  QUOTATIONS: {
+    LIST: '/quotations',
+    GET: '/quotations/:id'
   }
 }
 
@@ -25,7 +30,29 @@ export const ROUTES = {
   LOGIN: '/login',
   CLIENTS: {
     INDEX: '/clients',
-    CREATE: '/clients/create'
+    CREATE: '/clients/create',
+    DETAIL: (id: string | number) => `/clients/${id}`
+  },
+  QUOTATIONS: {
+    INDEX: '/quotations',
+    CREATE: '/quotations/create'
+  },
+  POLICIES: {
+    INDEX: '/policies',
+    CREATE: '/policies/create'
+  },
+  CERTIFICATES: {
+    INDEX: '/certificates',
+    CREATE: '/certificates/create'
+  },
+  RECEIPTS: {
+    INDEX: '/receipts'
+  },
+  SINISTERS: {
+    INDEX: '/sinisters'
+  },
+  REPORTS: {
+    INDEX: '/reports'
   },
   ABOUT: '/about'
 }

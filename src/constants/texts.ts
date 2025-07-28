@@ -8,7 +8,29 @@ export const METADATA = {
 export const VERTICAL_MENU = {
   HOME: 'Inicio',
   CLIENTS: 'Clientes',
+  QUOTATIONS: 'Cotizaciones',
+  POLICIES: 'Polizas',
+  CERTIFICATES: 'Certificados',
+  RECEIPTS: 'Recibos',
+  SINISTERS: 'Siniestros',
+  REPORTS: 'Reportes',
   ABOUT: 'Info'
+}
+
+export const POLICIES_PAGE = {
+  title: 'Pólizas',
+  searchPlaceholder: 'Buscar pólizas...',
+  createPolicy: 'Crear Póliza',
+  noResults: 'No se encontraron pólizas',
+  tableHeaders: {
+    nroPoliza: 'N° Póliza',
+    cliente: 'Cliente',
+    ramo: 'Ramo',
+    aseguradora: 'Aseguradora',
+    fechaEmision: 'Fecha Emisión',
+    estado: 'Estado',
+    estadoGestion: 'Estado Gestión'
+  }
 }
 
 export const LOGIN = {
@@ -33,6 +55,17 @@ export const LOGOUT = {
   signout: 'Cerrar sesión'
 }
 
+export const QUOTATIONS_PAGE = {
+  metadata: {
+    title: 'Cotizaciones',
+    description: 'Búsqueda de cotizaciones'
+  },
+  TITLE: 'Cotizaciones',
+  SEARCH_PLACEHOLDER: 'Buscar cotizaciones...',
+  NO_RESULTS: 'No se encontraron cotizaciones.',
+  CREATE_QUOTATION: 'Crear cotización'
+}
+
 export const CLIENTS_PAGE = {
   metadata: {
     title: 'Clientes',
@@ -42,4 +75,15 @@ export const CLIENTS_PAGE = {
   SEARCH_PLACEHOLDER: 'Buscar clientes...',
   NO_RESULTS: 'No se encontraron clientes.',
   CREATE_CLIENT: 'Crear cliente'
+}
+
+export const CERTIFICATES_PAGE = {
+  metadata: {
+    title: 'Certificados',
+    description: 'Búsqueda de certificados'
+  },
+  TITLE: 'Certificados',
+  SEARCH_PLACEHOLDER: 'Buscar certificados...',
+  NO_RESULTS: 'No se encontraron certificados.',
+  CREATE_CERTIFICATE: 'Crear certificado'
 }
