@@ -20,6 +20,7 @@ export interface Client {
   zone_id?: number | null
   reference?: string | null
   client_category_id?: number | null
+  is_member_of_group?: boolean | null
   office_id?: number | null
   agent_id?: number | null
   executive_id?: number | null

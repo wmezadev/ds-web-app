@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 
 import {
   Box,
@@ -19,9 +19,6 @@ import {
 
 import type { Client } from '@/types/client'
 
-/* ------------------------------------------------------------------
- * Tipos del formulario: ampliados con `| null` porque la API trae null.
- * ------------------------------------------------------------------ */
 export interface ClientFormFields {
   is_member_of_group?: boolean | null
   client_type?: 'V' | 'E' | 'J' | string | null
@@ -53,9 +50,6 @@ export interface ClientFormFields {
   doc?: File | null
 }
 
-/* ------------------------------------------------------------------
- * Valores por defecto
- * ------------------------------------------------------------------ */
 const defaultValues: ClientFormFields = {
   is_member_of_group: false,
   client_type: 'V',
@@ -98,12 +92,8 @@ interface ClientFormProps {
   title?: string
 }
 
-/* ------------------------------------------------------------------
- * Adaptador API -> Form
- * ------------------------------------------------------------------ */
 export function clientApiToForm(client: Client): ClientFormFields {
   return {
-    // si la API trae estos campos, mapéalos; si no, usa defaults
     is_member_of_group: (client as any).is_member_of_group ?? false,
     client_type: client.client_type ?? 'V',
     document_number: client.document_number ?? '',
@@ -135,9 +125,46 @@ export function clientApiToForm(client: Client): ClientFormFields {
   }
 }
 
-/* ------------------------------------------------------------------
- * Validación básica
- * ------------------------------------------------------------------ */
+export function clientFormToApi(formData: ClientFormFields): Partial<Client> {
+  const apiPayload: Partial<Client> = {
+    first_name: formData.first_name,
+    last_name: formData.last_name,
+    document_number: formData.document_number,
+    email_1: formData.email_1,
+    mobile_1: formData.mobile_1,
+    status: formData.status === null ? undefined : formData.status,
+    birth_date: formData.birth_date,
+    join_date: formData.join_date,
+    client_type: formData.client_type ?? undefined,
+    person_type: formData.person_type,
+    is_member_of_group: formData.is_member_of_group,
+    phone: formData.phone,
+    email_2: formData.email_2,
+    mobile_2: formData.mobile_2,
+    billing_address: formData.billing_address,
+    reference: formData.reference,
+    birth_place: formData.birth_place,
+
+    city_id: formData.city_id ? Number(formData.city_id) : null,
+    zone_id: formData.zone_id ? Number(formData.zone_id) : null,
+    client_category_id: formData.client_category_id ? Number(formData.client_category_id) : null,
+    office_id: formData.office_id ? Number(formData.office_id) : null,
+    agent_id: formData.agent_id ? Number(formData.agent_id) : null,
+    executive_id: formData.executive_id ? Number(formData.executive_id) : null,
+    client_group_id: formData.client_group_id ? Number(formData.client_group_id) : null,
+    client_branch_id: formData.client_branch_id ? Number(formData.client_branch_id) : null,
+    notes: formData.notes
+  }
+
+  Object.keys(apiPayload).forEach(key => {
+    if ((apiPayload as any)[key] === '' || (apiPayload as any)[key] === null) {
+      delete (apiPayload as any)[key]
+    }
+  })
+
+  return apiPayload
+}
+
 function validate(values: ClientFormFields) {
   const errs: Partial<Record<keyof ClientFormFields, string>> = {}
 
@@ -156,14 +183,8 @@ function validate(values: ClientFormFields) {
   return errs
 }
 
-/* ------------------------------------------------------------------
- * Normalizador: evita pasar null/undefined a inputs controlados
- * ------------------------------------------------------------------ */
 const nv = (v: unknown): string | number => (v === null || v === undefined ? '' : (v as any))
 
-/* ------------------------------------------------------------------
- * Componente
- * ------------------------------------------------------------------ */
 const ClientForm: React.FC<ClientFormProps> = ({
   mode = 'create',
   initialValues = {},
@@ -172,7 +193,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
   submitLabel,
   title
 }) => {
-  // inicializa una vez (cuando el componente se monta)
   const [values, setValues] = React.useState<ClientFormFields>(() => ({
     ...defaultValues,
     ...initialValues
@@ -182,12 +202,15 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   const readOnly = mode === 'view'
 
-  // IMPORTANTE: no re-sincronizamos automáticamente para evitar loops.
-  // Cuando necesites refrescar datos (ej: vas de un cliente a otro), remonta el componente con `key={id}` desde el padre.
-  // Si quieres sincronizar, descomenta:
-  // React.useEffect(() => {
-  //   setValues(prev => ({ ...prev, ...initialValues }))
-  // }, [initialValues])
+  const hasInitialized = useRef(false)
+
+  React.useEffect(() => {
+    if (!hasInitialized.current && initialValues) {
+      setValues({ ...defaultValues, ...initialValues })
+      setErrors({})
+      hasInitialized.current = true
+    }
+  }, [initialValues])
 
   const handleFieldChange =
     (field: keyof ClientFormFields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any) => {
@@ -206,12 +229,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (readOnly) return
+    if (readOnly) return // No enviar si está en modo solo lectura
+
     const errs = validate(values)
 
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
-    await onSubmit?.(values)
+
+    await onSubmit?.(values) // Llama a la función onSubmit pasada por el padre
   }
 
   const resolvedTitle =
@@ -225,6 +250,8 @@ const ClientForm: React.FC<ClientFormProps> = ({
         <Typography variant='h5' sx={{ mb: 3, fontWeight: 600 }}>
           {resolvedTitle}
         </Typography>
+
+        {/* submitError no se muestra aquí por ahora */}
 
         <form onSubmit={handleSubmit} noValidate>
           <Stack spacing={4}>
@@ -647,7 +674,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             </Paper>
 
             {/* -------------------------------------- */}
-            {/* Botones                                */}
+            {/* Botones                              */}
             {/* -------------------------------------- */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               {onCancel && (
