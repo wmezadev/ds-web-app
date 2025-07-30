@@ -1,56 +1,73 @@
 'use client'
 
-import { Box, Button, Typography } from '@mui/material'
-import { Controller, useFormContext } from 'react-hook-form'
-import { CloudUpload } from '@mui/icons-material'
+import { Box, Button, Typography, List, ListItem, ListItemText } from '@mui/material'
+import { useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
 
 const DocumentFields = () => {
-  const {
-    control,
-    formState: { errors }
-  } = useFormContext<ClientFormFields>()
+  const { watch, setValue } = useFormContext<ClientFormFields>()
+
+  const documents =
+    (watch('documents') as { type: string; expiration_date: string; status: string; due: boolean }[]) || []
+
+  const handleAdd = () => {
+    setValue('documents', [...documents, { type: '', expiration_date: '', status: '', due: false }])
+  }
+
+  const handleDelete = (idx: number) => {
+    setValue(
+      'documents',
+      documents.filter((_, i) => i !== idx)
+    )
+  }
+
+  // For editing, you may want to open a modal or inline form (not implemented here)
 
   return (
-    <Box display='flex' flexDirection='column' gap={2}>
+    <Box>
       <Typography variant='h6' gutterBottom>
-        Documentos del Cliente
+        Documentos
       </Typography>
-      <Controller
-        name='doc'
-        control={control}
-        render={({ field: { onChange, value } }) => (
-          <Box>
-            <input
-              accept='image/*,.pdf,.doc,.docx'
-              style={{ display: 'none' }}
-              id='document-upload'
-              type='file'
-              onChange={e => {
-                const file = e.target.files?.[0] || null
-
-                onChange(file)
-              }}
-            />
-            <label htmlFor='document-upload'>
-              <Button variant='outlined' component='span' startIcon={<CloudUpload />} fullWidth>
-                Subir Documento
-              </Button>
-            </label>
-            {value && (
-              <Typography variant='body2' sx={{ mt: 1 }}>
-                Archivo seleccionado: {(value as File).name}
-              </Typography>
-            )}
-            {errors.doc && (
-              <Typography variant='body2' color='error' sx={{ mt: 1 }}>
-                {errors.doc.message}
-              </Typography>
-            )}
-          </Box>
-        )}
-      />
+      {documents.length === 0 ? (
+        <Button variant='outlined' onClick={handleAdd}>
+          Agregar documento
+        </Button>
+      ) : (
+        <>
+          <List>
+            {documents.map((doc, idx) => (
+              <ListItem
+                key={idx}
+                secondaryAction={
+                  <>
+                    {/* <Button size='small' onClick={() => handleEdit(idx)}>Editar</Button> */}
+                    <Button size='small' color='error' onClick={() => handleDelete(idx)}>
+                      Eliminar
+                    </Button>
+                  </>
+                }
+              >
+                <ListItemText
+                  primary={
+                    doc && typeof doc === 'object' && 'type' in doc && 'expiration_date' in doc
+                      ? `${doc.type} - Vence: ${doc.expiration_date}`
+                      : 'Documento'
+                  }
+                  secondary={
+                    doc && typeof doc === 'object' && 'status' in doc && 'due' in doc
+                      ? `Estado: ${doc.status} | Vencido: ${doc.due ? 'Sí' : 'No'}`
+                      : ''
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+          <Button variant='outlined' onClick={handleAdd}>
+            Agregar otro documento
+          </Button>
+        </>
+      )}
     </Box>
   )
 }

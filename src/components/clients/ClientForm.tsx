@@ -26,7 +26,38 @@ const steps = [
   'Opciones de Registro'
 ]
 
-export interface ClientFormFields extends Partial<Client> {}
+export type ClientFormFields = {
+  id?: string | number
+  first_name: string
+  last_name: string
+  is_member_of_group: string // 'yes' or ''
+  client_type: string
+  document_number: string
+  birth_place: string
+  birth_date: string
+  join_date: string
+  person_type: string
+  status: string
+  source: string
+  email_1: string
+  mobile_1: string
+  email_2: string
+  mobile_2: string
+  phone: string
+  reference: string
+  doc: string
+  documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
+  contacts?: {
+    name: string
+    last_name: string
+    profession: string
+    phone: string
+    email: string
+    observations: string
+  }[]
+  client_category_id: string
+  office_id: string
+}
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -203,17 +234,17 @@ const ClientForm: React.FC<Props> = ({
 // Helper functions for API conversion
 export const clientApiToForm = (client: Client): ClientFormFields => {
   return {
-    ...client
-
-    // Add any necessary transformations here
+    ...client,
+    status: client.status === true ? 'active' : 'inactive',
+    is_member_of_group: client.is_member_of_group === true ? 'yes' : ''
   }
 }
 
 export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => {
   return {
-    ...formData
-
-    // Add any necessary transformations here
+    ...formData,
+    status: formData.status === 'active',
+    is_member_of_group: formData.is_member_of_group === 'yes'
   }
 }
 
