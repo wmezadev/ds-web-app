@@ -22,6 +22,7 @@ export default function ClientDetailPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -53,12 +54,10 @@ export default function ClientDetailPage() {
         return
       }
 
-      try {
-        setShowSuccess(true)
-        setTimeout(() => {
-          router.push(ROUTES.CLIENTS.INDEX)
-        }, 2500)
+      setIsSubmitting(true)
+      setSubmitError(null)
 
+      try {
         const apiPayload = clientFormToApi(values)
 
         await fetchApi(API_ROUTES.CLIENTS.UPDATE(id as string), {
@@ -70,13 +69,18 @@ export default function ClientDetailPage() {
         })
 
         console.log('Cliente actualizado exitosamente!')
-        router.push(ROUTES.CLIENTS.INDEX)
+        setShowSuccess(true)
+        setTimeout(() => {
+          router.push(ROUTES.CLIENTS.INDEX)
+        }, 2500)
       } catch (err: any) {
         console.error('Error al actualizar cliente:', err)
+        setSubmitError(err?.message || 'Error al actualizar el cliente.')
       } finally {
+        setIsSubmitting(false)
       }
     },
-    [id, fetchApi, router] // Dependencias: id del cliente, hook de API, y router
+    [id, fetchApi, router]
   )
 
   // --- Renderizado de estados de carga y error ---
@@ -95,15 +99,13 @@ export default function ClientDetailPage() {
   return (
     <>
       <ClientForm
-        key={String(id)} // Importante: fuerza a React a remontar el formulario si el ID del cliente cambia
+        key={String(id)}
         mode='edit'
         initialValues={formData}
-        onSubmit={handleSubmit} // ¡Aquí pasamos la función para actualizar!
+        onSubmit={handleSubmit}
         onCancel={() => router.back()}
-
-        // isSubmitting y submitError no se pasan aquí por ahora
-        // isSubmitting={isSubmitting}
-        // submitError={submitError}
+        isSubmitting={isSubmitting}
+        submitError={submitError}
       />
       <Snackbar
         open={showSuccess}
