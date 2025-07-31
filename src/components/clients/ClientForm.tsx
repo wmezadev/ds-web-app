@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 
 import { useForm, FormProvider } from 'react-hook-form'
 import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 
 import type { Client } from '@/types/client'
 import StepperCustomDot from '@/components/stepper-dot'
@@ -89,14 +91,11 @@ const ClientForm: React.FC<Props> = ({
   const validateCurrentStep = async (): Promise<boolean> => {
     const fieldsToValidate = getFieldsForStep(activeStep)
 
-    // For editing mode, don't block progression if fields are empty
     if (mode === 'edit' && fieldsToValidate.length > 0) {
       await methods.trigger(fieldsToValidate)
-
-      // Mark as completed even if validation fails in edit mode
       setCompletedSteps(prev => new Set([...prev, activeStep]))
 
-      return true // Allow progression in edit mode
+      return true
     }
 
     const result = await methods.trigger(fieldsToValidate)
@@ -110,19 +109,19 @@ const ClientForm: React.FC<Props> = ({
 
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
     switch (step) {
-      case 0: // Client Info
+      case 0:
         return ['document_number', 'client_type']
-      case 1: // Contact
+      case 1:
         return ['email_1', 'mobile_1']
-      case 2: // Personal Data
+      case 2:
         return ['birth_date', 'birth_place']
-      case 3: // Contact List
+      case 3:
         return ['email_2', 'mobile_2']
-      case 4: // Documents
+      case 4:
         return ['doc']
-      case 5: // Bank Accounts
+      case 5:
         return []
-      case 6: // Registration Options
+      case 6:
         return ['client_category_id', 'office_id']
       default:
         return []
@@ -142,11 +141,9 @@ const ClientForm: React.FC<Props> = ({
   }
 
   const handleStepClick = (step: number) => {
-    // Allow navigation to any step when editing existing clients
     if (mode === 'edit') {
       setActiveStep(step)
     } else {
-      // For new clients, only allow navigation to completed steps or the next available step
       if (completedSteps.has(step) || step <= activeStep) {
         setActiveStep(step)
       }
@@ -160,7 +157,7 @@ const ClientForm: React.FC<Props> = ({
       case 1:
         return <ContactFields mode={mode} />
       case 2:
-        return <PersonalDataFields mode={mode} />
+        return <PersonalDataFields />
       case 3:
         return <ContactListFields />
       case 4:
@@ -185,7 +182,7 @@ const ClientForm: React.FC<Props> = ({
   return (
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
-        <form onSubmit={methods.handleSubmit(handleSubmit)}>
+        <form onSubmit={methods.handleSubmit(handleSubmit)} noValidate>
           <Stepper activeStep={activeStep} orientation='horizontal' sx={{ mb: 4 }}>
             {steps.map((label, index) => (
               <Step key={label} completed={completedSteps.has(index)}>
@@ -201,29 +198,42 @@ const ClientForm: React.FC<Props> = ({
           </Stepper>
 
           {/* Step Content */}
-          <Box sx={{ mt: 4, minHeight: '300px' }}>
-            {renderStepContent(activeStep)}
-            <Stack direction='row' spacing={2} sx={{ mt: 3 }}>
-              {!isFirstStep && (
-                <Button variant='outlined' onClick={handleBack}>
-                  Atrás
-                </Button>
-              )}
-              {onCancel && (
-                <Button variant='outlined' onClick={onCancel}>
-                  Cancelar
-                </Button>
-              )}
-              {!isLastStep ? (
-                <Button variant='contained' onClick={handleNext}>
-                  Siguiente
-                </Button>
-              ) : (
-                <Button type='submit' variant='contained' disabled={isSubmitting}>
-                  {isSubmitting ? 'Guardando...' : 'Guardar'}
-                </Button>
-              )}
-            </Stack>
+          <Box
+            sx={{
+              mt: 4,
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box>{renderStepContent(activeStep)}</Box>
+
+            <Box display='flex' justifyContent='flex-end' mt={4}>
+              <Stack direction='row' spacing={2} alignItems='center'>
+                {onCancel && (
+                  <Button variant='outlined' onClick={onCancel} type='button'>
+                    Volver
+                  </Button>
+                )}
+
+                {!isFirstStep && (
+                  <Button variant='outlined' onClick={handleBack} aria-label='Paso anterior' type='button'>
+                    <ArrowBackIcon />
+                  </Button>
+                )}
+
+                {!isLastStep ? (
+                  <Button variant='contained' onClick={handleNext} aria-label='Paso siguiente' type='button'>
+                    <ArrowForwardIcon />
+                  </Button>
+                ) : (
+                  <Button type='submit' variant='contained' disabled={isSubmitting}>
+                    {isSubmitting ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                )}
+              </Stack>
+            </Box>
           </Box>
         </form>
       </Paper>
@@ -231,7 +241,6 @@ const ClientForm: React.FC<Props> = ({
   )
 }
 
-// Helper functions for API conversion
 export const clientApiToForm = (client: Client): ClientFormFields => {
   return {
     ...client,

@@ -1,29 +1,98 @@
 'use client'
 
-import { Box, Typography, TextField, Button } from '@mui/material'
-import { Controller, useFormContext } from 'react-hook-form'
-import { Add } from '@mui/icons-material'
+import { Box, Typography, Button, Stack, Grid, TextField, IconButton } from '@mui/material'
+import { Add, Delete } from '@mui/icons-material'
+import { useFieldArray, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
 
 const BankAccountFields = () => {
-  const {
+  const { control, register } = useFormContext<ClientFormFields>()
+
+  const { fields, append, remove } = useFieldArray({
     control,
-    formState: { errors }
-  } = useFormContext<ClientFormFields>()
+    name: 'bank_accounts'
+  })
+
+  const handleAddAccount = () => {
+    append({
+      bank: '',
+      account_number: '',
+      currency: '',
+      account_type: '',
+      observations: ''
+    })
+  }
 
   return (
-    <Box display='flex' flexDirection='column' gap={2}>
-      <Typography variant='h6' gutterBottom>
-        Cuentas Bancarias
-      </Typography>
-      <Typography variant='body2' color='text.secondary'>
-        Esta funcionalidad estará disponible próximamente. Los datos de cuentas bancarias se podrán agregar después de
-        crear el cliente.
-      </Typography>
-      <Button variant='outlined' startIcon={<Add />} disabled fullWidth>
-        Agregar Cuenta Bancaria
-      </Button>
+    <Box>
+      {/* Header */}
+      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
+        <Typography variant='h6'>Cuentas Bancarias</Typography>
+        <Button variant='outlined' startIcon={<Add />} onClick={handleAddAccount}>
+          Agregar cuenta bancaria
+        </Button>
+      </Stack>
+
+      {fields.length === 0 ? (
+        <Typography variant='body2' color='text.secondary'>
+          No hay cuentas bancarias añadidas aún.
+        </Typography>
+      ) : (
+        <Stack spacing={3}>
+          {fields.map((field, index) => (
+            <Box key={field.id} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label='Banco'
+                    placeholder='Nombre del banco'
+                    {...register(`bank_accounts.${index}.bank`)}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label='Número de cuenta'
+                    placeholder='0123-4567-8901-2345'
+                    {...register(`bank_accounts.${index}.account_number`)}
+                  />
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <TextField
+                    fullWidth
+                    label='Moneda'
+                    placeholder='USD / EUR / VES'
+                    {...register(`bank_accounts.${index}.currency`)}
+                  />
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <TextField
+                    fullWidth
+                    label='Tipo de cuenta'
+                    placeholder='Ahorro / Corriente'
+                    {...register(`bank_accounts.${index}.account_type`)}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box display='flex' alignItems='center' gap={2}>
+                    <TextField
+                      label='Observaciones'
+                      placeholder='Notas adicionales...'
+                      {...register(`bank_accounts.${index}.observations`)}
+                      fullWidth
+                    />
+                    <IconButton onClick={() => remove(index)} color='error'>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          ))}
+        </Stack>
+      )}
     </Box>
   )
 }
