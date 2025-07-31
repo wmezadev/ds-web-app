@@ -12,7 +12,7 @@ export default function ClientCreatePage() {
   const { fetchApi } = useApi()
 
   const handleCreate = async (values: ClientFormFields) => {
-    await fetchApi(API_ROUTES.CLIENTS.LIST, {
+    await fetchApi(API_ROUTES.CLIENTS.POST, {
       method: 'POST',
       body: values
     })
