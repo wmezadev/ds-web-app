@@ -49,11 +49,11 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
     const path = pathSegments.join('/')
     const targetUrl = `${API_BASE_URL}/${path}`
 
-    // Prepare body for proxying: stream for non-GET/DELETE, undefined otherwise
-    let body: any = undefined
+    // Read the request body as text to avoid stream-related errors.
+    let body: string | undefined = undefined
 
     if (method !== 'GET' && method !== 'DELETE') {
-      body = request.body
+      body = await request.text()
     }
 
     // Get query parameters
@@ -68,16 +68,16 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
     headers.set('Authorization', `Bearer ${token.accessToken}`)
     headers.delete('host')
 
-    // Required for Node.js/Edge when streaming a body
+    // NOTE: Set the 'Content-Type' header explicitly for POST requests.
+    // This is a good practice and can prevent some backend parsing errors.
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      headers.set('Content-Type', 'application/json')
+    }
+
     const fetchOptions: RequestInit = {
       method,
       headers,
-      body
-    }
-
-    if (body) {
-      // @ts-ignore
-      fetchOptions.duplex = 'half'
+      body: body || undefined // Only include body if it exists
     }
 
     const response = await fetch(fullTargetUrl, fetchOptions)
