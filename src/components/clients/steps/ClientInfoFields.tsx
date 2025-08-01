@@ -71,11 +71,12 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='client_type'
             control={control}
+            defaultValue=''
             rules={{ required: mode === 'create' ? 'El tipo de cliente es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_type}>
                 <InputLabel>Tipo</InputLabel>
-                <Select {...field} label='Tipo'>
+                <Select {...field} label='Tipo' value={field.value ?? ''}>
                   <MenuItem value='V'>V</MenuItem>
                   <MenuItem value='J'>J</MenuItem>
                   <MenuItem value='E'>E</MenuItem>

@@ -32,7 +32,7 @@ export type ClientFormFields = {
   id?: string | number
   first_name: string
   last_name: string
-  is_member_of_group: string // 'yes' or ''
+  is_member_of_group: string
   client_type: string
   document_number: string
   birth_place: string
@@ -57,13 +57,84 @@ export type ClientFormFields = {
     email: string
     observations: string
   }[]
-  client_category_id: string
-  office_id: string
+  client_category_id: string | number
+  office_id: string | number
+  agent_id?: string | number | null
+  executive_id?: string | number | null
+  client_group_id?: string | number | null
+  client_branch_id?: string | number | null
+  notes?: string | null
+}
+
+const DEFAULT_VALUES: ClientFormFields = {
+  id: '',
+  first_name: '',
+  last_name: '',
+  is_member_of_group: '',
+  client_type: '',
+  document_number: '',
+  birth_place: '',
+  birth_date: '',
+  join_date: '',
+  person_type: '',
+  status: 'active',
+  source: '',
+  email_1: '',
+  mobile_1: '',
+  email_2: '',
+  mobile_2: '',
+  phone: '',
+  reference: '',
+  doc: '',
+  documents: [],
+  contacts: [],
+  client_category_id: '',
+  office_id: '',
+  agent_id: '',
+  executive_id: '',
+  client_group_id: '',
+  client_branch_id: '',
+  notes: ''
+}
+
+function sanitizeClientFormValues(values: Partial<ClientFormFields>): ClientFormFields {
+  return {
+    ...DEFAULT_VALUES,
+    ...values,
+    id: values.id ?? '',
+    first_name: values.first_name ?? '',
+    last_name: values.last_name ?? '',
+    is_member_of_group: values.is_member_of_group ?? '',
+    client_type: values.client_type ?? '',
+    document_number: values.document_number ?? '',
+    birth_place: values.birth_place ?? '',
+    birth_date: values.birth_date ?? '',
+    join_date: values.join_date ?? '',
+    person_type: values.person_type ?? '',
+    status: values.status ?? 'active',
+    source: values.source ?? '',
+    email_1: values.email_1 ?? '',
+    mobile_1: values.mobile_1 ?? '',
+    email_2: values.email_2 ?? '',
+    mobile_2: values.mobile_2 ?? '',
+    phone: values.phone ?? '',
+    reference: values.reference ?? '',
+    doc: values.doc ?? '',
+    documents: values.documents ?? [],
+    contacts: values.contacts ?? [],
+    client_category_id: values.client_category_id ?? '',
+    office_id: values.office_id ?? '',
+    agent_id: values.agent_id ?? '',
+    executive_id: values.executive_id ?? '',
+    client_group_id: values.client_group_id ?? '',
+    client_branch_id: values.client_branch_id ?? '',
+    notes: values.notes ?? ''
+  }
 }
 
 interface Props {
   mode?: 'create' | 'edit'
-  initialValues?: ClientFormFields
+  initialValues?: Partial<ClientFormFields>
   onSubmit: (data: ClientFormFields) => void
   onCancel?: () => void
   isSubmitting?: boolean
@@ -77,8 +148,10 @@ const ClientForm: React.FC<Props> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  const sanitizedInitialValues = sanitizeClientFormValues(initialValues)
+
   const methods = useForm<ClientFormFields>({
-    defaultValues: initialValues,
+    defaultValues: sanitizedInitialValues,
     mode: 'onChange'
   })
 
@@ -87,25 +160,6 @@ const ClientForm: React.FC<Props> = ({
 
   const isLastStep = activeStep === steps.length - 1
   const isFirstStep = activeStep === 0
-
-  const validateCurrentStep = async (): Promise<boolean> => {
-    const fieldsToValidate = getFieldsForStep(activeStep)
-
-    if (mode === 'edit' && fieldsToValidate.length > 0) {
-      await methods.trigger(fieldsToValidate)
-      setCompletedSteps(prev => new Set([...prev, activeStep]))
-
-      return true
-    }
-
-    const result = await methods.trigger(fieldsToValidate)
-
-    if (result) {
-      setCompletedSteps(prev => new Set([...prev, activeStep]))
-    }
-
-    return result
-  }
 
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
     switch (step) {
@@ -128,11 +182,27 @@ const ClientForm: React.FC<Props> = ({
     }
   }
 
+  const validateCurrentStep = async (): Promise<boolean> => {
+    const fieldsToValidate = getFieldsForStep(activeStep)
+    const result = await methods.trigger(fieldsToValidate)
+
+    if (result) {
+      setCompletedSteps(prev => new Set([...prev, activeStep]))
+    }
+
+    return result
+  }
+
   const handleNext = async () => {
+    if (isLastStep) {
+      // Si ya estamos en el último paso, no hacemos nada.
+      return
+    }
+
     const isValid = await validateCurrentStep()
 
     if (isValid) {
-      setActiveStep(prev => Math.min(prev + 1, steps.length - 1))
+      setActiveStep(prev => prev + 1)
     }
   }
 
@@ -140,13 +210,11 @@ const ClientForm: React.FC<Props> = ({
     setActiveStep(prev => Math.max(prev - 1, 0))
   }
 
-  const handleStepClick = (step: number) => {
-    if (mode === 'edit') {
+  const handleStepClick = async (step: number) => {
+    const isValid = await validateCurrentStep()
+
+    if (isValid || mode === 'edit') {
       setActiveStep(step)
-    } else {
-      if (completedSteps.has(step) || step <= activeStep) {
-        setActiveStep(step)
-      }
     }
   }
 
@@ -171,18 +239,10 @@ const ClientForm: React.FC<Props> = ({
     }
   }
 
-  const handleSubmit = async (data: ClientFormFields) => {
-    const isValid = await validateCurrentStep()
-
-    if (isValid) {
-      onSubmit(data)
-    }
-  }
-
   return (
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
-        <form onSubmit={methods.handleSubmit(handleSubmit)} noValidate>
+        <form noValidate onSubmit={methods.handleSubmit(onSubmit)}>
           <Stepper activeStep={activeStep} orientation='horizontal' sx={{ mb: 4 }}>
             {steps.map((label, index) => (
               <Step key={label} completed={completedSteps.has(index)}>
@@ -197,7 +257,6 @@ const ClientForm: React.FC<Props> = ({
             ))}
           </Stepper>
 
-          {/* Step Content */}
           <Box
             sx={{
               mt: 4,
@@ -228,7 +287,12 @@ const ClientForm: React.FC<Props> = ({
                     <ArrowForwardIcon />
                   </Button>
                 ) : (
-                  <Button type='submit' variant='contained' disabled={isSubmitting}>
+                  <Button
+                    type='button'
+                    variant='contained'
+                    disabled={isSubmitting}
+                    onClick={methods.handleSubmit(onSubmit)}
+                  >
                     {isSubmitting ? 'Guardando...' : 'Guardar'}
                   </Button>
                 )}
@@ -242,19 +306,50 @@ const ClientForm: React.FC<Props> = ({
 }
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
-  return {
+  const formFields: ClientFormFields = {
     ...client,
     status: client.status === true ? 'active' : 'inactive',
-    is_member_of_group: client.is_member_of_group === true ? 'yes' : ''
+    is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
+    client_category_id: client.client_category_id ?? '',
+    office_id: client.office_id ?? '',
+    agent_id: client.agent_id ?? '',
+    executive_id: client.executive_id ?? '',
+    client_group_id: client.client_group_id ?? '',
+    client_branch_id: client.client_branch_id ?? '',
+    notes: client.notes ?? ''
   }
+
+  return formFields
 }
 
 export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => {
-  return {
-    ...formData,
-    status: formData.status === 'active',
-    is_member_of_group: formData.is_member_of_group === 'yes'
+  const apiData: Partial<Client> = {}
+
+  for (const key in formData) {
+    const value = formData[key as keyof ClientFormFields]
+
+    if (key === 'status') {
+      apiData[key] = (value === 'active') as any
+      continue
+    }
+
+    if (key === 'is_member_of_group') {
+      apiData[key] = (value === 'yes') as any
+      continue
+    }
+
+    const finalValue = value === '' ? null : value
+
+    if (finalValue !== null && finalValue !== undefined && finalValue !== '') {
+      apiData[key] = finalValue as any
+    }
   }
+
+  if (formData.id === '') {
+    delete apiData.id
+  }
+
+  return apiData
 }
 
 export default ClientForm

@@ -9,8 +9,7 @@ import { Box, CircularProgress, Typography, Snackbar, Alert } from '@mui/materia
 import type { ClientFormFields } from '@/components/clients/ClientForm'
 import ClientForm, { clientApiToForm, clientFormToApi } from '@/components/clients/ClientForm'
 import { useApi } from '@/hooks/useApi'
-import { ROUTES, API_ROUTES } from '@/constants/routes'
-
+import { API_ROUTES, ROUTES } from '@/constants/routes'
 import type { Client } from '@/types/client'
 
 export default function ClientDetailPage() {
@@ -19,10 +18,10 @@ export default function ClientDetailPage() {
   const { fetchApi } = useApi()
   const [formData, setFormData] = useState<ClientFormFields | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Nuevo estado para controlar Snackbar
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -32,7 +31,16 @@ export default function ClientDetailPage() {
       setError(null)
 
       try {
-        const data: Client = await fetchApi(API_ROUTES.CLIENTS.GET(id as string))
+        const clientId = Array.isArray(id) ? id[0] : id
+
+        if (!clientId) {
+          console.error('Client ID is empty after parsing URL parameters.')
+          setError('Client ID is missing.')
+
+          return
+        }
+
+        const data: Client = await fetchApi(API_ROUTES.CLIENTS.GET(clientId))
 
         setFormData(clientApiToForm(data))
       } catch (err: any) {
@@ -48,19 +56,19 @@ export default function ClientDetailPage() {
 
   const handleSubmit = useCallback(
     async (values: ClientFormFields) => {
-      if (!id) {
-        console.error('ID del cliente no disponible para actualizar.')
+      const clientId = Array.isArray(id) ? id[0] : id
+
+      if (!clientId) {
+        console.error('handleSubmit: ID del cliente no disponible para actualizar.')
+        alert('DEBUG: No hay ID de cliente para actualizar.')
 
         return
       }
 
-      setIsSubmitting(true)
-      setSubmitError(null)
-
       try {
         const apiPayload = clientFormToApi(values)
 
-        await fetchApi(API_ROUTES.CLIENTS.UPDATE(id as string), {
+        await fetchApi(API_ROUTES.CLIENTS.UPDATE(clientId), {
           method: 'PUT',
           body: apiPayload,
           headers: {
@@ -68,22 +76,21 @@ export default function ClientDetailPage() {
           }
         })
 
-        console.log('Cliente actualizado exitosamente!')
-        setShowSuccess(true)
+        // Mostrar snackbar
+        setShowSuccessSnackbar(true)
+
+        // Esperar 2 segundos antes de redirigir
         setTimeout(() => {
           router.push(ROUTES.CLIENTS.INDEX)
-        }, 2500)
+        }, 2000)
       } catch (err: any) {
         console.error('Error al actualizar cliente:', err)
-        setSubmitError(err?.message || 'Error al actualizar el cliente.')
-      } finally {
-        setIsSubmitting(false)
+        alert(`DEBUG: Fallo en la actualización: ${err.message}`)
       }
     },
     [id, fetchApi, router]
   )
 
-  // --- Renderizado de estados de carga y error ---
   if (loading) {
     return (
       <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
@@ -104,31 +111,18 @@ export default function ClientDetailPage() {
         initialValues={formData}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        isSubmitting={isSubmitting}
-        submitError={submitError}
       />
+
       <Snackbar
-        open={showSuccess}
-        autoHideDuration={3000}
-        onClose={() => setShowSuccess(false)}
+        open={showSuccessSnackbar}
+        autoHideDuration={2000}
+        onClose={() => setShowSuccessSnackbar(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setShowSuccess(false)} severity='success' sx={{ width: '100%' }}>
+        <Alert severity='success' sx={{ width: '100%' }} onClose={() => setShowSuccessSnackbar(false)}>
           Cliente actualizado exitosamente
         </Alert>
       </Snackbar>
-      {submitError && (
-        <Snackbar
-          open={!!submitError}
-          autoHideDuration={3000}
-          onClose={() => setSubmitError(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setSubmitError(null)} severity='error' sx={{ width: '100%' }}>
-            {submitError}
-          </Alert>
-        </Snackbar>
-      )}
     </>
   )
 }
