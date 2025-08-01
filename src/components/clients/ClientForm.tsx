@@ -307,16 +307,34 @@ const ClientForm: React.FC<Props> = ({
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
   const formFields: ClientFormFields = {
-    ...client,
-    status: client.status === true ? 'active' : 'inactive',
+    id: client.id ?? '',
+    first_name: client.first_name ?? '',
+    last_name: client.last_name ?? '',
     is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
+    client_type: client.client_type ?? '',
+    document_number: client.document_number ?? '',
+    birth_place: client.birth_place ?? '',
+    birth_date: client.birth_date ?? '',
+    join_date: client.join_date ?? '',
+    person_type: client.person_type ?? '',
+    status: client.status === true ? 'active' : 'inactive',
+    source: client.source ?? '',
+    email_1: client.email_1 ?? '',
+    mobile_1: client.mobile_1 ?? '',
+    email_2: client.email_2 ?? '',
+    mobile_2: client.mobile_2 ?? '',
+    phone: client.phone ?? '',
+    reference: client.reference ?? '',
+    doc: '',
+    documents: client.documents ?? [],
+    contacts: client.contacts ?? [],
     client_category_id: client.client_category_id ?? '',
     office_id: client.office_id ?? '',
-    agent_id: client.agent_id ?? '',
-    executive_id: client.executive_id ?? '',
-    client_group_id: client.client_group_id ?? '',
-    client_branch_id: client.client_branch_id ?? '',
-    notes: client.notes ?? ''
+    agent_id: client.agent_id ?? null,
+    executive_id: client.executive_id ?? null,
+    client_group_id: client.client_group_id ?? null,
+    client_branch_id: client.client_branch_id ?? null,
+    notes: client.notes ?? null
   }
 
   return formFields
@@ -328,20 +346,24 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
   for (const key in formData) {
     const value = formData[key as keyof ClientFormFields]
 
+    if (key === 'doc' || key === 'documents' || key === 'contacts') {
+      continue
+    }
+
     if (key === 'status') {
-      apiData[key] = (value === 'active') as any
+      apiData.status = value === 'active'
       continue
     }
 
     if (key === 'is_member_of_group') {
-      apiData[key] = (value === 'yes') as any
+      apiData.is_member_of_group = value === 'yes'
       continue
     }
 
     const finalValue = value === '' ? null : value
 
-    if (finalValue !== null && finalValue !== undefined && finalValue !== '') {
-      apiData[key] = finalValue as any
+    if (finalValue !== null && finalValue !== undefined) {
+      ;(apiData as any)[key] = finalValue
     }
   }
 

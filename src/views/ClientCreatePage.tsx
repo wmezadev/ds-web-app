@@ -46,14 +46,14 @@ export default function ClientCreatePage() {
   const handleCreate = async (values: ClientFormFields) => {
     console.log('✅ El formulario se ha enviado. Procesa los datos...')
 
-    try {
-      const apiValues = clientFormToApi(values)
+    const apiData = clientFormToApi(values)
 
-      console.log('✅ Datos enviados desde formulario:', apiValues)
+    try {
+      console.log('✅ Datos enviados desde formulario:', apiData)
 
       const response = await fetchApi(API_ROUTES.CLIENTS.POST, {
         method: 'POST',
-        body: apiValues
+        body: apiData
       })
 
       if (!response.ok) {
