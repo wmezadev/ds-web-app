@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-
 import { useForm, FormProvider } from 'react-hook-form'
 import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -48,6 +47,29 @@ export type ClientFormFields = {
   phone: string
   reference: string
   doc: string
+  billing_address?: string
+  gender?: string
+  civil_status?: string
+  height?: number
+  weight?: number
+  smoker?: boolean
+  sports?: string
+  rif?: string
+  profession_id?: string | number
+  occupation_id?: string | number
+  monthly_income?: number
+  pathology?: string
+  legal_representative?: string
+  economic_activity_id?: string | number
+  city_id?: string | number
+  zone_id?: string | number
+  client_category_id: string | number
+  office_id: string | number
+  agent_id?: string | number | null
+  executive_id?: string | number | null
+  client_group_id?: string | number | null
+  client_branch_id?: string | number | null
+  notes?: string | null
   documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
   contacts?: {
     name: string
@@ -57,84 +79,12 @@ export type ClientFormFields = {
     email: string
     observations: string
   }[]
-  client_category_id: string | number
-  office_id: string | number
-  agent_id?: string | number | null
-  executive_id?: string | number | null
-  client_group_id?: string | number | null
-  client_branch_id?: string | number | null
-  notes?: string | null
-}
-
-const DEFAULT_VALUES: ClientFormFields = {
-  id: '',
-  first_name: '',
-  last_name: '',
-  is_member_of_group: '',
-  client_type: '',
-  document_number: '',
-  birth_place: '',
-  birth_date: '',
-  join_date: '',
-  person_type: '',
-  status: 'active',
-  source: '',
-  email_1: '',
-  mobile_1: '',
-  email_2: '',
-  mobile_2: '',
-  phone: '',
-  reference: '',
-  doc: '',
-  documents: [],
-  contacts: [],
-  client_category_id: '',
-  office_id: '',
-  agent_id: '',
-  executive_id: '',
-  client_group_id: '',
-  client_branch_id: '',
-  notes: ''
-}
-
-function sanitizeClientFormValues(values: Partial<ClientFormFields>): ClientFormFields {
-  return {
-    ...DEFAULT_VALUES,
-    ...values,
-    id: values.id ?? '',
-    first_name: values.first_name ?? '',
-    last_name: values.last_name ?? '',
-    is_member_of_group: values.is_member_of_group ?? '',
-    client_type: values.client_type ?? '',
-    document_number: values.document_number ?? '',
-    birth_place: values.birth_place ?? '',
-    birth_date: values.birth_date ?? '',
-    join_date: values.join_date ?? '',
-    person_type: values.person_type ?? '',
-    status: values.status ?? 'active',
-    source: values.source ?? '',
-    email_1: values.email_1 ?? '',
-    mobile_1: values.mobile_1 ?? '',
-    email_2: values.email_2 ?? '',
-    mobile_2: values.mobile_2 ?? '',
-    phone: values.phone ?? '',
-    reference: values.reference ?? '',
-    doc: values.doc ?? '',
-    documents: values.documents ?? [],
-    contacts: values.contacts ?? [],
-    client_category_id: values.client_category_id ?? '',
-    office_id: values.office_id ?? '',
-    agent_id: values.agent_id ?? '',
-    executive_id: values.executive_id ?? '',
-    client_group_id: values.client_group_id ?? '',
-    client_branch_id: values.client_branch_id ?? '',
-    notes: values.notes ?? ''
-  }
+  bank_accounts?: any[]
 }
 
 interface Props {
   mode?: 'create' | 'edit'
-  initialValues?: Partial<ClientFormFields>
+  initialValues?: ClientFormFields
   onSubmit: (data: ClientFormFields) => void
   onCancel?: () => void
   isSubmitting?: boolean
@@ -148,10 +98,45 @@ const ClientForm: React.FC<Props> = ({
   onCancel,
   isSubmitting = false
 }) => {
-  const sanitizedInitialValues = sanitizeClientFormValues(initialValues)
-
   const methods = useForm<ClientFormFields>({
-    defaultValues: sanitizedInitialValues,
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      is_member_of_group: '',
+      client_type: '',
+      document_number: '',
+      birth_place: '',
+      birth_date: '',
+      join_date: '',
+      person_type: '',
+      status: '',
+      source: '',
+      email_1: '',
+      mobile_1: '',
+      email_2: '',
+      mobile_2: '',
+      phone: '',
+      reference: '',
+      doc: '',
+      billing_address: '',
+      gender: '',
+      civil_status: '',
+      sports: '',
+      rif: '',
+      pathology: '',
+      legal_representative: '',
+      client_category_id: '', // Se inicializa con una cadena vacía
+      office_id: '', // Se inicializa con una cadena vacía
+      agent_id: '', // Se inicializa con una cadena vacía
+      executive_id: '',
+      client_group_id: '',
+      client_branch_id: '',
+      notes: '',
+      documents: [],
+      contacts: [],
+      bank_accounts: [],
+      ...initialValues
+    },
     mode: 'onChange'
   })
 
@@ -194,15 +179,9 @@ const ClientForm: React.FC<Props> = ({
   }
 
   const handleNext = async () => {
-    if (isLastStep) {
-      // Si ya estamos en el último paso, no hacemos nada.
-      return
-    }
-
     const isValid = await validateCurrentStep()
-
     if (isValid) {
-      setActiveStep(prev => prev + 1)
+      setActiveStep(prev => Math.min(prev + 1, steps.length - 1))
     }
   }
 
@@ -212,7 +191,6 @@ const ClientForm: React.FC<Props> = ({
 
   const handleStepClick = async (step: number) => {
     const isValid = await validateCurrentStep()
-
     if (isValid || mode === 'edit') {
       setActiveStep(step)
     }
@@ -239,10 +217,14 @@ const ClientForm: React.FC<Props> = ({
     }
   }
 
+  const handleFinalSubmit = () => {
+    methods.handleSubmit(onSubmit)()
+  }
+
   return (
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
-        <form noValidate onSubmit={methods.handleSubmit(onSubmit)}>
+        <form noValidate>
           <Stepper activeStep={activeStep} orientation='horizontal' sx={{ mb: 4 }}>
             {steps.map((label, index) => (
               <Step key={label} completed={completedSteps.has(index)}>
@@ -287,12 +269,7 @@ const ClientForm: React.FC<Props> = ({
                     <ArrowForwardIcon />
                   </Button>
                 ) : (
-                  <Button
-                    type='button'
-                    variant='contained'
-                    disabled={isSubmitting}
-                    onClick={methods.handleSubmit(onSubmit)}
-                  >
+                  <Button type='button' variant='contained' onClick={handleFinalSubmit} disabled={isSubmitting}>
                     {isSubmitting ? 'Guardando...' : 'Guardar'}
                   </Button>
                 )}
@@ -307,17 +284,14 @@ const ClientForm: React.FC<Props> = ({
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
   const formFields: ClientFormFields = {
-    id: client.id ?? '',
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',
-    is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
-    client_type: client.client_type ?? '',
     document_number: client.document_number ?? '',
+    client_type: client.client_type ?? '',
     birth_place: client.birth_place ?? '',
     birth_date: client.birth_date ?? '',
     join_date: client.join_date ?? '',
     person_type: client.person_type ?? '',
-    status: client.status === true ? 'active' : 'inactive',
     source: client.source ?? '',
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
@@ -325,16 +299,36 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     mobile_2: client.mobile_2 ?? '',
     phone: client.phone ?? '',
     reference: client.reference ?? '',
-    doc: '',
-    documents: client.documents ?? [],
-    contacts: client.contacts ?? [],
+    doc: client.doc ?? '',
+    status: client.status === true ? 'active' : 'inactive',
+    is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
     client_category_id: client.client_category_id ?? '',
     office_id: client.office_id ?? '',
-    agent_id: client.agent_id ?? null,
-    executive_id: client.executive_id ?? null,
-    client_group_id: client.client_group_id ?? null,
-    client_branch_id: client.client_branch_id ?? null,
-    notes: client.notes ?? null
+    agent_id: client.agent_id ?? '',
+    executive_id: client.executive_id ?? '',
+    client_group_id: client.client_group_id ?? '',
+    client_branch_id: client.client_branch_id ?? '',
+    notes: client.notes ?? '',
+    contacts: client.contacts,
+    documents: client.documents,
+    bank_accounts: client.bank_accounts,
+    id: client.id,
+    billing_address: client.billing_address ?? '',
+    gender: client.gender ?? '',
+    civil_status: client.civil_status ?? '',
+    height: client.height ?? 0,
+    weight: client.weight ?? 0,
+    smoker: client.smoker ?? false,
+    sports: client.sports ?? '',
+    rif: client.rif ?? '',
+    profession_id: client.profession_id ?? '',
+    occupation_id: client.occupation_id ?? '',
+    monthly_income: client.monthly_income ?? 0,
+    pathology: client.pathology ?? '',
+    legal_representative: client.legal_representative ?? '',
+    economic_activity_id: client.economic_activity_id ?? '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? ''
   }
 
   return formFields
@@ -344,32 +338,29 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
   const apiData: Partial<Client> = {}
 
   for (const key in formData) {
-    const value = formData[key as keyof ClientFormFields]
+    if (Object.prototype.hasOwnProperty.call(formData, key)) {
+      const value = formData[key as keyof ClientFormFields]
 
-    if (key === 'doc' || key === 'documents' || key === 'contacts') {
-      continue
-    }
-
-    if (key === 'status') {
-      apiData.status = value === 'active'
-      continue
-    }
-
-    if (key === 'is_member_of_group') {
-      apiData.is_member_of_group = value === 'yes'
-      continue
-    }
-
-    const finalValue = value === '' ? null : value
-
-    if (finalValue !== null && finalValue !== undefined) {
-      ;(apiData as any)[key] = finalValue
+      if (value === '' || value === 0 || (Array.isArray(value) && value.length === 0) || value === undefined) {
+        // @ts-ignore
+        apiData[key as keyof Client] = null
+      } else {
+        // @ts-ignore
+        apiData[key as keyof Client] = value
+      }
     }
   }
 
-  if (formData.id === '') {
+  apiData.status = formData.status === 'active'
+  apiData.is_member_of_group = formData.is_member_of_group === 'yes'
+
+  if (apiData.id === null || apiData.id === undefined) {
     delete apiData.id
   }
+
+  apiData.contacts = formData.contacts || []
+  apiData.documents = formData.documents || []
+  apiData.bank_accounts = formData.bank_accounts || []
 
   return apiData
 }

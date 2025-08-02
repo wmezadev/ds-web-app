@@ -1,38 +1,52 @@
 export type Client = {
-  id: string | number
-  first_name?: string | null
-  last_name?: string | null
-  is_member_of_group?: boolean
-  client_type?: string | null
-  document_number?: string | null
-  birth_place?: string | null
-  birth_date?: string | null
-  join_date?: string | null
-  person_type?: string | null
-  status?: boolean
-  source?: string | null
-  email_1?: string | null
-  mobile_1?: string | null
-  email_2?: string | null
-  mobile_2?: string | null
-  phone?: string | null
-  reference?: string | null
-  notes?: string | null
-  client_category_id?: string | number | null
-  office_id?: string | number | null
-  agent_id?: string | number | null
-  executive_id?: string | number | null
-  client_group_id?: string | number | null
-  client_branch_id?: string | number | null
-  documents?: { type: string; expiration_date: string; status: string; due: boolean }[] | null
-  contacts?:
-    | {
-        name: string
-        last_name: string
-        profession: string
-        phone: string
-        email: string
-        observations: string
-      }[]
-    | null
+  id: number
+  first_name: string
+  last_name: string
+  document_number: string
+  client_type: string
+  is_member_of_group: boolean
+  person_type: 'natural' | 'legal' | string
+  status: boolean
+  source: string
+  birth_place: string
+  birth_date: string
+  join_date: string
+  email_1: string
+  mobile_1: string
+  email_2: string | null
+  mobile_2: string | null
+  phone: string | null
+  reference: string | null
+  notes: string | null
+  doc: string
+  client_category_id: number
+  office_id: number
+  agent_id: number | null
+  executive_id: number | null
+  client_group_id: number | null
+  client_branch_id: number
+  documents: {
+    type: string
+    expiration_date: string
+    status: string
+    due: boolean
+  }[]
+
+  bank_accounts: {
+    bank_name: string
+    account_number: string
+    currency: string
+    account_type: string
+    notes?: string | null
+  }[]
+
+  contacts: {
+    full_name: string
+    position: string
+    phone: string
+    email: string
+    notes?: string | null
+  }[]
+  created_at: string
+  updated_at: string
 }
