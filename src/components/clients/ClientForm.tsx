@@ -48,16 +48,7 @@ export type ClientFormFields = {
   reference: string
   doc: string
   billing_address?: string
-  gender?: string
-  civil_status?: string
-  height?: number
-  weight?: number
-  smoker?: boolean
-  sports?: string
   rif?: string
-  profession_id?: string | number
-  occupation_id?: string | number
-  monthly_income?: number
   pathology?: string
   legal_representative?: string
   economic_activity_id?: string | number
@@ -70,6 +61,17 @@ export type ClientFormFields = {
   client_group_id?: string | number | null
   client_branch_id?: string | number | null
   notes?: string | null
+  personal_data: {
+    gender?: string
+    civil_status?: string
+    height?: number
+    weight?: number
+    smoker?: boolean
+    sports?: string
+    profession_id?: string | number
+    occupation_id?: string | number
+    monthly_income?: number
+  }
   documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
   contacts?: {
     name: string
@@ -119,9 +121,6 @@ const ClientForm: React.FC<Props> = ({
       reference: '',
       doc: '',
       billing_address: '',
-      gender: '',
-      civil_status: '',
-      sports: '',
       rif: '',
       pathology: '',
       legal_representative: '',
@@ -132,6 +131,17 @@ const ClientForm: React.FC<Props> = ({
       client_group_id: '',
       client_branch_id: '',
       notes: '',
+      personal_data: {
+        gender: '',
+        civil_status: '',
+        height: undefined,
+        weight: undefined,
+        smoker: undefined,
+        sports: '',
+        profession_id: '',
+        occupation_id: '',
+        monthly_income: undefined
+      },
       documents: [],
       contacts: [],
       bank_accounts: [],
@@ -313,22 +323,24 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     documents: client.documents,
     bank_accounts: client.bank_accounts,
     id: client.id,
-    billing_address: client.billing_address ?? '',
-    gender: client.gender ?? '',
-    civil_status: client.civil_status ?? '',
-    height: client.height ?? 0,
-    weight: client.weight ?? 0,
-    smoker: client.smoker ?? false,
-    sports: client.sports ?? '',
-    rif: client.rif ?? '',
-    profession_id: client.profession_id ?? '',
-    occupation_id: client.occupation_id ?? '',
-    monthly_income: client.monthly_income ?? 0,
-    pathology: client.pathology ?? '',
-    legal_representative: client.legal_representative ?? '',
-    economic_activity_id: client.economic_activity_id ?? '',
-    city_id: client.city_id ?? '',
-    zone_id: client.zone_id ?? ''
+    billing_address: '',
+    rif: '',
+    pathology: '',
+    legal_representative: '',
+    economic_activity_id: '',
+    city_id: '',
+    zone_id: '',
+    personal_data: {
+      gender: '',
+      civil_status: '',
+      height: undefined,
+      weight: undefined,
+      smoker: undefined,
+      sports: '',
+      profession_id: '',
+      occupation_id: '',
+      monthly_income: undefined
+    }
   }
 
   return formFields
@@ -337,8 +349,9 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
 export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => {
   const apiData: Partial<Client> = {}
 
+  // Handle non-nested fields
   for (const key in formData) {
-    if (Object.prototype.hasOwnProperty.call(formData, key)) {
+    if (Object.prototype.hasOwnProperty.call(formData, key) && key !== 'personal_data') {
       const value = formData[key as keyof ClientFormFields]
 
       if (value === '' || value === 0 || (Array.isArray(value) && value.length === 0) || value === undefined) {
@@ -349,6 +362,20 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
         apiData[key as keyof Client] = value
       }
     }
+  }
+
+  // Handle personal_data nested fields
+  if (formData.personal_data) {
+    const personalData = formData.personal_data
+    apiData.gender = personalData.gender || null
+    apiData.civil_status = personalData.civil_status || null
+    apiData.height = personalData.height || null
+    apiData.weight = personalData.weight || null
+    apiData.smoker = personalData.smoker || null
+    apiData.sports = personalData.sports || null
+    apiData.profession_id = personalData.profession_id || null
+    apiData.occupation_id = personalData.occupation_id || null
+    apiData.monthly_income = personalData.monthly_income || null
   }
 
   apiData.status = formData.status === 'active'

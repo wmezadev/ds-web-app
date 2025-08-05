@@ -18,71 +18,102 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
   return (
     <Box display='flex' flexDirection='column' gap={2}>
       <Controller
-        name='birth_date'
+        name='personal_data.gender'
         control={control}
-        rules={{
-          required: mode === 'create' ? 'La fecha de nacimiento es requerida' : false,
-          validate: value => {
-            if (!value) return mode === 'create' ? 'La fecha de nacimiento es requerida' : true
-            const date = new Date(value)
-            const today = new Date()
-
-            if (date > today) return 'La fecha de nacimiento no puede ser futura'
-
-            return true
-          }
-        }}
+        rules={{ required: mode === 'create' ? 'El género es requerido' : false }}
         render={({ field }) => (
           <TextField
             {...field}
-            label='Fecha de Nacimiento'
-            type='date'
+            label='Género'
             fullWidth
-            InputLabelProps={{ shrink: true }}
-            error={!!errors.birth_date}
-            helperText={errors.birth_date?.message}
+            error={!!errors.personal_data?.gender}
+            helperText={errors.personal_data?.gender?.message}
           />
         )}
       />
       <Controller
-        name='birth_place'
+        name='personal_data.civil_status'
         control={control}
-        rules={{ required: mode === 'create' ? 'El lugar de nacimiento es requerido' : false }}
+        rules={{ required: mode === 'create' ? 'El estado civil es requerido' : false }}
         render={({ field }) => (
           <TextField
             {...field}
-            label='Lugar de Nacimiento'
+            label='Estado Civil'
             fullWidth
-            error={!!errors.birth_place}
-            helperText={errors.birth_place?.message}
+            error={!!errors.personal_data?.civil_status}
+            helperText={errors.personal_data?.civil_status?.message}
           />
         )}
       />
       <Controller
-        name='first_name'
+        name='personal_data.height'
         control={control}
-        rules={{ required: mode === 'create' ? 'El nombre es requerido' : false }}
+        rules={{ required: mode === 'create' ? 'La altura es requerida' : false }}
         render={({ field }) => (
           <TextField
             {...field}
-            label='Nombre'
+            label='Altura'
+            type='number'
             fullWidth
-            error={!!errors.first_name}
-            helperText={errors.first_name?.message}
+            error={!!errors.personal_data?.height}
+            helperText={errors.personal_data?.height?.message}
           />
         )}
       />
       <Controller
-        name='last_name'
+        name='personal_data.weight'
         control={control}
-        rules={{ required: mode === 'create' ? 'El apellido es requerido' : false }}
+        rules={{ required: mode === 'create' ? 'El peso es requerido' : false }}
         render={({ field }) => (
           <TextField
             {...field}
-            label='Apellido'
+            label='Peso'
+            type='number'
             fullWidth
-            error={!!errors.last_name}
-            helperText={errors.last_name?.message}
+            error={!!errors.personal_data?.weight}
+            helperText={errors.personal_data?.weight?.message}
+          />
+        )}
+      />
+      <Controller
+        name='personal_data.smoker'
+        control={control}
+        rules={{ required: mode === 'create' ? 'El fumador es requerido' : false }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label='Fumador'
+            fullWidth
+            error={!!errors.personal_data?.smoker}
+            helperText={errors.personal_data?.smoker?.message}
+          />
+        )}
+      />
+      <Controller
+        name='personal_data.sports'
+        control={control}
+        rules={{ required: mode === 'create' ? 'El deporte es requerido' : false }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label='Deporte'
+            fullWidth
+            error={!!errors.personal_data?.sports}
+            helperText={errors.personal_data?.sports?.message}
+          />
+        )}
+      />
+      <Controller
+        name='personal_data.profession_id'
+        control={control}
+        rules={{ required: mode === 'create' ? 'La profesión es requerida' : false }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label='Profesión'
+            fullWidth
+            error={!!errors.personal_data?.profession_id}
+            helperText={errors.personal_data?.profession_id?.message}
           />
         )}
       />
