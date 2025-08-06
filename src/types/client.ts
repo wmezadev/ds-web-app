@@ -25,6 +25,21 @@ export type Client = {
   executive_id: number | null
   client_group_id: number | null
   client_branch_id: number
+  
+  personal_data: {
+    gender: string | null
+    civil_status: string | null
+    height: number | null
+    weight: number | null
+    smoker: boolean | null
+    sports: string | null
+    rif: string | null
+    profession_id: number | null
+    occupation_id: number | null
+    monthly_income: number | null
+    pathology: string | null
+  }
+  
   documents: {
     type: string
     expiration_date: string

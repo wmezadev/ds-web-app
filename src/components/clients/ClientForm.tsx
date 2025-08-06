@@ -49,7 +49,6 @@ export type ClientFormFields = {
   doc: string
   billing_address?: string
   rif?: string
-  pathology?: string
   legal_representative?: string
   economic_activity_id?: string | number
   city_id?: string | number
@@ -71,6 +70,7 @@ export type ClientFormFields = {
     profession_id?: string | number
     occupation_id?: string | number
     monthly_income?: number
+    pathology?: string
   }
   documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
   contacts?: {
@@ -122,7 +122,7 @@ const ClientForm: React.FC<Props> = ({
       doc: '',
       billing_address: '',
       rif: '',
-      pathology: '',
+
       legal_representative: '',
       client_category_id: '', // Se inicializa con una cadena vacía
       office_id: '', // Se inicializa con una cadena vacía
@@ -140,7 +140,8 @@ const ClientForm: React.FC<Props> = ({
         sports: '',
         profession_id: '',
         occupation_id: '',
-        monthly_income: undefined
+        monthly_income: undefined,
+        pathology: ''
       },
       documents: [],
       contacts: [],
@@ -325,7 +326,6 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     id: client.id,
     billing_address: '',
     rif: '',
-    pathology: '',
     legal_representative: '',
     economic_activity_id: '',
     city_id: '',
@@ -339,7 +339,8 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
       sports: '',
       profession_id: '',
       occupation_id: '',
-      monthly_income: undefined
+      monthly_income: undefined,
+      pathology: ''
     }
   }
 
@@ -367,15 +368,19 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
   // Handle personal_data nested fields
   if (formData.personal_data) {
     const personalData = formData.personal_data
-    apiData.gender = personalData.gender || null
-    apiData.civil_status = personalData.civil_status || null
-    apiData.height = personalData.height || null
-    apiData.weight = personalData.weight || null
-    apiData.smoker = personalData.smoker || null
-    apiData.sports = personalData.sports || null
-    apiData.profession_id = personalData.profession_id || null
-    apiData.occupation_id = personalData.occupation_id || null
-    apiData.monthly_income = personalData.monthly_income || null
+    apiData.personal_data = {
+      gender: personalData.gender || null,
+      civil_status: personalData.civil_status || null,
+      height: personalData.height || null,
+      weight: personalData.weight || null,
+      smoker: personalData.smoker || null,
+      sports: personalData.sports || null,
+      rif: personalData.rif || null,
+      profession_id: personalData.profession_id || null,
+      occupation_id: personalData.occupation_id || null,
+      monthly_income: personalData.monthly_income || null,
+      pathology: personalData.pathology || null
+    }
   }
 
   apiData.status = formData.status === 'active'

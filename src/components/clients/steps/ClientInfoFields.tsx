@@ -32,7 +32,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
   return (
     <Box>
       <Grid container spacing={2}>
-        {/* Name and Last Name */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='first_name'
