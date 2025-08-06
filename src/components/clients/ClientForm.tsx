@@ -74,12 +74,11 @@ export type ClientFormFields = {
   }
   documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
   contacts?: {
-    name: string
-    last_name: string
-    profession: string
+    full_name: string
+    position: string
     phone: string
     email: string
-    observations: string
+    notes?: string | null
   }[]
   bank_accounts?: any[]
 }
@@ -375,9 +374,9 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
       weight: personalData.weight || null,
       smoker: personalData.smoker || null,
       sports: personalData.sports || null,
-      rif: personalData.rif || null,
-      profession_id: personalData.profession_id || null,
-      occupation_id: personalData.occupation_id || null,
+
+      profession_id: personalData.profession_id ? Number(personalData.profession_id) || null : null,
+      occupation_id: personalData.occupation_id ? Number(personalData.occupation_id) || null : null,
       monthly_income: personalData.monthly_income || null,
       pathology: personalData.pathology || null
     }

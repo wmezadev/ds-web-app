@@ -1,11 +1,18 @@
 'use client'
 
-import { Box, Grid, IconButton, Stack, TextField, Typography, Button } from '@mui/material'
+import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert } from '@mui/material'
 import { useFieldArray, useFormContext } from 'react-hook-form'
-import { Add, Delete } from '@mui/icons-material'
+import { Add, Delete, Save } from '@mui/icons-material'
+import { useState } from 'react'
+import { useApi } from '@/hooks/useApi'
+import { API_ROUTES } from '@/constants/routes'
+import { clientFormToApi, type ClientFormFields } from '../ClientForm'
 
 const ContactListFields = () => {
-  const { control, register } = useFormContext()
+  const { control, register, getValues } = useFormContext<ClientFormFields>()
+  const { fetchApi } = useApi()
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [savingIndex, setSavingIndex] = useState<number | null>(null)
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -14,13 +21,49 @@ const ContactListFields = () => {
 
   const handleAddContact = () => {
     append({
-      name: '',
-      last_name: '',
-      profession: '',
+      full_name: '',
+      position: '',
       phone: '',
       email: '',
-      observations: ''
+      notes: ''
     })
+  }
+
+  const handleSaveContact = async (index: number) => {
+    setSavingIndex(index)
+    try {
+      const formData = getValues()
+      const contactData = formData.contacts?.[index]
+      
+      // Validate required fields
+      if (!contactData?.full_name || !contactData?.email || !contactData?.phone) {
+        setSaveMessage('Por favor complete los campos requeridos (Nombre completo, Email y Teléfono)')
+        setTimeout(() => setSaveMessage(null), 3000)
+        return
+      }
+
+      // Check if we're editing an existing client
+      if (formData.id) {
+        // Update existing client with the new/updated contact
+        const apiData = clientFormToApi(formData)
+        await fetchApi(API_ROUTES.CLIENTS.UPDATE(formData.id), {
+          method: 'PUT',
+          body: apiData
+        })
+        setSaveMessage('Contacto guardado exitosamente en el cliente')
+      } else {
+        // For new clients, we can't save individual contacts until the client is created
+        setSaveMessage('Debe guardar el cliente primero antes de guardar contactos individuales')
+      }
+      
+      setTimeout(() => setSaveMessage(null), 3000)
+    } catch (error) {
+      console.error('Error saving contact:', error)
+      setSaveMessage('Error al guardar el contacto')
+      setTimeout(() => setSaveMessage(null), 3000)
+    } finally {
+      setSavingIndex(null)
+    }
   }
 
   return (
@@ -29,9 +72,19 @@ const ContactListFields = () => {
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h6'>Contactos</Typography>
         <Button variant='outlined' onClick={handleAddContact} startIcon={<Add />}>
-          Añadir contacto
+          Nuevo Contacto
         </Button>
       </Stack>
+
+      {/* Success/Error Message */}
+      {saveMessage && (
+        <Alert 
+          severity={saveMessage.includes('exitosamente') ? 'success' : 'error'} 
+          sx={{ mb: 2 }}
+        >
+          {saveMessage}
+        </Alert>
+      )}
 
       {fields.length === 0 ? (
         <Typography variant='body2' color='text.secondary'>
@@ -41,46 +94,72 @@ const ContactListFields = () => {
         fields.map((field, index) => (
           <Box key={field.id} mb={3} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
             <Grid container spacing={2} alignItems='center'>
-              <Grid item xs={6} md={3}>
-                <TextField fullWidth label='Nombre' placeholder='Juan' {...register(`contacts.${index}.name`)} />
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <TextField
-                  fullWidth
-                  label='Apellido'
-                  placeholder='Pérez'
-                  {...register(`contacts.${index}.last_name`)}
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  fullWidth 
+                  label='Nombre Completo' 
+                  placeholder='Juan Pérez' 
+                  {...register(`contacts.${index}.full_name`)} 
+                  required
                 />
               </Grid>
-              <Grid item xs={6} md={3}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label='Profesión'
-                  placeholder='Ingeniero'
-                  {...register(`contacts.${index}.profession`)}
+                  label='Posición/Cargo'
+                  placeholder='Ingeniero, Gerente, etc.'
+                  {...register(`contacts.${index}.position`)}
                 />
               </Grid>
-              <Grid item xs={6} md={3}>
-                <TextField fullWidth label='Teléfono' placeholder='+58...' {...register(`contacts.${index}.phone`)} />
+              <Grid item xs={12} md={4}>
+                <TextField 
+                  fullWidth 
+                  label='Teléfono' 
+                  placeholder='+58...' 
+                  {...register(`contacts.${index}.phone`)} 
+                  required
+                />
               </Grid>
-              <Grid item xs={12}>
-                <Box display='flex' alignItems='center' gap={2}>
-                  <TextField
-                    label='Email'
-                    placeholder='ejemplo@correo.com'
-                    {...register(`contacts.${index}.email`)}
-                    sx={{ flexBasis: '25%' }}
-                  />
-                  <TextField
-                    label='Observaciones'
-                    placeholder='Detalles relevantes...'
-                    {...register(`contacts.${index}.observations`)}
-                    sx={{ flexGrow: 1 }}
-                  />
-                  <IconButton onClick={() => remove(index)} color='error'>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label='Email'
+                  placeholder='ejemplo@correo.com'
+                  {...register(`contacts.${index}.email`)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
+                  <Button
+                    variant='contained'
+                    onClick={() => handleSaveContact(index)}
+                    startIcon={<Save />}
+                    disabled={savingIndex === index}
+                    sx={{ 
+                      backgroundColor: '#4caf50',
+                      '&:hover': {
+                        backgroundColor: '#45a049'
+                      },
+                      minWidth: '120px'
+                    }}
+                  >
+                    {savingIndex === index ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                  <IconButton onClick={() => remove(index)} color='error' size='large'>
                     <Delete />
                   </IconButton>
                 </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label='Notas'
+                  placeholder='Detalles relevantes, observaciones...'
+                  {...register(`contacts.${index}.notes`)}
+                  multiline
+                  rows={2}
+                />
               </Grid>
             </Grid>
           </Box>
