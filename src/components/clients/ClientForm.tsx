@@ -48,7 +48,6 @@ export type ClientFormFields = {
   reference: string
   doc: string
   billing_address?: string
-  rif?: string
   legal_representative?: string
   economic_activity_id?: string | number
   city_id?: string | number
@@ -71,6 +70,7 @@ export type ClientFormFields = {
     occupation_id?: string | number
     monthly_income?: number
     pathology?: string
+    rif?: string
   }
   documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
   contacts?: {
@@ -120,8 +120,6 @@ const ClientForm: React.FC<Props> = ({
       reference: '',
       doc: '',
       billing_address: '',
-      rif: '',
-
       legal_representative: '',
       client_category_id: '', // Se inicializa con una cadena vacía
       office_id: '', // Se inicializa con una cadena vacía
@@ -140,7 +138,8 @@ const ClientForm: React.FC<Props> = ({
         profession_id: '',
         occupation_id: '',
         monthly_income: undefined,
-        pathology: ''
+        pathology: '',
+        rif: ''
       },
       documents: [],
       contacts: [],
@@ -324,7 +323,6 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     bank_accounts: client.bank_accounts,
     id: client.id,
     billing_address: '',
-    rif: '',
     legal_representative: '',
     economic_activity_id: '',
     city_id: '',
@@ -339,7 +337,8 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
       profession_id: '',
       occupation_id: '',
       monthly_income: undefined,
-      pathology: ''
+      pathology: '',
+      rif: ''
     }
   }
 
@@ -378,7 +377,8 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
       profession_id: personalData.profession_id ? Number(personalData.profession_id) || null : null,
       occupation_id: personalData.occupation_id ? Number(personalData.occupation_id) || null : null,
       monthly_income: personalData.monthly_income || null,
-      pathology: personalData.pathology || null
+      pathology: personalData.pathology || null,
+      rif: personalData.rif || null
     }
   }
 
