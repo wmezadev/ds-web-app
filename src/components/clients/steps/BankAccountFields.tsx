@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Box, Typography, Button, Stack, Grid, TextField, IconButton } from '@mui/material'
 import { Add, Delete } from '@mui/icons-material'
+import Save from '@mui/icons-material/Save'
+
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
@@ -14,6 +17,8 @@ const BankAccountFields = () => {
     name: 'bank_accounts'
   })
 
+  const [savingIndex, setSavingIndex] = useState<number | null>(null)
+
   const handleAddAccount = () => {
     append({
       bank: '',
@@ -22,6 +27,20 @@ const BankAccountFields = () => {
       account_type: '',
       observations: ''
     })
+  }
+
+  const handleSaveContact = async (index: number) => {
+    setSavingIndex(index)
+
+    try {
+      // Aquí puedes añadir la lógica real para guardar la cuenta bancaria, como llamadas a API
+      await new Promise(resolve => setTimeout(resolve, 1500)) // Simula un retardo
+      console.log(`Guardado cuenta bancaria ${index}`)
+    } catch (error) {
+      console.error('Error al guardar cuenta bancaria', error)
+    } finally {
+      setSavingIndex(null)
+    }
   }
 
   return (
@@ -75,15 +94,31 @@ const BankAccountFields = () => {
                     {...register(`bank_accounts.${index}.account_type`)}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Box display='flex' alignItems='center' gap={2}>
-                    <TextField
-                      label='Observaciones'
-                      placeholder='Notas adicionales...'
-                      {...register(`bank_accounts.${index}.observations`)}
-                      fullWidth
-                    />
-                    <IconButton onClick={() => remove(index)} color='error'>
+                <Grid item xs={12} md={10}>
+                  <TextField
+                    label='Observaciones'
+                    placeholder='Notas adicionales...'
+                    {...register(`bank_accounts.${index}.observations`)}
+                    fullWidth
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={2}>
+                  <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
+                    <Button
+                      variant='contained'
+                      onClick={() => handleSaveContact(index)}
+                      startIcon={<Save />}
+                      disabled={savingIndex === index}
+                      sx={{
+                        backgroundColor: '#4caf50',
+                        '&:hover': { backgroundColor: '#45a049' },
+                        minWidth: '120px'
+                      }}
+                    >
+                      {savingIndex === index ? 'Guardando...' : 'Guardar'}
+                    </Button>
+                    <IconButton onClick={() => remove(index)} color='error' size='large'>
                       <Delete />
                     </IconButton>
                   </Box>

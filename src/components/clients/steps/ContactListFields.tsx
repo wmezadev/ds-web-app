@@ -34,7 +34,7 @@ const ContactListFields = () => {
     try {
       const formData = getValues()
       const contactData = formData.contacts?.[index]
-      
+
       // Validate required fields
       if (!contactData?.full_name || !contactData?.email || !contactData?.phone) {
         setSaveMessage('Por favor complete los campos requeridos (Nombre completo, Email y Teléfono)')
@@ -55,7 +55,7 @@ const ContactListFields = () => {
         // For new clients, we can't save individual contacts until the client is created
         setSaveMessage('Debe guardar el cliente primero antes de guardar contactos individuales')
       }
-      
+
       setTimeout(() => setSaveMessage(null), 3000)
     } catch (error) {
       console.error('Error saving contact:', error)
@@ -78,10 +78,7 @@ const ContactListFields = () => {
 
       {/* Success/Error Message */}
       {saveMessage && (
-        <Alert 
-          severity={saveMessage.includes('exitosamente') ? 'success' : 'error'} 
-          sx={{ mb: 2 }}
-        >
+        <Alert severity={saveMessage.includes('exitosamente') ? 'success' : 'error'} sx={{ mb: 2 }}>
           {saveMessage}
         </Alert>
       )}
@@ -94,16 +91,16 @@ const ContactListFields = () => {
         fields.map((field, index) => (
           <Box key={field.id} mb={3} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
             <Grid container spacing={2} alignItems='center'>
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  fullWidth 
-                  label='Nombre Completo' 
-                  placeholder='Juan Pérez' 
-                  {...register(`contacts.${index}.full_name`)} 
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label='Nombre Completo'
+                  placeholder='Juan Pérez'
+                  {...register(`contacts.${index}.full_name`)}
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
                   label='Posición/Cargo'
@@ -112,11 +109,11 @@ const ContactListFields = () => {
                 />
               </Grid>
               <Grid item xs={12} md={4}>
-                <TextField 
-                  fullWidth 
-                  label='Teléfono' 
-                  placeholder='+58...' 
-                  {...register(`contacts.${index}.phone`)} 
+                <TextField
+                  fullWidth
+                  label='Teléfono'
+                  placeholder='+58...'
+                  {...register(`contacts.${index}.phone`)}
                   required
                 />
               </Grid>
@@ -129,14 +126,23 @@ const ContactListFields = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label='Notas'
+                  placeholder='Detalles relevantes, observaciones...'
+                  {...register(`contacts.${index}.notes`)}
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
                 <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
                   <Button
                     variant='contained'
                     onClick={() => handleSaveContact(index)}
                     startIcon={<Save />}
                     disabled={savingIndex === index}
-                    sx={{ 
+                    sx={{
                       backgroundColor: '#4caf50',
                       '&:hover': {
                         backgroundColor: '#45a049'
@@ -150,16 +156,6 @@ const ContactListFields = () => {
                     <Delete />
                   </IconButton>
                 </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label='Notas'
-                  placeholder='Detalles relevantes, observaciones...'
-                  {...register(`contacts.${index}.notes`)}
-                  multiline
-                  rows={2}
-                />
               </Grid>
             </Grid>
           </Box>
