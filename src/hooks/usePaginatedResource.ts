@@ -7,12 +7,13 @@ interface UsePaginatedResourceOptions {
   dataKey: string // 'clients'
   initialPerPage?: number
   enabled?: boolean
-  skipParamName?: string
-  limitParamName?: string
 }
 
 interface RawPaginatedResponse {
-  total?: number
+  total: number
+  page: number
+  per_page: number
+  pages: number
   [key: string]: any
 }
 
@@ -20,9 +21,7 @@ export function usePaginatedResource<T>({
   endpoint,
   dataKey,
   initialPerPage = 2,
-  enabled = true,
-  skipParamName = 'skip',
-  limitParamName = 'limit'
+  enabled = true
 }: UsePaginatedResourceOptions) {
   const { fetchApi } = useApi()
 
@@ -61,11 +60,9 @@ export function usePaginatedResource<T>({
       try {
         const searchParams = new URLSearchParams()
 
-        // paginación usando skip y limit
-        const skip = (currentPage - 1) * currentPerPage // Usa currentPerPage aquí
-
-        searchParams.set(skipParamName, String(skip))
-        searchParams.set(limitParamName, String(currentPerPage)) // Usa currentPerPage aquí
+        // paginación usando page y per_page
+        searchParams.set('page', String(currentPage))
+        searchParams.set('per_page', String(currentPerPage))
 
         // filtros
         Object.entries(currentParams).forEach(([k, v]) => {
@@ -82,8 +79,9 @@ export function usePaginatedResource<T>({
 
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
-        const apiTotal = typeof raw.total === 'number' ? raw.total : items.length
-        const apiPages = Math.max(1, Math.ceil(apiTotal / currentPerPage)) // Usa currentPerPage aquí
+        // Use the pagination data directly from the API response
+        const apiTotal = raw.total || 0
+        const apiPages = raw.pages || 1
 
         setData(items)
         setTotal(apiTotal)
@@ -100,7 +98,7 @@ export function usePaginatedResource<T>({
         setLoading(false)
       }
     },
-    [fetchApi, enabled, skipParamName, limitParamName, dataKey, endpoint] // Remueve page y perPage de las dependencias
+    [fetchApi, enabled, dataKey, endpoint] // Remueve page y perPage de las dependencias
   )
 
   // useEffect que dispara la petición
