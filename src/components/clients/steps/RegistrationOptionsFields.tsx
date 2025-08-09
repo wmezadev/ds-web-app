@@ -138,42 +138,7 @@ const RegistrationOptionsFields = () => {
           />
         </Grid>
 
-        {/* Readonly fields */}
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='updated_at'
-            control={control}
-            render={({ field }) => <TextField {...field} label='Actualizado en' fullWidth disabled />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='is_deleted'
-            control={control}
-            render={({ field }) => <TextField {...field} label='¿Eliminado?' fullWidth disabled />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='deleted_at'
-            control={control}
-            render={({ field }) => <TextField {...field} label='Eliminado en' fullWidth disabled />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='created_by'
-            control={control}
-            render={({ field }) => <TextField {...field} label='Creado por' fullWidth disabled />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='updated_by'
-            control={control}
-            render={({ field }) => <TextField {...field} label='Actualizado por' fullWidth disabled />}
-          />
-        </Grid>
+
       </Grid>
     </Box>
   )

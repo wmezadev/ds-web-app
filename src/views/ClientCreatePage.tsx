@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+
 import { useRouter } from 'next/navigation'
+
 import { Box, Typography, Alert, Snackbar } from '@mui/material'
 
 import ClientForm, { clientFormToApi } from '@/components/clients/ClientForm'
@@ -17,6 +19,7 @@ export default function ClientCreatePage() {
     message: '',
     severity: 'success' as 'success' | 'error'
   })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreate = useCallback(

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import { useForm, FormProvider } from 'react-hook-form'
 import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -72,7 +73,7 @@ export type ClientFormFields = {
     pathology?: string
     rif?: string
   }
-  documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
+  documents?: { type: string; expiration_date: string; status: string; due: boolean; file?: File }[]
   contacts?: {
     full_name: string
     position: string
@@ -189,6 +190,7 @@ const ClientForm: React.FC<Props> = ({
 
   const handleNext = async () => {
     const isValid = await validateCurrentStep()
+
     if (isValid) {
       setActiveStep(prev => Math.min(prev + 1, steps.length - 1))
     }
@@ -200,6 +202,7 @@ const ClientForm: React.FC<Props> = ({
 
   const handleStepClick = async (step: number) => {
     const isValid = await validateCurrentStep()
+
     if (isValid || mode === 'edit') {
       setActiveStep(step)
     }
@@ -366,6 +369,7 @@ export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => 
   // Handle personal_data nested fields
   if (formData.personal_data) {
     const personalData = formData.personal_data
+
     apiData.personal_data = {
       gender: personalData.gender || null,
       civil_status: personalData.civil_status || null,

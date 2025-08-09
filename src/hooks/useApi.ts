@@ -1,8 +1,11 @@
 'use client'
 
 import { useCallback } from 'react'
+
 import { useRouter } from 'next/navigation'
+
 import { useSession, signOut } from 'next-auth/react'
+
 import { ROUTES } from '@/constants/routes'
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
@@ -44,6 +47,7 @@ export const useApi = () => {
 
         if (!response.ok) {
           let errorData: any = 'An unknown error occurred.'
+
           try {
             errorData = await response.json()
           } catch (e) {
@@ -57,6 +61,7 @@ export const useApi = () => {
           }
 
           const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
+
           throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
         }
 

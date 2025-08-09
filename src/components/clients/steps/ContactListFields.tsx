@@ -1,9 +1,11 @@
 'use client'
 
-import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert } from '@mui/material'
-import { useFieldArray, useFormContext } from 'react-hook-form'
-import { Add, Delete, Save } from '@mui/icons-material'
 import { useState } from 'react'
+
+import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert } from '@mui/material'
+import { Add, Delete, Save } from '@mui/icons-material'
+import { useFieldArray, useFormContext } from 'react-hook-form'
+
 import { useApi } from '@/hooks/useApi'
 import { API_ROUTES } from '@/constants/routes'
 import { clientFormToApi, type ClientFormFields } from '../ClientForm'
@@ -31,6 +33,7 @@ const ContactListFields = () => {
 
   const handleSaveContact = async (index: number) => {
     setSavingIndex(index)
+
     try {
       const formData = getValues()
       const contactData = formData.contacts?.[index]
@@ -39,18 +42,22 @@ const ContactListFields = () => {
       if (!contactData?.full_name || !contactData?.email || !contactData?.phone) {
         setSaveMessage('Por favor complete los campos requeridos (Nombre completo, Email y Teléfono)')
         setTimeout(() => setSaveMessage(null), 3000)
+
         return
       }
 
       // Check if we're editing an existing client
+
       if (formData.id) {
         // Update existing client with the new/updated contact
         const apiData = clientFormToApi(formData)
+
         await fetchApi(API_ROUTES.CLIENTS.UPDATE(formData.id), {
           method: 'PUT',
           body: apiData
         })
         setSaveMessage('Contacto guardado exitosamente en el cliente')
+
       } else {
         // For new clients, we can't save individual contacts until the client is created
         setSaveMessage('Debe guardar el cliente primero antes de guardar contactos individuales')
