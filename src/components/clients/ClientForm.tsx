@@ -6,6 +6,8 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 import type { Client } from '@/types/client'
 import StepperCustomDot from '@/components/stepper-dot'
@@ -156,6 +158,9 @@ const ClientForm: React.FC<Props> = ({
   const isLastStep = activeStep === steps.length - 1
   const isFirstStep = activeStep === 0
 
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
     switch (step) {
       case 0:
@@ -237,7 +242,26 @@ const ClientForm: React.FC<Props> = ({
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
         <form noValidate>
-          <Stepper activeStep={activeStep} orientation='horizontal' sx={{ mb: 4 }}>
+          <Stepper
+            activeStep={activeStep}
+            orientation={isMobile ? 'vertical' : 'horizontal'}
+            sx={{
+              mb: 4,
+              ...(isMobile
+                ? {
+                    '& .MuiStepConnector-root': {
+                      ml: 1.25,
+                      '& .MuiStepConnector-line': {
+                        minHeight: '1px'
+                      }
+                    },
+                    '& .MuiStepLabel-root': {
+                      paddingLeft: '0px'
+                    }
+                  }
+                : {})
+            }}
+          >
             {steps.map((label, index) => (
               <Step key={label} completed={completedSteps.has(index)}>
                 <StepLabel
