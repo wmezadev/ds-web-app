@@ -40,6 +40,9 @@ export const useApi = () => {
 
       if (body) {
         requestOptions.body = JSON.stringify(body)
+        console.log('[useApi] Request URL:', apiUrl)
+        console.log('[useApi] Request method:', requestOptions.method)
+        console.log('[useApi] Request body:', JSON.stringify(body, null, 2))
       }
 
       try {
@@ -49,18 +52,28 @@ export const useApi = () => {
           let errorData: any = 'An unknown error occurred.'
 
           try {
-            errorData = await response.json()
+            const responseText = await response.text()
+            console.log('[useApi] Raw error response text:', responseText)
+            try {
+              errorData = JSON.parse(responseText)
+            } catch (e) {
+              errorData = responseText
+            }
           } catch (e) {
-            errorData = await response.text()
+            errorData = 'Failed to read error response'
           }
+
+          const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
+          
+          console.log('[useApi] Error response status:', response.status)
+          console.log('[useApi] Error response data:', errorData)
+          console.log('[useApi] Full error message:', errorMessage)
 
           if (response.status === 401) {
             await signOut({ redirect: false })
             router.push(ROUTES.LOGIN)
             throw new Error('Authentication failed. Please sign in again.')
           }
-
-          const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
 
           throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
         }
