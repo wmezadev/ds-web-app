@@ -4,12 +4,26 @@ import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Typography, 
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
+import { useClientCategories } from '@/hooks/useClientCategories'
+import { useOffices } from '@/hooks/useOffices'
+import { useAgents } from '@/hooks/useAgents'
+import { useClientBranches } from '@/hooks/useClientBranches'
+import { useClientGroups } from '@/hooks/useClientGroups'
+import { useExecutives } from '@/hooks/useExecutives'
 
 const RegistrationOptionsFields = () => {
   const {
     control,
     formState: { errors }
   } = useFormContext<ClientFormFields>()
+
+  // Fetch all catalog data
+  const { clientCategories, loading: categoriesLoading } = useClientCategories()
+  const { offices, loading: officesLoading } = useOffices()
+  const { agents, loading: agentsLoading } = useAgents()
+  const { clientBranches, loading: branchesLoading } = useClientBranches()
+  const { clientGroups, loading: groupsLoading } = useClientGroups()
+  const { executives, loading: executivesLoading } = useExecutives()
 
   return (
     <Box>
@@ -25,11 +39,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_category_id}>
                 <InputLabel>Categoría de Cliente</InputLabel>
-                <Select {...field} label='Categoría de Cliente'>
-                  <MenuItem value={1}>Premium</MenuItem>
-                  <MenuItem value={2}>Estándar</MenuItem>
-                  <MenuItem value={3}>Básico</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Categoría de Cliente'
+                  value={field.value ?? ''}
+                  disabled={categoriesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar categoría</em>
+                  </MenuItem>
+                  {clientCategories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {categoriesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando categorías...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
@@ -41,11 +70,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.office_id}>
                 <InputLabel>Oficina</InputLabel>
-                <Select {...field} label='Oficina'>
-                  <MenuItem value={1}>Oficina Central</MenuItem>
-                  <MenuItem value={2}>Sucursal Norte</MenuItem>
-                  <MenuItem value={3}>Sucursal Sur</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Oficina'
+                  value={field.value ?? ''}
+                  disabled={officesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar oficina</em>
+                  </MenuItem>
+                  {offices.map((office) => (
+                    <MenuItem key={office.id} value={office.id}>
+                      {office.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {officesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando oficinas...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
@@ -59,11 +103,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.agent_id}>
                 <InputLabel>Agente</InputLabel>
-                <Select {...field} label='Agente'>
-                  <MenuItem value={1}>Agente 1</MenuItem>
-                  <MenuItem value={2}>Agente 2</MenuItem>
-                  <MenuItem value={3}>Agente 3</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Agente'
+                  value={field.value ?? ''}
+                  disabled={agentsLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar agente</em>
+                  </MenuItem>
+                  {agents.map((agent) => (
+                    <MenuItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {agentsLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando agentes...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
@@ -75,11 +134,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.executive_id}>
                 <InputLabel>Ejecutivo</InputLabel>
-                <Select {...field} label='Ejecutivo'>
-                  <MenuItem value={1}>Ejecutivo 1</MenuItem>
-                  <MenuItem value={2}>Ejecutivo 2</MenuItem>
-                  <MenuItem value={3}>Ejecutivo 3</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Ejecutivo'
+                  value={field.value ?? ''}
+                  disabled={executivesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar ejecutivo</em>
+                  </MenuItem>
+                  {executives.map((executive) => (
+                    <MenuItem key={executive.id} value={executive.id}>
+                      {executive.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {executivesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando ejecutivos...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
@@ -93,11 +167,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_group_id}>
                 <InputLabel>Grupo de Cliente</InputLabel>
-                <Select {...field} label='Grupo de Cliente'>
-                  <MenuItem value={1}>Grupo 1</MenuItem>
-                  <MenuItem value={2}>Grupo 2</MenuItem>
-                  <MenuItem value={3}>Grupo 3</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Grupo de Cliente'
+                  value={field.value ?? ''}
+                  disabled={groupsLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar grupo</em>
+                  </MenuItem>
+                  {clientGroups.map((group) => (
+                    <MenuItem key={group.id} value={group.id}>
+                      {group.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {groupsLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando grupos...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
@@ -109,11 +198,26 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_branch_id}>
                 <InputLabel>Sucursal de Cliente</InputLabel>
-                <Select {...field} label='Sucursal de Cliente'>
-                  <MenuItem value={1}>Sucursal 1</MenuItem>
-                  <MenuItem value={2}>Sucursal 2</MenuItem>
-                  <MenuItem value={3}>Sucursal 3</MenuItem>
+                <Select 
+                  {...field} 
+                  label='Sucursal de Cliente'
+                  value={field.value ?? ''}
+                  disabled={branchesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar sucursal</em>
+                  </MenuItem>
+                  {clientBranches.map((branch) => (
+                    <MenuItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {branchesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando sucursales...
+                  </Typography>
+                )}
               </FormControl>
             )}
           />
