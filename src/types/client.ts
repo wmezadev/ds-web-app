@@ -25,6 +25,8 @@ export type Client = {
   executive_id: number | null
   client_group_id: number | null
   client_branch_id: number
+  city_id: number | null
+  zone_id: number | null
   
   personal_data: {
     gender: string | null

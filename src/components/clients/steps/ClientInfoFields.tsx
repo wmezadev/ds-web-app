@@ -18,6 +18,7 @@ import { Close, Check } from '@mui/icons-material'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
+import { useCities } from '@/hooks/useCities'
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -28,6 +29,8 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
     control,
     formState: { errors }
   } = useFormContext<ClientFormFields>()
+  
+  const { cities, loading: citiesLoading } = useCities()
 
   return (
     <Box>
@@ -101,19 +104,68 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
+        {/* City */}
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name='city_id'
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.city_id}>
+                <InputLabel>Ciudad de Residencia</InputLabel>
+                <Select 
+                  {...field} 
+                  label='Ciudad de Residencia' 
+                  value={field.value ?? ''}
+                  disabled={citiesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar ciudad</em>
+                  </MenuItem>
+                  {cities.map((city) => (
+                    <MenuItem key={city.id} value={city.id}>
+                      {city.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {citiesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando ciudades...
+                  </Typography>
+                )}
+              </FormControl>
+            )}
+          />
+        </Grid>
+
         {/* Birth Place and Birth Date */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='birth_place'
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label='Lugar de Nacimiento'
-                fullWidth
-                error={!!errors.birth_place}
-                helperText={errors.birth_place?.message}
-              />
+              <FormControl fullWidth error={!!errors.birth_place}>
+                <InputLabel>Lugar de Nacimiento</InputLabel>
+                <Select 
+                  {...field} 
+                  label='Lugar de Nacimiento' 
+                  value={field.value ?? ''}
+                  disabled={citiesLoading}
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar lugar de nacimiento</em>
+                  </MenuItem>
+                  {cities.map((city) => (
+                    <MenuItem key={city.id} value={city.name}>
+                      {city.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {citiesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando ciudades...
+                  </Typography>
+                )}
+              </FormControl>
             )}
           />
         </Grid>

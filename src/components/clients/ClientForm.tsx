@@ -352,8 +352,8 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     billing_address: '',
     legal_representative: '',
     economic_activity_id: '',
-    city_id: '',
-    zone_id: '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? '',
     personal_data: {
       gender: '',
       civil_status: '',
