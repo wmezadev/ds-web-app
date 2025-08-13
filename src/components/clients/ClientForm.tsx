@@ -41,8 +41,7 @@ export type ClientFormFields = {
   birth_date: string
   join_date: string
   person_type: string
-  status: string
-  source: string
+  source: 'cliente' | 'prospecto'
   email_1: string
   mobile_1: string
   email_2: string
@@ -328,7 +327,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     birth_date: client.birth_date ?? '',
     join_date: client.join_date ?? '',
     person_type: client.person_type ?? '',
-    source: client.source ?? '',
+    source: (client.source === 'cliente' || client.source === 'prospecto') ? client.source : 'cliente',
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
     email_2: client.email_2 ?? '',
@@ -336,7 +335,6 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     phone: client.phone ?? '',
     reference: client.reference ?? '',
     doc: client.doc ?? '',
-    status: client.status === true ? 'active' : 'inactive',
     is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
     client_category_id: client.client_category_id ?? '',
     office_id: client.office_id ?? '',
@@ -404,7 +402,6 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   const apiData = {
     // Boolean fields (exact match)
     is_member_of_group: formData.is_member_of_group === 'yes',
-    status: formData.status === 'active',
     
     // String fields (exact match)
     client_type: formData.client_type?.trim() || 'individual',
@@ -417,7 +414,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     email_2: validateEmail(formData.email_2) || 'user@example.com',
     join_date: formatDateForApi(formData.join_date) || '2025-08-11',
     person_type: formData.person_type?.trim() || 'natural',
-    source: formData.source?.trim() || 'web',
+    source: formData.source || 'cliente',
     billing_address: formData.billing_address?.trim() || '',
     phone: formData.phone?.trim() || '',
     mobile_1: formData.mobile_1?.trim() || '',

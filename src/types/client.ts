@@ -6,8 +6,7 @@ export type Client = {
   client_type: string
   is_member_of_group: boolean
   person_type: 'natural' | 'legal' | string
-  status: boolean
-  source: string
+  source: 'cliente' | 'prospecto'
   birth_place: string
   birth_date: string
   join_date: string

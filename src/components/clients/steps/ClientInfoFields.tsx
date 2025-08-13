@@ -206,50 +206,40 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Source + Estado/Miembro */}
+        {/* Source + Miembro */}
         <Grid container item xs={12} spacing={2}>
           <Grid item xs={12} sm={6}>
-            <Controller
-              name='source'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='Fuente (opcional)'
-                  fullWidth
-                  error={!!errors.source}
-                  helperText={errors.source?.message}
-                />
-              )}
-            />
+            <Box>
+              <Typography variant='subtitle2' gutterBottom>
+                Origen
+              </Typography>
+              <Controller
+                name='source'
+                control={control}
+                defaultValue='cliente'
+                rules={{ required: mode === 'create' ? 'El tipo de fuente es requerido' : false }}
+                render={({ field }) => (
+                  <ToggleButtonGroup
+                    exclusive
+                    value={field.value ?? 'cliente'}
+                    onChange={(_, value) => field.onChange(value)}
+                    size='small'
+                    fullWidth
+                  >
+                    <ToggleButton value='cliente' color='primary'>
+                      Cliente
+                    </ToggleButton>
+                    <ToggleButton value='prospecto' color='warning'>
+                      Prospecto
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                )}
+              />
+            </Box>
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <Box display='flex' gap={4} alignItems='flex-end'>
-              <Box>
-                <Typography variant='subtitle2' gutterBottom>
-                  Estado
-                </Typography>
-                <Controller
-                  name='status'
-                  control={control}
-                  render={({ field }) => (
-                    <ToggleButtonGroup
-                      exclusive
-                      value={field.value ?? ''}
-                      onChange={(_, value) => field.onChange(value)}
-                      size='small'
-                    >
-                      <ToggleButton value='active' color='success'>
-                        <Check fontSize='small' />
-                      </ToggleButton>
-                      <ToggleButton value='inactive' color='error'>
-                        <Close fontSize='small' />
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  )}
-                />
-              </Box>
+            <Box display='flex' justifyContent='flex-start' alignItems='flex-end'>
               <Box>
                 <Typography variant='subtitle2' gutterBottom>
                   ¿Miembro de Grupo?
