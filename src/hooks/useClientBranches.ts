@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { useApi } from './useApi'
 
 export interface ClientBranch {
@@ -20,12 +21,12 @@ export function useClientBranches(enabled = true) {
     setError(null)
 
     try {
-      console.log('[useClientBranches] Fetching client branches from /catalogs/client_branches')
+
       const response: ClientBranch[] = await fetchApi('catalogs/client_branches')
-      console.log('[useClientBranches] Response:', response)
+
       setClientBranches(response || [])
     } catch (err: any) {
-      console.error('[useClientBranches] Error fetching client branches:', err)
+
       setError(err?.message || 'Error al cargar sucursales de cliente.')
       setClientBranches([])
     } finally {

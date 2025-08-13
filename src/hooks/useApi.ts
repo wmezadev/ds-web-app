@@ -40,9 +40,7 @@ export const useApi = () => {
 
       if (body) {
         requestOptions.body = JSON.stringify(body)
-        console.log('[useApi] Request URL:', apiUrl)
-        console.log('[useApi] Request method:', requestOptions.method)
-        console.log('[useApi] Request body:', JSON.stringify(body, null, 2))
+
       }
 
       try {
@@ -53,7 +51,7 @@ export const useApi = () => {
 
           try {
             const responseText = await response.text()
-            console.log('[useApi] Raw error response text:', responseText)
+
             try {
               errorData = JSON.parse(responseText)
             } catch (e) {
@@ -65,9 +63,7 @@ export const useApi = () => {
 
           const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
           
-          console.log('[useApi] Error response status:', response.status)
-          console.log('[useApi] Error response data:', errorData)
-          console.log('[useApi] Full error message:', errorMessage)
+
 
           if (response.status === 401) {
             await signOut({ redirect: false })
@@ -84,7 +80,7 @@ export const useApi = () => {
 
         return await response.json()
       } catch (error: any) {
-        console.error('API Request failed:', error)
+
         throw error
       }
     },

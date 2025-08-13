@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { useApi } from './useApi'
 
 export interface CatalogCity {
@@ -73,13 +74,11 @@ export function useCatalogs(enabled = true) {
     setError(null)
 
     try {
-      console.log('[useCatalogs] Fetching catalogs from /api/v1/catalogs')
       const response: CatalogsResponse = await fetchApi('v1/catalogs')
-      console.log('[useCatalogs] Response:', response)
-      console.log('[useCatalogs] Cities found:', response?.cities?.length || 0, response?.cities)
+      
       setCatalogs(response)
     } catch (err: any) {
-      console.error('[useCatalogs] Error fetching catalogs:', err)
+
       setError(err?.message || 'Error al cargar catálogos.')
       setCatalogs(null)
     } finally {
@@ -97,8 +96,9 @@ export function useCatalogs(enabled = true) {
     catalogs,
     loading,
     error,
+    
     refetch: fetchCatalogs,
-    // Individual catalog arrays for easy access
+    
     cities: catalogs?.cities || [],
     agents: catalogs?.agents || [],
     offices: catalogs?.offices || [],

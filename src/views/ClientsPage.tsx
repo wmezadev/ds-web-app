@@ -19,10 +19,12 @@ const formatFullName = (client: Client) =>
   client.client_type === 'J' ? client.last_name || '' : `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
 const formatPersonType = (client: Client) => (client.client_type === 'V' ? 'Natural' : 'Jurídico')
+
 const formatSource = (source: string) => {
   if (source === 'cliente') return 'Cliente'
+  
   if (source === 'prospecto') return 'Prospecto'
-  // Default to Cliente for any invalid/missing source values
+
   return 'Cliente'
 }
 

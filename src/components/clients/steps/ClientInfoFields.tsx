@@ -14,7 +14,7 @@ import {
   MenuItem,
   Typography
 } from '@mui/material'
-import { Close, Check } from '@mui/icons-material'
+
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'

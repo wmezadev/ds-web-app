@@ -313,7 +313,7 @@ const SubMenu: ForwardRefRenderFunction<HTMLLIElement, SubMenuProps> = (props, r
   }, [pathname])
 
   /* useEffect(() => {
-    console.log(openSubmenu)
+
   }, [openSubmenu]) */
 
   const submenuContent = (

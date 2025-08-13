@@ -72,12 +72,11 @@ export function usePaginatedResource<T>({
 
         const url = `${endpoint}?${searchParams.toString()}`
 
-        console.log('[usePaginatedResource] GET', url)
-        console.log('[usePaginatedResource] Params:', { page: currentPage, per_page: currentPerPage, ...currentParams })
+
 
         const raw: RawPaginatedResponse = await fetchApi(url)
 
-        console.log('[usePaginatedResource] Response:', raw)
+
 
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
@@ -89,9 +88,9 @@ export function usePaginatedResource<T>({
         setTotal(apiTotal)
         setTotalPages(apiPages)
 
-        console.log('[usePaginatedResource] Processed:', { items: items.length, total: apiTotal, pages: apiPages })
+
       } catch (err: any) {
-        console.error('[usePaginatedResource] fetch error:', err)
+
         setError(err?.message || 'Error al cargar datos.')
         setData([])
       } finally {

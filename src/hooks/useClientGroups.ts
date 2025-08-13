@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { useApi } from './useApi'
 
 export interface ClientGroup {
@@ -20,12 +21,11 @@ export function useClientGroups(enabled = true) {
     setError(null)
 
     try {
-      console.log('[useClientGroups] Fetching client groups from /catalogs/client_groups')
       const response: ClientGroup[] = await fetchApi('catalogs/client_groups')
-      console.log('[useClientGroups] Response:', response)
+      
       setClientGroups(response || [])
     } catch (err: any) {
-      console.error('[useClientGroups] Error fetching client groups:', err)
+
       setError(err?.message || 'Error al cargar grupos de cliente.')
       setClientGroups([])
     } finally {

@@ -120,8 +120,7 @@ const ClientForm: React.FC<Props> = ({
       birth_date: '',
       join_date: '',
       person_type: '',
-      status: '',
-      source: '',
+      source: 'cliente',
       email_1: '',
       mobile_1: '',
       email_2: '',
@@ -425,15 +424,21 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   const toNumberOrNull = (value: string | number | null | undefined): number | null => {
     if (value === null || value === undefined || value === '') return null
     const num = Number(value)
+
     return isNaN(num) ? null : num
   }
 
   // Helper function to format date for API (YYYY-MM-DD)
   const formatDateForApi = (dateString: string | null | undefined): string | null => {
+    
     if (!dateString || dateString.trim() === '') return null
+    
     try {
+      
       const date = new Date(dateString)
+      
       if (isNaN(date.getTime())) return null
+      
       return date.toISOString().split('T')[0] // YYYY-MM-DD format
     } catch {
       return null
@@ -443,9 +448,13 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   // Helper function to validate email
   const validateEmail = (email: string | null | undefined): string | null => {
     if (!email || email.trim() === '') return null
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    
     const cleanEmail = email.trim().toLowerCase()
-    return emailRegex.test(cleanEmail) ? cleanEmail : null
+
+    
+return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
   // Build API payload matching EXACT specification
@@ -525,10 +534,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     risk_variables: []
   }
 
-  console.log('[clientFormToApi] MINIMAL TEST PAYLOAD:')
-  console.log('[clientFormToApi] Form data:', formData)
-  console.log('[clientFormToApi] API payload:', JSON.stringify(apiData, null, 2))
-  console.log('[clientFormToApi] Payload size:', JSON.stringify(apiData).length)
+
 
   return apiData
 }

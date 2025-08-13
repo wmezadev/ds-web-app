@@ -7,15 +7,15 @@ import { Add, Delete } from '@mui/icons-material'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
 import { useApi } from '@/hooks/useApi'
-import { API_ROUTES } from '@/constants/routes'
-import { clientFormToApi, type ClientFormFields } from '../ClientForm'
+import { type ClientFormFields } from '../ClientForm'
 
 const ContactListFields = () => {
   const { control, register, getValues } = useFormContext<ClientFormFields>()
-  const { fetchApi } = useApi()
+
+  useApi()
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: 'contacts'
   })
@@ -28,16 +28,17 @@ const ContactListFields = () => {
   useEffect(() => {
     if (clientId) {
       const savedContacts = localStorage.getItem(localStorageKey)
+      
       if (savedContacts) {
         try {
-          const contacts = JSON.parse(savedContacts)
-          console.log('[ContactListFields] Loaded contacts from localStorage:', contacts)
-          // Update form with saved contacts if they exist
+          const contacts = JSON.parse(savedContacts) 
+          
           if (contacts.length > 0 && fields.length === 0) {
+          
             contacts.forEach((contact: any) => append(contact))
           }
         } catch (error) {
-          console.error('[ContactListFields] Error loading contacts from localStorage:', error)
+
         }
       }
     }
@@ -47,7 +48,7 @@ const ContactListFields = () => {
   const saveToLocalStorage = (contacts: any[]) => {
     if (clientId) {
       localStorage.setItem(localStorageKey, JSON.stringify(contacts))
-      console.log('[ContactListFields] Saved contacts to localStorage:', contacts)
+
     }
   }
 
@@ -67,13 +68,15 @@ const ContactListFields = () => {
     
     // Update localStorage with remaining contacts
     const formData = getValues()
+    
     const remainingContacts = (formData.contacts || []).filter((_, i) => i !== index)
+    
     saveToLocalStorage(remainingContacts)
     
-    setDeleteMessage('🗑️ Contacto eliminado')
+    setDeleteMessage('Contacto eliminado')
     setTimeout(() => setDeleteMessage(null), 2000)
     
-    console.log('[ContactListFields] Contact deleted, remaining contacts saved to localStorage')
+
   }
 
 

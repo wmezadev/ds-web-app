@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { useApi } from './useApi'
 
 export interface City {
@@ -20,13 +21,10 @@ export function useCities(enabled = true) {
     setError(null)
 
     try {
-      console.log('[useCities] Fetching cities from /catalogs/cities')
       const response: City[] = await fetchApi('catalogs/cities')
-      console.log('[useCities] Response:', response)
-      console.log('[useCities] Cities found:', response?.length || 0)
+      
       setCities(response || [])
     } catch (err: any) {
-      console.error('[useCities] Error fetching cities:', err)
       setError(err?.message || 'Error al cargar ciudades.')
       setCities([])
     } finally {
