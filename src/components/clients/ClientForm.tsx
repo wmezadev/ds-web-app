@@ -20,15 +20,21 @@ import DocumentFields from './steps/DocumentFields'
 import BankAccountFields from './steps/BankAccountFields'
 import RegistrationOptionsFields from './steps/RegistrationOptionsFields'
 
-const steps = [
-  'Información del Cliente',
-  'Datos de Contacto',
-  'Datos Personales',
-  'Contactos',
-  'Documentos',
-  'Cuentas Bancarias',
-  'Opciones de Registro'
-]
+const getStepsForMode = (mode: 'create' | 'edit') => {
+  const baseSteps = [
+    'Información del Cliente',
+    'Datos de Contacto',
+    'Datos Personales',
+    'Contactos'
+  ]
+  
+  if (mode === 'edit') {
+    return [...baseSteps, 'Documentos', 'Cuentas Bancarias', 'Opciones de Registro']
+  }
+  
+  // For create mode, skip Documents step
+  return [...baseSteps, 'Cuentas Bancarias', 'Opciones de Registro']
+}
 
 export type ClientFormFields = {
   id?: string | number
@@ -101,6 +107,8 @@ const ClientForm: React.FC<Props> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  const steps = getStepsForMode(mode)
+  
   const methods = useForm<ClientFormFields>({
     defaultValues: {
       first_name: '',
@@ -161,23 +169,44 @@ const ClientForm: React.FC<Props> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
-    switch (step) {
-      case 0:
-        return ['document_number', 'client_type']
-      case 1:
-        return ['email_1', 'mobile_1']
-      case 2:
-        return ['birth_date', 'birth_place']
-      case 3:
-        return ['email_2', 'mobile_2']
-      case 4:
-        return ['doc']
-      case 5:
-        return []
-      case 6:
-        return ['client_category_id', 'office_id']
-      default:
-        return []
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return ['document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Bank Accounts (Documents step skipped)
+          return []
+        case 5: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return ['document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Documents
+          return ['doc']
+        case 5: // Bank Accounts
+          return []
+        case 6: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
     }
   }
 
@@ -213,23 +242,44 @@ const ClientForm: React.FC<Props> = ({
   }
 
   const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return <ClientInfoFields mode={mode} />
-      case 1:
-        return <ContactFields mode={mode} />
-      case 2:
-        return <PersonalDataFields />
-      case 3:
-        return <ContactListFields />
-      case 4:
-        return <DocumentFields />
-      case 5:
-        return <BankAccountFields />
-      case 6:
-        return <RegistrationOptionsFields />
-      default:
-        return <Typography variant='body2'>[Por agregar]</Typography>
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Bank Accounts (Documents step skipped)
+          return <BankAccountFields />
+        case 5: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Documents
+          return <DocumentFields />
+        case 5: // Bank Accounts
+          return <BankAccountFields />
+        case 6: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
     }
   }
 
