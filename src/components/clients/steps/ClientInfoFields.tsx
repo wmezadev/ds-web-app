@@ -68,6 +68,24 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
+        {/* Person Type */}
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name='person_type'
+            control={control}
+            rules={{ required: 'El tipo de persona es requerido' }}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.person_type}>
+                <InputLabel>Tipo de Persona</InputLabel>
+                <Select {...field} label='Tipo de Persona' value={field.value ?? ''}>
+                  <MenuItem value='natural'>Natural</MenuItem>
+                  <MenuItem value='jurídica'>Jurídica</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
         {/* Client Type and Document Number */}
         <Grid item xs={4} sm={2}>
           <Controller

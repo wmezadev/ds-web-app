@@ -4,6 +4,7 @@ import { Box, TextField, Grid, FormControl, InputLabel, Select, MenuItem } from 
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
+import LegalDataFields from './LegalDataFields'
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -12,9 +13,18 @@ interface Props {
 const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
   const {
     control,
-    formState: { errors }
+    formState: { errors },
+    watch
   } = useFormContext<ClientFormFields>()
 
+  const personType = watch('person_type')
+
+  // Render legal data fields for jurídica person type
+  if (personType === 'jurídica') {
+    return <LegalDataFields mode={mode} />
+  }
+
+  // Render personal data fields for natural person type (default)
   return (
     <Box>
       <Grid container spacing={2}>

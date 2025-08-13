@@ -41,6 +41,11 @@ export type Client = {
     pathology: string | null
   }
   
+  legal_data: {
+    legal_representative: string | null
+    economic_activity_id: number | null
+  }
+  
   documents: {
     type: string
     expiration_date: string

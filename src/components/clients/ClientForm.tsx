@@ -173,7 +173,7 @@ const ClientForm: React.FC<Props> = ({
       // Create mode: no Documents step
       switch (step) {
         case 0:
-          return ['document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
@@ -191,7 +191,7 @@ const ClientForm: React.FC<Props> = ({
       // Edit mode: includes Documents step
       switch (step) {
         case 0:
-          return ['document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
@@ -398,8 +398,8 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     bank_accounts: client.bank_accounts,
     id: client.id,
     billing_address: '',
-    legal_representative: '',
-    economic_activity_id: '',
+    legal_representative: client.legal_data?.legal_representative ?? '',
+    economic_activity_id: client.legal_data?.economic_activity_id ?? '',
     city_id: client.city_id ?? '',
     zone_id: client.zone_id ?? '',
     personal_data: {
