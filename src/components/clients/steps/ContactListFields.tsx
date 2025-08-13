@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert } from '@mui/material'
-import { Add, Delete, Save } from '@mui/icons-material'
+import { Add, Delete } from '@mui/icons-material'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
 import { useApi } from '@/hooks/useApi'
@@ -13,8 +13,7 @@ import { clientFormToApi, type ClientFormFields } from '../ClientForm'
 const ContactListFields = () => {
   const { control, register, getValues } = useFormContext<ClientFormFields>()
   const { fetchApi } = useApi()
-  const [saveMessage, setSaveMessage] = useState<string | null>(null)
-  const [localSaves, setLocalSaves] = useState<Set<number>>(new Set())
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
 
   const { fields, append, remove, update } = useFieldArray({
     control,
@@ -62,70 +61,24 @@ const ContactListFields = () => {
     })
   }
 
-  const handleSaveContact = (index: number) => {
+  const handleDeleteContact = (index: number) => {
+    // Remove from form
+    remove(index)
+    
+    // Update localStorage with remaining contacts
     const formData = getValues()
-    const contactData = formData.contacts?.[index]
-
-    // Validate required fields
-    if (!contactData?.full_name || !contactData?.email || !contactData?.phone) {
-      setSaveMessage('Por favor complete los campos requeridos (Nombre completo, Email y Teléfono)')
-      setTimeout(() => setSaveMessage(null), 3000)
-      return
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(contactData.email)) {
-      setSaveMessage('Por favor ingrese un email válido (ejemplo@dominio.com)')
-      setTimeout(() => setSaveMessage(null), 3000)
-      return
-    }
-
-    // Clean and save to localStorage immediately
-    const cleanContactData = {
-      full_name: contactData.full_name.trim(),
-      position: contactData.position?.trim() || '',
-      phone: contactData.phone.trim(),
-      email: contactData.email.trim().toLowerCase(),
-      notes: contactData.notes?.trim() || ''
-    }
-
-    // Update the contact in the form
-    update(index, cleanContactData)
+    const remainingContacts = (formData.contacts || []).filter((_, i) => i !== index)
+    saveToLocalStorage(remainingContacts)
     
-    // Save all contacts to localStorage
-    const allContacts = formData.contacts || []
-    allContacts[index] = cleanContactData
-    saveToLocalStorage(allContacts)
+    setDeleteMessage('🗑️ Contacto eliminado')
+    setTimeout(() => setDeleteMessage(null), 2000)
     
-    // Mark as locally saved
-    setLocalSaves(prev => new Set([...prev, index]))
-    
-    setSaveMessage('💾 Contacto guardado localmente')
-    setTimeout(() => setSaveMessage(null), 2000)
-    
-    console.log('[ContactListFields] Contact saved to localStorage:', cleanContactData)
+    console.log('[ContactListFields] Contact deleted, remaining contacts saved to localStorage')
   }
 
 
 
-  const getButtonProps = (index: number) => {
-    if (localSaves.has(index)) {
-      return {
-        text: 'Guardado',
-        color: '#4caf50',
-        disabled: false,
-        icon: <Save />
-      }
-    }
-    
-    return {
-      text: 'Guardar',
-      color: '#2196f3',
-      disabled: false,
-      icon: <Save />
-    }
-  }
+
 
   return (
     <Box>
@@ -137,10 +90,10 @@ const ContactListFields = () => {
         </Button>
       </Stack>
 
-      {/* Success/Error Message */}
-      {saveMessage && (
-        <Alert severity={saveMessage.includes('exitosamente') ? 'success' : 'error'} sx={{ mb: 2 }}>
-          {saveMessage}
+      {/* Delete Message */}
+      {deleteMessage && (
+        <Alert severity='info' sx={{ mb: 2 }}>
+          {deleteMessage}
         </Alert>
       )}
 
@@ -198,29 +151,7 @@ const ContactListFields = () => {
               </Grid>
               <Grid item xs={12} md={2}>
                 <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
-                  {(() => {
-                    const buttonProps = getButtonProps(index)
-                    return (
-                      <Button
-                        variant='contained'
-                        onClick={() => handleSaveContact(index)}
-                        startIcon={buttonProps.icon}
-                        disabled={buttonProps.disabled}
-                        sx={{
-                          backgroundColor: buttonProps.color,
-                          '&:hover': {
-                            backgroundColor: buttonProps.color,
-                            opacity: 0.8
-                          },
-                          minWidth: '120px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        {buttonProps.text}
-                      </Button>
-                    )
-                  })()}
-                  <IconButton onClick={() => remove(index)} color='error' size='large'>
+                  <IconButton onClick={() => handleDeleteContact(index)} color='error' size='large'>
                     <Delete />
                   </IconButton>
                 </Box>

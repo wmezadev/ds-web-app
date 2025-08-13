@@ -372,54 +372,116 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
   return formFields
 }
 
-export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => {
-  const apiData: Partial<Client> = {}
+export const clientFormToApi = (formData: ClientFormFields): any => {
+  // Helper function to convert string to number or null
+  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null
+    const num = Number(value)
+    return isNaN(num) ? null : num
+  }
 
-  // Handle non-nested fields
-  for (const key in formData) {
-    if (Object.prototype.hasOwnProperty.call(formData, key) && key !== 'personal_data') {
-      const value = formData[key as keyof ClientFormFields]
-
-      if (value === '' || value === 0 || (Array.isArray(value) && value.length === 0) || value === undefined) {
-        // @ts-ignore
-        apiData[key as keyof Client] = null
-      } else {
-        // @ts-ignore
-        apiData[key as keyof Client] = value
-      }
+  // Helper function to format date for API (YYYY-MM-DD)
+  const formatDateForApi = (dateString: string | null | undefined): string | null => {
+    if (!dateString || dateString.trim() === '') return null
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return null
+      return date.toISOString().split('T')[0] // YYYY-MM-DD format
+    } catch {
+      return null
     }
   }
 
-  // Handle personal_data nested fields
-  if (formData.personal_data) {
-    const personalData = formData.personal_data
-
-    apiData.personal_data = {
-      gender: personalData.gender || null,
-      civil_status: personalData.civil_status || null,
-      height: personalData.height || null,
-      weight: personalData.weight || null,
-      smoker: personalData.smoker || null,
-      sports: personalData.sports || null,
-
-      profession_id: personalData.profession_id ? Number(personalData.profession_id) || null : null,
-      occupation_id: personalData.occupation_id ? Number(personalData.occupation_id) || null : null,
-      monthly_income: personalData.monthly_income || null,
-      pathology: personalData.pathology || null,
-      rif: personalData.rif || null
-    }
+  // Helper function to validate email
+  const validateEmail = (email: string | null | undefined): string | null => {
+    if (!email || email.trim() === '') return null
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const cleanEmail = email.trim().toLowerCase()
+    return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
-  apiData.status = formData.status === 'active'
-  apiData.is_member_of_group = formData.is_member_of_group === 'yes'
-
-  if (apiData.id === null || apiData.id === undefined) {
-    delete apiData.id
+  // Build API payload matching EXACT specification
+  const apiData = {
+    // Boolean fields (exact match)
+    is_member_of_group: formData.is_member_of_group === 'yes',
+    status: formData.status === 'active',
+    
+    // String fields (exact match)
+    client_type: formData.client_type?.trim() || 'individual',
+    document_number: formData.document_number?.trim() || '',
+    first_name: formData.first_name?.trim() || '',
+    last_name: formData.last_name?.trim() || '',
+    birth_place: formData.birth_place?.trim() || '',
+    birth_date: formatDateForApi(formData.birth_date) || '2025-08-11',
+    email_1: validateEmail(formData.email_1) || 'user@example.com',
+    email_2: validateEmail(formData.email_2) || 'user@example.com',
+    join_date: formatDateForApi(formData.join_date) || '2025-08-11',
+    person_type: formData.person_type?.trim() || 'natural',
+    source: formData.source?.trim() || 'web',
+    billing_address: formData.billing_address?.trim() || '',
+    phone: formData.phone?.trim() || '',
+    mobile_1: formData.mobile_1?.trim() || '',
+    mobile_2: formData.mobile_2?.trim() || '',
+    reference: formData.reference?.trim() || '',
+    notes: formData.notes?.trim() || '',
+    
+    // Numeric fields (can be 0 as per API spec)
+    city_id: toNumberOrNull(formData.city_id) || 0,
+    zone_id: toNumberOrNull(formData.zone_id) || 0,
+    client_category_id: toNumberOrNull(formData.client_category_id) || 0,
+    office_id: toNumberOrNull(formData.office_id) || 0,
+    agent_id: toNumberOrNull(formData.agent_id) || 0,
+    executive_id: toNumberOrNull(formData.executive_id) || 0,
+    client_group_id: toNumberOrNull(formData.client_group_id) || 0,
+    client_branch_id: toNumberOrNull(formData.client_branch_id) || 0,
+    
+    // Personal data (exact match to API spec)
+    personal_data: {
+      gender: formData.personal_data?.gender?.trim() || 'M',
+      civil_status: formData.personal_data?.civil_status?.trim() || 'single',
+      height: formData.personal_data?.height || 0,
+      weight: formData.personal_data?.weight || 0,
+      smoker: Boolean(formData.personal_data?.smoker),
+      sports: formData.personal_data?.sports?.trim() || '',
+      rif: formData.personal_data?.rif?.trim() || '',
+      profession_id: toNumberOrNull(formData.personal_data?.profession_id) || 0,
+      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id) || 0,
+      monthly_income: formData.personal_data?.monthly_income || 0,
+      pathology: formData.personal_data?.pathology?.trim() || ''
+    },
+    
+    // Legal data (exact match to API spec)
+    legal_data: {
+      legal_representative: formData.legal_representative?.trim() || '',
+      economic_activity_id: toNumberOrNull(formData.economic_activity_id) || 0
+    },
+    
+    // Arrays (exact match to API spec)
+    contacts: (formData.contacts || []).filter(contact => 
+      contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim()
+    ).map(contact => ({
+      full_name: contact.full_name.trim(),
+      position: contact.position?.trim() || '',
+      phone: contact.phone.trim(),
+      email: validateEmail(contact.email) || contact.email.trim().toLowerCase(),
+      notes: contact.notes?.trim() || ''
+    })),
+    
+    bank_accounts: (formData.bank_accounts || []).map(account => ({
+      bank_name: account.bank_name?.trim() || '',
+      account_number: account.account_number?.trim() || '',
+      currency: account.currency?.trim() || '',
+      account_type: account.account_type?.trim() || '',
+      notes: account.notes?.trim() || ''
+    })),
+    
+    risk_variables: []
   }
 
-  apiData.contacts = formData.contacts || []
-  apiData.documents = formData.documents || []
-  apiData.bank_accounts = formData.bank_accounts || []
+  console.log('[clientFormToApi] MINIMAL TEST PAYLOAD:')
+  console.log('[clientFormToApi] Form data:', formData)
+  console.log('[clientFormToApi] API payload:', JSON.stringify(apiData, null, 2))
+  console.log('[clientFormToApi] Payload size:', JSON.stringify(apiData).length)
 
   return apiData
 }
