@@ -139,33 +139,18 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
 
         {/* Birth Place and Birth Date */}
         <Grid item xs={12} sm={6}>
-          <Controller
+        <Controller
             name='birth_place'
             control={control}
+            rules={{ required: mode === 'create' ? 'El lugar de nacimiento es requerido' : false }}
             render={({ field }) => (
-              <FormControl fullWidth error={!!errors.birth_place}>
-                <InputLabel>Lugar de Nacimiento</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Lugar de Nacimiento' 
-                  value={field.value ?? ''}
-                  disabled={citiesLoading}
-                >
-                  <MenuItem value=''>
-                    <em>Seleccionar lugar de nacimiento</em>
-                  </MenuItem>
-                  {cities.map((city) => (
-                    <MenuItem key={city.id} value={city.name}>
-                      {city.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {citiesLoading && (
-                  <Typography variant='caption' color='textSecondary'>
-                    Cargando ciudades...
-                  </Typography>
-                )}
-              </FormControl>
+              <TextField
+                {...field}
+                label='Lugar de Nacimiento'
+                fullWidth
+                error={!!errors.birth_place}
+                helperText={errors.birth_place?.message}
+              />
             )}
           />
         </Grid>
