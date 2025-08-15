@@ -18,6 +18,7 @@ export type Client = {
   reference: string | null
   notes: string | null
   doc: string
+  billing_address: string | null
   client_category_id: number
   office_id: number
   agent_id: number | null

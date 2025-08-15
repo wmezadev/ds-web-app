@@ -4,13 +4,15 @@ import React, { useState, useCallback } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import { Box, Typography, Alert, Snackbar } from '@mui/material'
+import { Box, Alert, Snackbar } from '@mui/material'
 
-import ClientForm from '@/components/clients/ClientForm'
-import { ROUTES } from '@/constants/routes'
+import ClientForm, { clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
+import { useApi } from '@/hooks/useApi'
+import { API_ROUTES, ROUTES } from '@/constants/routes'
 
 export default function ClientCreatePage() {
   const router = useRouter()
+  const { fetchApi } = useApi()
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -21,12 +23,23 @@ export default function ClientCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreate = useCallback(
-    async () => {
+    async (formData: ClientFormFields) => {
       setIsSubmitting(true)
       setSnackbar(prev => ({ ...prev, open: false }))
 
       try {
-        // TODO: Implement actual client creation logic
+
+        const apiPayload = clientFormToApi(formData)
+        
+      
+        await fetchApi(API_ROUTES.CLIENTS.POST, {
+          method: 'POST',
+          body: apiPayload,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
         setSnackbar({
           open: true,
           message: 'Cliente creado exitosamente!',
@@ -37,7 +50,8 @@ export default function ClientCreatePage() {
           router.push(ROUTES.CLIENTS.INDEX)
         }, 1500)
       } catch (error: any) {
-        // Manejo de errores más genérico y robusto
+        console.error('Error creating client:', error)
+        
         setSnackbar({
           open: true,
           message: `Error al crear el cliente: ${error.message}`,
@@ -47,7 +61,7 @@ export default function ClientCreatePage() {
         setIsSubmitting(false)
       }
     },
-    [router]
+    [router, fetchApi]
   )
 
   const handleCloseSnackbar = () => {
@@ -55,11 +69,7 @@ export default function ClientCreatePage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
-        Crear nuevo cliente
-      </Typography>
-
+    <Box>
       <ClientForm mode='create' onSubmit={handleCreate} onCancel={() => router.back()} isSubmitting={isSubmitting} />
 
       <Snackbar
