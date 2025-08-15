@@ -3,9 +3,24 @@
 import React, { useState } from 'react'
 
 import { useForm, FormProvider } from 'react-hook-form'
-import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
+import {
+  Box,
+  Button,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+  Paper,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
+} from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
@@ -91,21 +106,25 @@ interface Props {
   initialValues?: ClientFormFields
   onSubmit: (data: ClientFormFields) => void
   onCancel?: () => void
+  onDelete?: (clientId: string | number) => void
   isSubmitting?: boolean
   submitError?: string | null
 }
 
 const ClientForm: React.FC<Props> = ({
   mode = 'create',
-  initialValues = {},
+  initialValues = {} as ClientFormFields,
   onSubmit,
   onCancel,
+  onDelete,
   isSubmitting = false
 }) => {
   const steps = getStepsForMode(mode)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const methods = useForm<ClientFormFields>({
     defaultValues: {
+      ...initialValues,
       first_name: '',
       last_name: '',
       is_member_of_group: '',
@@ -139,23 +158,9 @@ const ClientForm: React.FC<Props> = ({
       client_group_id: '',
       client_branch_id: '',
       notes: '',
-      personal_data: {
-        gender: '',
-        civil_status: '',
-        height: undefined,
-        weight: undefined,
-        smoker: undefined,
-        sports: '',
-        profession_id: '',
-        occupation_id: '',
-        monthly_income: undefined,
-        pathology: '',
-        rif: ''
-      },
       documents: [],
       contacts: [],
-      bank_accounts: [],
-      ...initialValues
+      bank_accounts: []
     },
     mode: 'onChange'
   })
@@ -288,6 +293,22 @@ const ClientForm: React.FC<Props> = ({
     methods.handleSubmit(onSubmit)()
   }
 
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (onDelete && initialValues?.id) {
+      onDelete(initialValues.id)
+    }
+
+    setDeleteDialogOpen(false)
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false)
+  }
+
   return (
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
@@ -336,7 +357,24 @@ const ClientForm: React.FC<Props> = ({
           >
             <Box>{renderStepContent(activeStep)}</Box>
 
-            <Box display='flex' justifyContent='flex-end' mt={4}>
+            <Box display='flex' justifyContent='space-between' alignItems='center' mt={4}>
+              {/* Delete button on the left */}
+              <Box>
+                {mode === 'edit' && onDelete && initialValues?.id && (
+                  <Button
+                    variant='outlined'
+                    color='error'
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDeleteClick}
+                    disabled={isSubmitting}
+                    sx={{ minWidth: 120 }}
+                  >
+                    Eliminar Cliente
+                  </Button>
+                )}
+              </Box>
+
+              {/* Navigation buttons on the right */}
               <Stack direction='row' spacing={2} alignItems='center'>
                 {onCancel && (
                   <Button variant='outlined' onClick={onCancel} type='button'>
@@ -356,7 +394,7 @@ const ClientForm: React.FC<Props> = ({
                   </Button>
                 ) : (
                   <Button type='button' variant='contained' onClick={handleFinalSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : 'Guardar'}
+                    {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear Cliente' : 'Actualizar Cliente'}
                   </Button>
                 )}
               </Stack>
@@ -364,6 +402,37 @@ const ClientForm: React.FC<Props> = ({
           </Box>
         </form>
       </Paper>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby='delete-dialog-title'
+        aria-describedby='delete-dialog-description'
+      >
+        <DialogTitle id='delete-dialog-title'>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='delete-dialog-description'>
+            ¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer.
+            {initialValues?.first_name && initialValues?.last_name && (
+              <>
+                <br />
+                <strong>
+                  Cliente: {initialValues.first_name} {initialValues.last_name}
+                </strong>
+              </>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color='primary'>
+            Cancelar
+          </Button>
+          <Button onClick={handleDeleteConfirm} color='error' variant='contained'>
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </FormProvider>
   )
 }
