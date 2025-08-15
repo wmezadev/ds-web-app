@@ -68,6 +68,9 @@ export default function ClientDetailPage() {
 
       try {
         const apiPayload = clientFormToApi(values)
+        
+        // Debug: Log the payload being sent to API
+        console.log('DEBUG: API Payload being sent:', JSON.stringify(apiPayload, null, 2))
 
         await fetchApi(API_ROUTES.CLIENTS.UPDATE(clientId), {
           method: 'PUT',
@@ -87,6 +90,21 @@ export default function ClientDetailPage() {
         }, 2000)
       } catch (err: any) {
         console.error('Error al actualizar cliente:', err)
+        
+        // Debug: Log detailed error information
+        console.log('DEBUG: Error details:', {
+          message: err.message,
+          status: err.status,
+          response: err.response,
+          stack: err.stack,
+          fullError: err
+        })
+        
+        // Try to extract more detailed error information
+        if (err.message && err.message.includes('[object Object]')) {
+          console.log('DEBUG: Error contains object, trying to parse...')
+        }
+        
         alert(`DEBUG: Fallo en la actualización: ${err.message}`)
       }
     },
