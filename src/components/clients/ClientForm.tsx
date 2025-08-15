@@ -113,7 +113,7 @@ interface Props {
 
 const ClientForm: React.FC<Props> = ({
   mode = 'create',
-  initialValues = {},
+  initialValues = {} as ClientFormFields,
   onSubmit,
   onCancel,
   onDelete,
@@ -124,6 +124,7 @@ const ClientForm: React.FC<Props> = ({
 
   const methods = useForm<ClientFormFields>({
     defaultValues: {
+      ...initialValues,
       first_name: '',
       last_name: '',
       is_member_of_group: '',
@@ -150,23 +151,9 @@ const ClientForm: React.FC<Props> = ({
       client_group_id: '',
       client_branch_id: '',
       notes: '',
-      personal_data: {
-        gender: '',
-        civil_status: '',
-        height: undefined,
-        weight: undefined,
-        smoker: undefined,
-        sports: '',
-        profession_id: '',
-        occupation_id: '',
-        monthly_income: undefined,
-        pathology: '',
-        rif: ''
-      },
       documents: [],
       contacts: [],
-      bank_accounts: [],
-      ...initialValues
+      bank_accounts: []
     },
     mode: 'onChange'
   })
@@ -307,6 +294,7 @@ const ClientForm: React.FC<Props> = ({
     if (onDelete && initialValues?.id) {
       onDelete(initialValues.id)
     }
+
     setDeleteDialogOpen(false)
   }
 
