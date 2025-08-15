@@ -3,7 +3,21 @@
 import React, { useState } from 'react'
 
 import { useForm, FormProvider } from 'react-hook-form'
-import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
+import {
+  Box,
+  Button,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+  Paper,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
+} from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -22,17 +36,12 @@ import BankAccountFields from './steps/BankAccountFields'
 import RegistrationOptionsFields from './steps/RegistrationOptionsFields'
 
 const getStepsForMode = (mode: 'create' | 'edit') => {
-  const baseSteps = [
-    'Información del Cliente',
-    'Datos de Contacto',
-    'Datos Personales',
-    'Contactos'
-  ]
-  
+  const baseSteps = ['Información del Cliente', 'Datos de Contacto', 'Datos Personales', 'Contactos']
+
   if (mode === 'edit') {
     return [...baseSteps, 'Documentos', 'Cuentas Bancarias', 'Opciones de Registro']
   }
-  
+
   // For create mode, skip Documents step
   return [...baseSteps, 'Cuentas Bancarias', 'Opciones de Registro']
 }
@@ -48,7 +57,7 @@ export type ClientFormFields = {
   birth_date: string
   join_date: string
   person_type: string
-  source: 'cliente' | 'prospecto'
+  source: 'C' | 'P'
   email_1: string
   mobile_1: string
   email_2: string
@@ -112,19 +121,19 @@ const ClientForm: React.FC<Props> = ({
 }) => {
   const steps = getStepsForMode(mode)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  
+
   const methods = useForm<ClientFormFields>({
     defaultValues: {
       first_name: '',
       last_name: '',
       is_member_of_group: '',
-      client_type: '',
+      client_type: 'V',
       document_number: '',
       birth_place: '',
       birth_date: '',
       join_date: '',
       person_type: '',
-      source: 'cliente',
+      source: 'C',
       email_1: '',
       mobile_1: '',
       email_2: '',
@@ -358,8 +367,8 @@ const ClientForm: React.FC<Props> = ({
               <Box>
                 {mode === 'edit' && onDelete && initialValues?.id && (
                   <Button
-                    variant="outlined"
-                    color="error"
+                    variant='outlined'
+                    color='error'
                     startIcon={<DeleteIcon />}
                     onClick={handleDeleteClick}
                     disabled={isSubmitting}
@@ -390,7 +399,7 @@ const ClientForm: React.FC<Props> = ({
                   </Button>
                 ) : (
                   <Button type='button' variant='contained' onClick={handleFinalSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : (mode === 'create' ? 'Crear Cliente' : 'Actualizar Cliente')}
+                    {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear Cliente' : 'Actualizar Cliente'}
                   </Button>
                 )}
               </Stack>
@@ -403,25 +412,28 @@ const ClientForm: React.FC<Props> = ({
       <Dialog
         open={deleteDialogOpen}
         onClose={handleDeleteCancel}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
+        aria-labelledby='delete-dialog-title'
+        aria-describedby='delete-dialog-description'
       >
-        <DialogTitle id="delete-dialog-title">
-          Confirmar Eliminación
-        </DialogTitle>
+        <DialogTitle id='delete-dialog-title'>Confirmar Eliminación</DialogTitle>
         <DialogContent>
-          <DialogContentText id="delete-dialog-description">
+          <DialogContentText id='delete-dialog-description'>
             ¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer.
             {initialValues?.first_name && initialValues?.last_name && (
-              <><br /><strong>Cliente: {initialValues.first_name} {initialValues.last_name}</strong></>
+              <>
+                <br />
+                <strong>
+                  Cliente: {initialValues.first_name} {initialValues.last_name}
+                </strong>
+              </>
             )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">
+          <Button onClick={handleDeleteCancel} color='primary'>
             Cancelar
           </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button onClick={handleDeleteConfirm} color='error' variant='contained'>
             Eliminar
           </Button>
         </DialogActions>
@@ -440,7 +452,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     birth_date: client.birth_date ?? '',
     join_date: client.join_date ?? '',
     person_type: client.person_type ?? '',
-    source: (client.source === 'cliente' || client.source === 'prospecto') ? client.source : 'cliente',
+    source: client.source ?? 'C',
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
     email_2: client.email_2 ?? '',
@@ -494,15 +506,13 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
 
   // Helper function to format date for API (YYYY-MM-DD)
   const formatDateForApi = (dateString: string | null | undefined): string | null => {
-    
     if (!dateString || dateString.trim() === '') return null
-    
+
     try {
-      
       const date = new Date(dateString)
-      
+
       if (isNaN(date.getTime())) return null
-      
+
       return date.toISOString().split('T')[0] // YYYY-MM-DD format
     } catch {
       return null
@@ -512,22 +522,21 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   // Helper function to validate email
   const validateEmail = (email: string | null | undefined): string | null => {
     if (!email || email.trim() === '') return null
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    
+
     const cleanEmail = email.trim().toLowerCase()
 
-    
-return emailRegex.test(cleanEmail) ? cleanEmail : null
+    return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
   // Build API payload matching EXACT specification
   const apiData = {
     // Boolean fields (exact match)
     is_member_of_group: formData.is_member_of_group === 'yes',
-    
+
     // String fields (exact match)
-    client_type: formData.client_type?.trim() || 'individual',
+    client_type: formData.client_type?.trim() || 'V',
     document_number: formData.document_number?.trim() || '',
     first_name: formData.first_name?.trim() || '',
     last_name: formData.last_name?.trim() || '',
@@ -536,7 +545,7 @@ return emailRegex.test(cleanEmail) ? cleanEmail : null
     email_1: validateEmail(formData.email_1) || 'user@example.com',
     email_2: validateEmail(formData.email_2) || 'user@example.com',
     join_date: formatDateForApi(formData.join_date) || '2025-08-11',
-    person_type: formData.person_type?.trim() || 'natural',
+    person_type: formData.person_type?.trim() || 'N',
     source: formData.source || 'cliente',
     billing_address: formData.billing_address?.trim() || '',
     phone: formData.phone?.trim() || '',
@@ -544,7 +553,7 @@ return emailRegex.test(cleanEmail) ? cleanEmail : null
     mobile_2: formData.mobile_2?.trim() || '',
     reference: formData.reference?.trim() || '',
     notes: formData.notes?.trim() || '',
-    
+
     // Numeric fields (can be 0 as per API spec)
     city_id: toNumberOrNull(formData.city_id) || 0,
     zone_id: toNumberOrNull(formData.zone_id) || 0,
@@ -554,7 +563,7 @@ return emailRegex.test(cleanEmail) ? cleanEmail : null
     executive_id: toNumberOrNull(formData.executive_id) || 0,
     client_group_id: toNumberOrNull(formData.client_group_id) || 0,
     client_branch_id: toNumberOrNull(formData.client_branch_id) || 0,
-    
+
     // Personal data (exact match to API spec)
     personal_data: {
       gender: formData.personal_data?.gender?.trim() || 'M',
@@ -569,24 +578,24 @@ return emailRegex.test(cleanEmail) ? cleanEmail : null
       monthly_income: formData.personal_data?.monthly_income || 0,
       pathology: formData.personal_data?.pathology?.trim() || ''
     },
-    
+
     // Legal data (exact match to API spec)
     legal_data: {
       legal_representative: formData.legal_representative?.trim() || '',
       economic_activity_id: toNumberOrNull(formData.economic_activity_id) || 0
     },
-    
+
     // Arrays (exact match to API spec)
-    contacts: (formData.contacts || []).filter(contact => 
-      contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim()
-    ).map(contact => ({
-      full_name: contact.full_name.trim(),
-      position: contact.position?.trim() || '',
-      phone: contact.phone.trim(),
-      email: validateEmail(contact.email) || contact.email.trim().toLowerCase(),
-      notes: contact.notes?.trim() || ''
-    })),
-    
+    contacts: (formData.contacts || [])
+      .filter(contact => contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim())
+      .map(contact => ({
+        full_name: contact.full_name.trim(),
+        position: contact.position?.trim() || '',
+        phone: contact.phone.trim(),
+        email: validateEmail(contact.email) || contact.email.trim().toLowerCase(),
+        notes: contact.notes?.trim() || ''
+      })),
+
     bank_accounts: (formData.bank_accounts || []).map(account => ({
       bank_name: account.bank_name?.trim() || '',
       account_number: account.account_number?.trim() || '',
@@ -594,11 +603,9 @@ return emailRegex.test(cleanEmail) ? cleanEmail : null
       account_type: account.account_type?.trim() || '',
       notes: account.notes?.trim() || ''
     })),
-    
+
     risk_variables: []
   }
-
-
 
   return apiData
 }

@@ -20,7 +20,7 @@ export const useApi = () => {
     async (endpoint: string, options: ApiOptions = {}) => {
       const { body, ...restOptions } = options
       const isExternalUrl = endpoint.startsWith('http')
-      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${endpoint}`
+      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${endpoint.replace(/^\/+/, '')}`
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -38,10 +38,7 @@ export const useApi = () => {
         ...restOptions
       }
 
-      if (body) {
-        requestOptions.body = JSON.stringify(body)
-
-      }
+      if (body) requestOptions.body = JSON.stringify(body)
 
       try {
         const response = await fetch(apiUrl, requestOptions)
@@ -62,8 +59,6 @@ export const useApi = () => {
           }
 
           const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
-          
-
 
           if (response.status === 401) {
             await signOut({ redirect: false })
@@ -80,7 +75,6 @@ export const useApi = () => {
 
         return await response.json()
       } catch (error: any) {
-
         throw error
       }
     },
