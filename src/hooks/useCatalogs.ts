@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 import { useApi } from './useApi'
 
-interface BaseClientEntity {
+interface BaseModel {
   id: number
   name: string
 }
@@ -13,17 +13,17 @@ export interface CatalogRiskVariable {
 }
 
 export interface CatalogsResponse {
-  agents: BaseClientEntity[]
-  business_activities: BaseClientEntity[]
-  cities: BaseClientEntity[]
-  client_branches: BaseClientEntity[]
-  client_categories: BaseClientEntity[]
-  client_groups: BaseClientEntity[]
-  client_occupations: BaseClientEntity[]
-  client_professions: BaseClientEntity[]
-  executives: BaseClientEntity[]
-  offices: BaseClientEntity[]
-  risk_variables: BaseClientEntity[]
+  agents: BaseModel[]
+  business_activities: BaseModel[]
+  cities: BaseModel[]
+  client_branches: BaseModel[]
+  client_categories: BaseModel[]
+  client_groups: BaseModel[]
+  client_occupations: BaseModel[]
+  client_professions: BaseModel[]
+  executives: BaseModel[]
+  offices: BaseModel[]
+  risk_variables: BaseModel[]
   zones: CatalogRiskVariable[]
 }
 
