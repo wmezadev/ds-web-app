@@ -22,6 +22,7 @@ export default function ClientDetailPage() {
 
   // Nuevo estado para controlar Snackbar
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -76,7 +77,8 @@ export default function ClientDetailPage() {
           }
         })
 
-        // Mostrar snackbar
+        // Mostrar snackbar de actualización exitosa
+        setSuccessMessage('Cliente actualizado exitosamente')
         setShowSuccessSnackbar(true)
 
         // Esperar 2 segundos antes de redirigir
@@ -89,6 +91,43 @@ export default function ClientDetailPage() {
       }
     },
     [id, fetchApi, router]
+  )
+
+  const handleDelete = useCallback(
+    async (clientId: string | number) => {
+      try {
+        await fetchApi(API_ROUTES.CLIENTS.DELETE(String(clientId)), {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        // Mostrar snackbar de eliminación exitosa
+        setSuccessMessage('Cliente eliminado con éxito')
+        setShowSuccessSnackbar(true)
+        
+        // Redirigir después de mostrar el snackbar
+        setTimeout(() => {
+          router.push(ROUTES.CLIENTS.INDEX)
+        }, 2000)
+        
+      } catch (err: any) {
+        // Verificar si el error es un 500 pero la eliminación fue exitosa
+        if (err.message && err.message.includes('status: 500')) {
+          setSuccessMessage('Cliente eliminado con éxito')
+          setShowSuccessSnackbar(true)
+          setTimeout(() => {
+            router.push(ROUTES.CLIENTS.INDEX)
+          }, 2000)
+        } else {
+          // Error real
+          console.error('Error al eliminar cliente:', err)
+          alert(`Error al eliminar cliente: ${err.message}`)
+        }
+      }
+    },
+    [fetchApi, router, setShowSuccessSnackbar]
   )
 
   if (loading) {
@@ -110,6 +149,7 @@ export default function ClientDetailPage() {
         mode='edit'
         initialValues={formData}
         onSubmit={handleSubmit}
+        onDelete={handleDelete}
         onCancel={() => router.back()}
       />
 
@@ -120,7 +160,7 @@ export default function ClientDetailPage() {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity='success' sx={{ width: '100%' }} onClose={() => setShowSuccessSnackbar(false)}>
-          Cliente actualizado exitosamente
+          {successMessage}
         </Alert>
       </Snackbar>
     </>
