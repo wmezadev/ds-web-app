@@ -2,46 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 
 import { useApi } from './useApi'
 
-export interface CatalogCity {
+interface BaseModel {
   id: number
   name: string
 }
-
-export interface CatalogAgent {
-  id: number
-  name: string
-}
-
-export interface CatalogOffice {
-  id: number
-  name: string
-}
-
-export interface CatalogZone {
-  id: number
-  name: string
-}
-
-export interface CatalogClientBranch {
-  id: number
-  name: string
-}
-
-export interface CatalogClientCategory {
-  id: number
-  name: string
-}
-
-export interface CatalogClientGroup {
-  id: number
-  name: string
-}
-
-export interface CatalogExecutive {
-  id: number
-  name: string
-}
-
 export interface CatalogRiskVariable {
   id: number
   code: string
@@ -49,20 +13,23 @@ export interface CatalogRiskVariable {
 }
 
 export interface CatalogsResponse {
-  agents: CatalogAgent[]
-  cities: CatalogCity[]
-  client_branches: CatalogClientBranch[]
-  client_categories: CatalogClientCategory[]
-  client_groups: CatalogClientGroup[]
-  executives: CatalogExecutive[]
-  offices: CatalogOffice[]
-  zones: CatalogZone[]
-  risk_variables: CatalogRiskVariable[]
+  agents: BaseModel[]
+  business_activities: BaseModel[]
+  cities: BaseModel[]
+  client_branches: BaseModel[]
+  client_categories: BaseModel[]
+  client_groups: BaseModel[]
+  client_occupations: BaseModel[]
+  client_professions: BaseModel[]
+  executives: BaseModel[]
+  offices: BaseModel[]
+  risk_variables: BaseModel[]
+  zones: CatalogRiskVariable[]
 }
 
 export function useCatalogs(enabled = true) {
   const { fetchApi } = useApi()
-  
+
   const [catalogs, setCatalogs] = useState<CatalogsResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,11 +41,10 @@ export function useCatalogs(enabled = true) {
     setError(null)
 
     try {
-      const response: CatalogsResponse = await fetchApi('v1/catalogs')
-      
+      const response: CatalogsResponse = await fetchApi('catalogs')
+
       setCatalogs(response)
     } catch (err: any) {
-
       setError(err?.message || 'Error al cargar catálogos.')
       setCatalogs(null)
     } finally {
@@ -96,17 +62,6 @@ export function useCatalogs(enabled = true) {
     catalogs,
     loading,
     error,
-    
-    refetch: fetchCatalogs,
-    
-    cities: catalogs?.cities || [],
-    agents: catalogs?.agents || [],
-    offices: catalogs?.offices || [],
-    zones: catalogs?.zones || [],
-    clientBranches: catalogs?.client_branches || [],
-    clientCategories: catalogs?.client_categories || [],
-    clientGroups: catalogs?.client_groups || [],
-    executives: catalogs?.executives || [],
-    riskVariables: catalogs?.risk_variables || []
+    refetch: fetchCatalogs
   }
 }

@@ -4,12 +4,7 @@ import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Typography, 
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
-import { useClientCategories } from '@/hooks/useClientCategories'
-import { useOffices } from '@/hooks/useOffices'
-import { useAgents } from '@/hooks/useAgents'
-import { useClientBranches } from '@/hooks/useClientBranches'
-import { useClientGroups } from '@/hooks/useClientGroups'
-import { useExecutives } from '@/hooks/useExecutives'
+import { useCatalogs } from '@/hooks/useCatalogs'
 
 const RegistrationOptionsFields = () => {
   const {
@@ -18,12 +13,7 @@ const RegistrationOptionsFields = () => {
   } = useFormContext<ClientFormFields>()
 
   // Fetch all catalog data
-  const { clientCategories, loading: categoriesLoading } = useClientCategories()
-  const { offices, loading: officesLoading } = useOffices()
-  const { agents, loading: agentsLoading } = useAgents()
-  const { clientBranches, loading: branchesLoading } = useClientBranches()
-  const { clientGroups, loading: groupsLoading } = useClientGroups()
-  const { executives, loading: executivesLoading } = useExecutives()
+  const { catalogs, loading: loadingCatalogs } = useCatalogs()
 
   return (
     <Box>
@@ -31,7 +21,6 @@ const RegistrationOptionsFields = () => {
         Opciones de Registro
       </Typography>
       <Grid container spacing={2}>
-        {/* Category and Office */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='client_category_id'
@@ -39,22 +28,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_category_id}>
                 <InputLabel>Categoría de Cliente</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Categoría de Cliente'
-                  value={field.value ?? ''}
-                  disabled={categoriesLoading}
-                >
+                <Select {...field} label='Categoría de Cliente' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar categoría</em>
                   </MenuItem>
-                  {clientCategories.map((category) => (
+                  {catalogs?.client_categories.map(category => (
                     <MenuItem key={category.id} value={category.id}>
                       {category.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {categoriesLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando categorías...
                   </Typography>
@@ -70,22 +54,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.office_id}>
                 <InputLabel>Oficina</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Oficina'
-                  value={field.value ?? ''}
-                  disabled={officesLoading}
-                >
+                <Select {...field} label='Oficina' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar oficina</em>
                   </MenuItem>
-                  {offices.map((office) => (
+                  {catalogs?.offices.map(office => (
                     <MenuItem key={office.id} value={office.id}>
                       {office.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {officesLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando oficinas...
                   </Typography>
@@ -103,22 +82,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.agent_id}>
                 <InputLabel>Agente</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Agente'
-                  value={field.value ?? ''}
-                  disabled={agentsLoading}
-                >
+                <Select {...field} label='Agente' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar agente</em>
                   </MenuItem>
-                  {agents.map((agent) => (
+                  {catalogs?.agents.map(agent => (
                     <MenuItem key={agent.id} value={agent.id}>
                       {agent.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {agentsLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando agentes...
                   </Typography>
@@ -134,22 +108,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.executive_id}>
                 <InputLabel>Ejecutivo</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Ejecutivo'
-                  value={field.value ?? ''}
-                  disabled={executivesLoading}
-                >
+                <Select {...field} label='Ejecutivo' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar ejecutivo</em>
                   </MenuItem>
-                  {executives.map((executive) => (
+                  {catalogs?.executives.map(executive => (
                     <MenuItem key={executive.id} value={executive.id}>
                       {executive.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {executivesLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando ejecutivos...
                   </Typography>
@@ -167,22 +136,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_group_id}>
                 <InputLabel>Grupo de Cliente</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Grupo de Cliente'
-                  value={field.value ?? ''}
-                  disabled={groupsLoading}
-                >
+                <Select {...field} label='Grupo de Cliente' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar grupo</em>
                   </MenuItem>
-                  {clientGroups.map((group) => (
+                  {catalogs?.client_groups.map(group => (
                     <MenuItem key={group.id} value={group.id}>
                       {group.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {groupsLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando grupos...
                   </Typography>
@@ -198,22 +162,17 @@ const RegistrationOptionsFields = () => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_branch_id}>
                 <InputLabel>Sucursal de Cliente</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Sucursal de Cliente'
-                  value={field.value ?? ''}
-                  disabled={branchesLoading}
-                >
+                <Select {...field} label='Sucursal de Cliente' value={field.value ?? ''} disabled={loadingCatalogs}>
                   <MenuItem value=''>
                     <em>Seleccionar sucursal</em>
                   </MenuItem>
-                  {clientBranches.map((branch) => (
+                  {catalogs?.client_branches.map(branch => (
                     <MenuItem key={branch.id} value={branch.id}>
                       {branch.name}
                     </MenuItem>
                   ))}
                 </Select>
-                {branchesLoading && (
+                {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando sucursales...
                   </Typography>
@@ -222,8 +181,6 @@ const RegistrationOptionsFields = () => {
             )}
           />
         </Grid>
-
-        {/* Notes */}
         <Grid item xs={12}>
           <Controller
             name='notes'
@@ -241,8 +198,6 @@ const RegistrationOptionsFields = () => {
             )}
           />
         </Grid>
-
-
       </Grid>
     </Box>
   )

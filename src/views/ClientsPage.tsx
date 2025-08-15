@@ -16,17 +16,7 @@ import { useClientSearch } from '@/hooks/useClientSearch'
 import type { Client } from '@/types/client'
 
 const formatFullName = (client: Client) =>
-  client.client_type === 'J' ? client.last_name || '' : `${client.first_name || ''} ${client.last_name || ''}`.trim()
-
-const formatPersonType = (client: Client) => (client.client_type === 'V' ? 'Natural' : 'Jurídico')
-
-const formatSource = (source: string) => {
-  if (source === 'cliente') return 'Cliente'
-  
-  if (source === 'prospecto') return 'Prospecto'
-
-  return 'Cliente'
-}
+  client.client_type === 'J' ? client?.last_name : `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
 const ClientsPage = () => {
   const { status: sessionStatus } = useSession()
@@ -52,9 +42,13 @@ const ClientsPage = () => {
         render: (value: number) => `#${value}`
       },
       {
-        key: 'document_number' as const,
+        key: 'document' as const,
         label: 'Documento',
-        render: (value: string) => <Box>{value}</Box>
+        render: (_: any, client: Client) => (
+          <Box>
+            {client?.client_type}-{client?.document_number}
+          </Box>
+        )
       },
       {
         key: 'client' as const,
@@ -103,46 +97,12 @@ const ClientsPage = () => {
       {
         key: 'type' as const,
         label: 'Tipo',
-        render: (_: any, client: Client) => formatPersonType(client)
+        render: (_: any, client: Client) => client?.person_type || ''
       },
       {
         key: 'birth_date' as const,
         label: 'Fecha Nac./Fund.',
         render: (date: string) => (date ? new Date(date).toLocaleDateString() : 'N/A')
-      },
-      {
-        key: 'source' as const,
-        label: 'Tipo',
-        render: (source: string) => {
-          // Handle API format (C/P) and form format (cliente/prospecto)
-          // Default to 'cliente' for null/undefined/empty values
-          let normalizedSource = 'cliente'
-          
-          if (source === 'P' || source === 'prospecto') {
-            normalizedSource = 'prospecto'
-          } else if (source === 'C' || source === 'cliente') {
-            normalizedSource = 'cliente'
-          }
-          
-          return (
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: 1.5,
-                py: 0.5,
-                backgroundColor: normalizedSource === 'cliente' ? 'primary.light' : 'warning.light',
-                color: normalizedSource === 'cliente' ? 'primary.contrastText' : 'warning.contrastText',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5
-              }}
-            >
-              {formatSource(normalizedSource)}
-            </Box>
-          )
-        }
       },
       {
         key: 'actions' as const,

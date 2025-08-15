@@ -19,8 +19,8 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
 
   const personType = watch('person_type')
 
-  // Render legal data fields for jurídica person type
-  if (personType === 'jurídica') {
+  // Render legal data fields for J person type
+  if (personType === 'J') {
     return <LegalDataFields mode={mode} />
   }
 
