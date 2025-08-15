@@ -449,8 +449,10 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     birth_place: client.birth_place ?? '',
     birth_date: client.birth_date ?? '',
     join_date: client.join_date ?? '',
-    person_type: client.person_type === 'J' ? 'jurídica' : 'natural',
-    source: (client.source === 'cliente' || client.source === 'prospecto') ? client.source : 'cliente',
+    // Convert API format back to form format
+    person_type: client.person_type === 'J' ? 'juridica' : 'natural',
+    // Convert API source format back to form format: "C" -> "cliente", "P" -> "prospecto"
+    source: client.source === 'C' ? 'cliente' : 'prospecto',
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
     email_2: client.email_2 ?? '',
@@ -470,23 +472,23 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     documents: client.documents,
     bank_accounts: client.bank_accounts,
     id: client.id,
-    billing_address: '',
+    billing_address: client.billing_address ?? '',
     legal_representative: client.legal_data?.legal_representative ?? '',
     economic_activity_id: client.legal_data?.economic_activity_id ?? '',
     city_id: client.city_id ?? '',
     zone_id: client.zone_id ?? '',
     personal_data: {
-      gender: '',
-      civil_status: '',
-      height: undefined,
-      weight: undefined,
-      smoker: undefined,
-      sports: '',
-      profession_id: '',
-      occupation_id: '',
-      monthly_income: undefined,
-      pathology: '',
-      rif: ''
+      gender: client.personal_data?.gender ?? '',
+      civil_status: client.personal_data?.civil_status ?? '',
+      height: client.personal_data?.height ?? undefined,
+      weight: client.personal_data?.weight ?? undefined,
+      smoker: client.personal_data?.smoker ?? false,
+      sports: client.personal_data?.sports ?? '',
+      profession_id: client.personal_data?.profession_id ?? '',
+      occupation_id: client.personal_data?.occupation_id ?? '',
+      monthly_income: client.personal_data?.monthly_income ?? undefined,
+      pathology: client.personal_data?.pathology ?? '',
+      rif: client.personal_data?.rif ?? ''
     }
   }
 
@@ -496,7 +498,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
 export const clientFormToApi = (formData: ClientFormFields): any => {
   const toNumberOrNull = (value: string | number | null | undefined): number | null => {
     if (value === null || value === undefined || value === '') return null
-    const num = Number(value)
+    const num = typeof value === 'string' ? parseInt(value, 10) : value
     return isNaN(num) ? null : num
   }
 
@@ -518,30 +520,47 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     return emailRegex.test(cleanEmail) ? cleanEmail : cleanEmail
   }
 
-  // Si es persona natural, legal_data será null
-  const legalData = formData.person_type === 'juridica'
+  const normalizeStringField = (value: string | null | undefined): string | null => {
+    if (!value || value.trim() === '') return null
+    return value.trim()
+  }
+
+  // Normalize person_type: "natural" -> "N", "juridica" -> "J"
+  const normalizedPersonType = formData.person_type === 'juridica' ? 'J' : 'N'
+
+  // Normalize source: "cliente" -> "C", "prospecto" -> "P"
+  const normalizedSource = formData.source === 'cliente' ? 'C' : 'P'
+
+  // Ensure is_member_of_group is boolean
+  const isMemberOfGroup = formData.is_member_of_group === 'yes' || formData.is_member_of_group === true
+
+  // Normalize client_type to single character (V, J, G, P)
+  const normalizedClientType = normalizeStringField(formData.client_type)
+
+  // legal_data only if person_type is "J" (juridica)
+  const legalData = normalizedPersonType === 'J'
     ? {
-        legal_representative: formData.legal_representative?.trim() || null,
+        legal_representative: normalizeStringField(formData.legal_representative),
         economic_activity_id: toNumberOrNull(formData.economic_activity_id)
       }
     : null
 
   const apiData = {
-    is_member_of_group: formData.is_member_of_group === 'yes' ? true : false,
+    is_member_of_group: isMemberOfGroup,
     status: true,
-    client_type: formData.client_type?.trim() || null,
-    person_type: formData.person_type === 'juridica' ? 'J' : 'N',
-    source: formData.source || null,
-    document_number: formData.document_number?.trim() || null,
-    first_name: formData.first_name?.trim() || null,
-    last_name: formData.last_name?.trim() || null,
-    birth_place: formData.birth_place?.trim() || null,
-    billing_address: formData.billing_address?.trim() || null,
-    phone: formData.phone?.trim() || null,
-    mobile_1: formData.mobile_1?.trim() || null,
-    mobile_2: formData.mobile_2?.trim() || null,
-    reference: formData.reference?.trim() || null,
-    notes: formData.notes?.trim() || null,
+    client_type: normalizedClientType,
+    person_type: normalizedPersonType,
+    source: normalizedSource,
+    document_number: normalizeStringField(formData.document_number),
+    first_name: normalizeStringField(formData.first_name),
+    last_name: normalizeStringField(formData.last_name),
+    birth_place: normalizeStringField(formData.birth_place),
+    billing_address: normalizeStringField(formData.billing_address),
+    phone: normalizeStringField(formData.phone),
+    mobile_1: normalizeStringField(formData.mobile_1),
+    mobile_2: normalizeStringField(formData.mobile_2),
+    reference: normalizeStringField(formData.reference),
+    notes: normalizeStringField(formData.notes),
     birth_date: formatDateForApi(formData.birth_date),
     join_date: formatDateForApi(formData.join_date),
     email_1: validateEmail(formData.email_1),
@@ -555,32 +574,32 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     client_group_id: toNumberOrNull(formData.client_group_id),
     client_branch_id: toNumberOrNull(formData.client_branch_id),
     personal_data: {
-      gender: formData.personal_data?.gender?.trim() || null,
-      civil_status: formData.personal_data?.civil_status?.trim() || null,
+      gender: normalizeStringField(formData.personal_data?.gender),
+      civil_status: normalizeStringField(formData.personal_data?.civil_status),
       height: toNumberOrNull(formData.personal_data?.height),
       weight: toNumberOrNull(formData.personal_data?.weight),
-      smoker: formData.personal_data?.smoker ?? null,
-      sports: formData.personal_data?.sports?.trim() || null,
-      rif: formData.personal_data?.rif?.trim() || null,
+      smoker: formData.personal_data?.smoker ?? false,
+      sports: normalizeStringField(formData.personal_data?.sports),
+      rif: normalizeStringField(formData.personal_data?.rif),
       profession_id: toNumberOrNull(formData.personal_data?.profession_id),
       occupation_id: toNumberOrNull(formData.personal_data?.occupation_id),
       monthly_income: toNumberOrNull(formData.personal_data?.monthly_income),
-      pathology: formData.personal_data?.pathology?.trim() || null
+      pathology: normalizeStringField(formData.personal_data?.pathology)
     },
     legal_data: legalData,
     contacts: (formData.contacts || []).map(contact => ({
-      full_name: contact.full_name?.trim() || null,
-      position: contact.position?.trim() || null,
-      phone: contact.phone?.trim() || null,
+      full_name: normalizeStringField(contact.full_name),
+      position: normalizeStringField(contact.position),
+      phone: normalizeStringField(contact.phone),
       email: validateEmail(contact.email),
-      notes: contact.notes?.trim() || null
+      notes: normalizeStringField(contact.notes)
     })),
     bank_accounts: (formData.bank_accounts || []).map(account => ({
-      bank_name: account.bank_name?.trim() || null,
-      account_number: account.account_number?.trim() || null,
-      currency: account.currency?.trim() || null,
-      account_type: account.account_type?.trim() || null,
-      notes: account.notes?.trim() || null
+      bank_name: normalizeStringField(account.bank_name),
+      account_number: normalizeStringField(account.account_number),
+      currency: normalizeStringField(account.currency),
+      account_type: normalizeStringField(account.account_type),
+      notes: normalizeStringField(account.notes)
     })),
     risk_variables: formData.risk_variables || []
   }
