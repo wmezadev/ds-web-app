@@ -309,8 +309,21 @@ const ClientForm: React.FC<Props> = ({
 
   return (
     <FormProvider {...methods}>
-      <Paper sx={{ p: 4 }}>
-        <form noValidate>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
+        {/* Header with title and back button */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>
+            {mode === 'create' ? 'Crear nuevo cliente' : 'Editar cliente'}
+          </Typography>
+          {onCancel && (
+            <Button variant="outlined" onClick={onCancel} type="button">
+              Volver
+            </Button>
+          )}
+        </Box>
+
+        <Paper sx={{ p: 4 }}>
+          <form noValidate>
           <Stepper
             activeStep={activeStep}
             orientation={isMobile ? 'vertical' : 'horizontal'}
@@ -374,12 +387,6 @@ const ClientForm: React.FC<Props> = ({
 
               {/* Navigation buttons on the right */}
               <Stack direction='row' spacing={2} alignItems='center'>
-                {onCancel && (
-                  <Button variant='outlined' onClick={onCancel} type='button'>
-                    Volver
-                  </Button>
-                )}
-
                 {!isFirstStep && (
                   <Button variant='outlined' onClick={handleBack} aria-label='Paso anterior' type='button'>
                     <ArrowBackIcon />
@@ -400,6 +407,7 @@ const ClientForm: React.FC<Props> = ({
           </Box>
         </form>
       </Paper>
+      </Box>
 
       {/* Delete Confirmation Dialog */}
       <Dialog

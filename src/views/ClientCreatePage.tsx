@@ -55,11 +55,7 @@ export default function ClientCreatePage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
-        Crear nuevo cliente
-      </Typography>
-
+    <Box>
       <ClientForm mode='create' onSubmit={handleCreate} onCancel={() => router.back()} isSubmitting={isSubmitting} />
 
       <Snackbar
