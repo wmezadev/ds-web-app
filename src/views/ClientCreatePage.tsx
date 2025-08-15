@@ -1,42 +1,32 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+
 import { useRouter } from 'next/navigation'
+
 import { Box, Typography, Alert, Snackbar } from '@mui/material'
 
-import ClientForm, { clientFormToApi } from '@/components/clients/ClientForm'
-import { API_ROUTES, ROUTES } from '@/constants/routes'
-import { useApi } from '@/hooks/useApi'
+import ClientForm from '@/components/clients/ClientForm'
+import { ROUTES } from '@/constants/routes'
 
 export default function ClientCreatePage() {
   const router = useRouter()
-  const { fetchApi } = useApi()
 
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error'
   })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreate = useCallback(
-    async (values: any) => {
+    async () => {
       setIsSubmitting(true)
-      setSnackbar({ ...snackbar, open: false })
-
-      const apiPayload = clientFormToApi(values)
-
-      // Log para depuración
-      console.log('Enviando los siguientes datos a la API:', apiPayload)
+      setSnackbar(prev => ({ ...prev, open: false }))
 
       try {
-        const newClient = await fetchApi(API_ROUTES.CLIENTS.POST, {
-          method: 'POST',
-          body: apiPayload
-        })
-
-        console.log('Cliente creado con éxito:', newClient)
-
+        // TODO: Implement actual client creation logic
         setSnackbar({
           open: true,
           message: 'Cliente creado exitosamente!',
@@ -47,8 +37,6 @@ export default function ClientCreatePage() {
           router.push(ROUTES.CLIENTS.INDEX)
         }, 1500)
       } catch (error: any) {
-        console.error('Error in handleCreate:', error)
-
         // Manejo de errores más genérico y robusto
         setSnackbar({
           open: true,
@@ -59,11 +47,11 @@ export default function ClientCreatePage() {
         setIsSubmitting(false)
       }
     },
-    [fetchApi, router]
+    [router]
   )
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false })
+    setSnackbar(prev => ({ ...prev, open: false }))
   }
 
   return (

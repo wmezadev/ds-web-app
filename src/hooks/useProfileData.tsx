@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from 'react'
 
+import { useSession } from 'next-auth/react'
+
 import { useApi } from '@/hooks/useApi'
 
 const useProfileData = () => {
-  const { fetchApi, isAuthenticated } = useApi()
+  const { data: session } = useSession()
+  const { fetchApi } = useApi()
+  const isAuthenticated = !!session?.accessToken
   const [profileData, setProfileData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

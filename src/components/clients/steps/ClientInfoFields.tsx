@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import {
   TextField,
@@ -14,10 +14,14 @@ import {
   MenuItem,
   Typography
 } from '@mui/material'
-import { Close, Check } from '@mui/icons-material'
+
 import { Controller, useFormContext } from 'react-hook-form'
 
+import { useDebounce } from '@/hooks/useDebounce'
+import { useApi } from '@/hooks/useApi'
+
 import type { ClientFormFields } from '../ClientForm'
+import { useCatalogs } from '@/hooks/useCatalogs'
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -26,8 +30,90 @@ interface Props {
 const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
   const {
     control,
-    formState: { errors }
+    formState: { errors },
+    watch,
+    setError,
+    clearErrors,
+    getValues
   } = useFormContext<ClientFormFields>()
+
+  const { catalogs, loading: citiesLoading } = useCatalogs()
+  const { fetchApi } = useApi()
+
+  // Watch fields needed for existence check
+  const clientType = watch('client_type')
+  const documentNumber = watch('document_number')
+
+  // Holds original values for edit mode
+  const originalRef = useRef<{ ct: string; dn: string } | null>(null)
+
+  const debouncedQuery = useDebounce(
+    useMemo(() => ({ clientType, documentNumber }), [clientType, documentNumber]),
+    400
+  )
+
+  // Initialize original values once in edit mode
+  useEffect(() => {
+    if (mode !== 'edit') return
+
+    if (!originalRef.current) {
+      const v = getValues()
+
+      originalRef.current = { ct: v?.client_type ?? '', dn: v?.document_number ?? '' }
+    }
+  }, [mode, getValues])
+
+  // Check client existence when both fields are present
+  useEffect(() => {
+    const { clientType: ct, documentNumber: dn } = debouncedQuery || {}
+
+    // Require both values
+    if (!ct || !dn) {
+      clearErrors('document_number')
+
+      return
+    }
+
+    // In edit mode, skip check if unchanged
+    const orig = originalRef.current
+
+    if (mode === 'edit' && orig && orig.ct === ct && orig.dn === dn) {
+      clearErrors('document_number')
+
+      return
+    }
+
+    let cancelled = false
+
+    const run = async () => {
+      try {
+        // GET /api/proxy/clients/exists?client_type=V&document_number=123
+        const url = `clients/exists?client_type=${encodeURIComponent(ct)}&document_number=${encodeURIComponent(dn)}`
+        const res = await fetchApi(url)
+        const exists = Boolean(res?.exists)
+
+        if (!cancelled) {
+          if (exists) {
+            setError('document_number', {
+              type: 'manual',
+              message: 'Ya existe un cliente con este tipo y número de documento.'
+            })
+          } else {
+            clearErrors('document_number')
+          }
+        }
+      } catch (e: any) {
+        // If API fails, do not block; just clear manual error
+        if (!cancelled) clearErrors('document_number')
+      }
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedQuery, mode, fetchApi, setError, clearErrors])
 
   return (
     <Box>
@@ -65,6 +151,24 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
+        {/* Person Type */}
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name='person_type'
+            control={control}
+            rules={{ required: 'El tipo de persona es requerido' }}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.person_type}>
+                <InputLabel>Tipo de Persona</InputLabel>
+                <Select {...field} label='Tipo de Persona' value={field.value ?? ''}>
+                  <MenuItem value='N'>Natural</MenuItem>
+                  <MenuItem value='J'>J</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
         {/* Client Type and Document Number */}
         <Grid item xs={4} sm={2}>
           <Controller
@@ -75,7 +179,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_type}>
                 <InputLabel>Tipo</InputLabel>
-                <Select {...field} label='Tipo' value={field.value ?? ''}>
+                <Select {...field} label='Tipo' value={field.value ?? ''} defaultValue='V'>
                   <MenuItem value='V'>V</MenuItem>
                   <MenuItem value='J'>J</MenuItem>
                   <MenuItem value='E'>E</MenuItem>
@@ -101,11 +205,40 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
+        {/* City */}
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name='city_id'
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.city_id}>
+                <InputLabel>Ciudad de Residencia</InputLabel>
+                <Select {...field} label='Ciudad de Residencia' value={field.value ?? ''} disabled={citiesLoading}>
+                  <MenuItem value=''>
+                    <em>Seleccionar ciudad</em>
+                  </MenuItem>
+                  {catalogs?.cities.map(city => (
+                    <MenuItem key={city.id} value={city.id}>
+                      {city.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {citiesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando ciudades...
+                  </Typography>
+                )}
+              </FormControl>
+            )}
+          />
+        </Grid>
+
         {/* Birth Place and Birth Date */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='birth_place'
             control={control}
+            rules={{ required: mode === 'create' ? 'El lugar de nacimiento es requerido' : false }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -154,50 +287,40 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Source + Estado/Miembro */}
+        {/* Source + Miembro */}
         <Grid container item xs={12} spacing={2}>
           <Grid item xs={12} sm={6}>
-            <Controller
-              name='source'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='Fuente (opcional)'
-                  fullWidth
-                  error={!!errors.source}
-                  helperText={errors.source?.message}
-                />
-              )}
-            />
+            <Box>
+              <Typography variant='subtitle2' gutterBottom>
+                Origen
+              </Typography>
+              <Controller
+                name='source'
+                control={control}
+                defaultValue='C'
+                rules={{ required: mode === 'create' ? 'El tipo de fuente es requerido' : false }}
+                render={({ field }) => (
+                  <ToggleButtonGroup
+                    exclusive
+                    value={field.value ?? 'C'}
+                    onChange={(_, value) => field.onChange(value)}
+                    size='small'
+                    fullWidth
+                  >
+                    <ToggleButton value='C' color='primary'>
+                      Cliente
+                    </ToggleButton>
+                    <ToggleButton value='P' color='warning'>
+                      Prospecto
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                )}
+              />
+            </Box>
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <Box display='flex' gap={4} alignItems='flex-end'>
-              <Box>
-                <Typography variant='subtitle2' gutterBottom>
-                  Estado
-                </Typography>
-                <Controller
-                  name='status'
-                  control={control}
-                  render={({ field }) => (
-                    <ToggleButtonGroup
-                      exclusive
-                      value={field.value ?? ''}
-                      onChange={(_, value) => field.onChange(value)}
-                      size='small'
-                    >
-                      <ToggleButton value='active' color='success'>
-                        <Check fontSize='small' />
-                      </ToggleButton>
-                      <ToggleButton value='inactive' color='error'>
-                        <Close fontSize='small' />
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  )}
-                />
-              </Box>
+            <Box display='flex' justifyContent='flex-start' alignItems='flex-end'>
               <Box>
                 <Typography variant='subtitle2' gutterBottom>
                   ¿Miembro de Grupo?

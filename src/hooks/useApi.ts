@@ -1,8 +1,11 @@
 'use client'
 
 import { useCallback } from 'react'
+
 import { useRouter } from 'next/navigation'
+
 import { useSession, signOut } from 'next-auth/react'
+
 import { ROUTES } from '@/constants/routes'
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
@@ -17,7 +20,7 @@ export const useApi = () => {
     async (endpoint: string, options: ApiOptions = {}) => {
       const { body, ...restOptions } = options
       const isExternalUrl = endpoint.startsWith('http')
-      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${endpoint}`
+      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${endpoint.replace(/^\/+/, '')}`
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -35,20 +38,27 @@ export const useApi = () => {
         ...restOptions
       }
 
-      if (body) {
-        requestOptions.body = JSON.stringify(body)
-      }
+      if (body) requestOptions.body = JSON.stringify(body)
 
       try {
         const response = await fetch(apiUrl, requestOptions)
 
         if (!response.ok) {
           let errorData: any = 'An unknown error occurred.'
+
           try {
-            errorData = await response.json()
+            const responseText = await response.text()
+
+            try {
+              errorData = JSON.parse(responseText)
+            } catch (e) {
+              errorData = responseText
+            }
           } catch (e) {
-            errorData = await response.text()
+            errorData = 'Failed to read error response'
           }
+
+          const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
 
           if (response.status === 401) {
             await signOut({ redirect: false })
@@ -56,7 +66,6 @@ export const useApi = () => {
             throw new Error('Authentication failed. Please sign in again.')
           }
 
-          const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
           throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
         }
 
@@ -66,7 +75,6 @@ export const useApi = () => {
 
         return await response.json()
       } catch (error: any) {
-        console.error('API Request failed:', error)
         throw error
       }
     },

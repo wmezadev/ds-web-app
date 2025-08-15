@@ -10,7 +10,7 @@ import { useApi } from '@/hooks/useApi'
 
 const UserProfile = () => {
   const { data: session } = useSession()
-  const { fetchApi, isAuthenticated } = useApi()
+  const { fetchApi } = useApi()
   const [profileData, setProfileData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -34,13 +34,13 @@ const UserProfile = () => {
   }
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (session) {
       fetchProfile()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated])
+  }, [session])
 
-  if (!isAuthenticated) {
+  if (!session) {
     return (
       <Card>
         <CardContent>

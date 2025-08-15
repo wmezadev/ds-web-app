@@ -1,10 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import { useForm, FormProvider } from 'react-hook-form'
 import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 import type { Client } from '@/types/client'
 import StepperCustomDot from '@/components/stepper-dot'
@@ -17,15 +20,16 @@ import DocumentFields from './steps/DocumentFields'
 import BankAccountFields from './steps/BankAccountFields'
 import RegistrationOptionsFields from './steps/RegistrationOptionsFields'
 
-const steps = [
-  'Información del Cliente',
-  'Datos de Contacto',
-  'Datos Personales',
-  'Contactos',
-  'Documentos',
-  'Cuentas Bancarias',
-  'Opciones de Registro'
-]
+const getStepsForMode = (mode: 'create' | 'edit') => {
+  const baseSteps = ['Información del Cliente', 'Datos de Contacto', 'Datos Personales', 'Contactos']
+
+  if (mode === 'edit') {
+    return [...baseSteps, 'Documentos', 'Cuentas Bancarias', 'Opciones de Registro']
+  }
+
+  // For create mode, skip Documents step
+  return [...baseSteps, 'Cuentas Bancarias', 'Opciones de Registro']
+}
 
 export type ClientFormFields = {
   id?: string | number
@@ -38,8 +42,7 @@ export type ClientFormFields = {
   birth_date: string
   join_date: string
   person_type: string
-  status: string
-  source: string
+  source: 'C' | 'P'
   email_1: string
   mobile_1: string
   email_2: string
@@ -72,7 +75,7 @@ export type ClientFormFields = {
     pathology?: string
     rif?: string
   }
-  documents?: { type: string; expiration_date: string; status: string; due: boolean }[]
+  documents?: { type: string; expiration_date: string; status: string; due: boolean; file?: File }[]
   contacts?: {
     full_name: string
     position: string
@@ -99,19 +102,20 @@ const ClientForm: React.FC<Props> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  const steps = getStepsForMode(mode)
+
   const methods = useForm<ClientFormFields>({
     defaultValues: {
       first_name: '',
       last_name: '',
       is_member_of_group: '',
-      client_type: '',
+      client_type: 'V',
       document_number: '',
       birth_place: '',
       birth_date: '',
       join_date: '',
       person_type: '',
-      status: '',
-      source: '',
+      source: 'C',
       email_1: '',
       mobile_1: '',
       email_2: '',
@@ -155,24 +159,48 @@ const ClientForm: React.FC<Props> = ({
   const isLastStep = activeStep === steps.length - 1
   const isFirstStep = activeStep === 0
 
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
-    switch (step) {
-      case 0:
-        return ['document_number', 'client_type']
-      case 1:
-        return ['email_1', 'mobile_1']
-      case 2:
-        return ['birth_date', 'birth_place']
-      case 3:
-        return ['email_2', 'mobile_2']
-      case 4:
-        return ['doc']
-      case 5:
-        return []
-      case 6:
-        return ['client_category_id', 'office_id']
-      default:
-        return []
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return ['person_type', 'document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Bank Accounts (Documents step skipped)
+          return []
+        case 5: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return ['person_type', 'document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Documents
+          return ['doc']
+        case 5: // Bank Accounts
+          return []
+        case 6: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
     }
   }
 
@@ -189,6 +217,7 @@ const ClientForm: React.FC<Props> = ({
 
   const handleNext = async () => {
     const isValid = await validateCurrentStep()
+
     if (isValid) {
       setActiveStep(prev => Math.min(prev + 1, steps.length - 1))
     }
@@ -200,29 +229,51 @@ const ClientForm: React.FC<Props> = ({
 
   const handleStepClick = async (step: number) => {
     const isValid = await validateCurrentStep()
+
     if (isValid || mode === 'edit') {
       setActiveStep(step)
     }
   }
 
   const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return <ClientInfoFields mode={mode} />
-      case 1:
-        return <ContactFields mode={mode} />
-      case 2:
-        return <PersonalDataFields />
-      case 3:
-        return <ContactListFields />
-      case 4:
-        return <DocumentFields />
-      case 5:
-        return <BankAccountFields />
-      case 6:
-        return <RegistrationOptionsFields />
-      default:
-        return <Typography variant='body2'>[Por agregar]</Typography>
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Bank Accounts (Documents step skipped)
+          return <BankAccountFields />
+        case 5: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Documents
+          return <DocumentFields />
+        case 5: // Bank Accounts
+          return <BankAccountFields />
+        case 6: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
     }
   }
 
@@ -234,7 +285,26 @@ const ClientForm: React.FC<Props> = ({
     <FormProvider {...methods}>
       <Paper sx={{ p: 4 }}>
         <form noValidate>
-          <Stepper activeStep={activeStep} orientation='horizontal' sx={{ mb: 4 }}>
+          <Stepper
+            activeStep={activeStep}
+            orientation={isMobile ? 'vertical' : 'horizontal'}
+            sx={{
+              mb: 4,
+              ...(isMobile
+                ? {
+                    '& .MuiStepConnector-root': {
+                      ml: 1.25,
+                      '& .MuiStepConnector-line': {
+                        minHeight: '1px'
+                      }
+                    },
+                    '& .MuiStepLabel-root': {
+                      paddingLeft: '0px'
+                    }
+                  }
+                : {})
+            }}
+          >
             {steps.map((label, index) => (
               <Step key={label} completed={completedSteps.has(index)}>
                 <StepLabel
@@ -301,7 +371,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     birth_date: client.birth_date ?? '',
     join_date: client.join_date ?? '',
     person_type: client.person_type ?? '',
-    source: client.source ?? '',
+    source: client.source ?? 'C',
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
     email_2: client.email_2 ?? '',
@@ -309,7 +379,6 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     phone: client.phone ?? '',
     reference: client.reference ?? '',
     doc: client.doc ?? '',
-    status: client.status === true ? 'active' : 'inactive',
     is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
     client_category_id: client.client_category_id ?? '',
     office_id: client.office_id ?? '',
@@ -323,10 +392,10 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     bank_accounts: client.bank_accounts,
     id: client.id,
     billing_address: '',
-    legal_representative: '',
-    economic_activity_id: '',
-    city_id: '',
-    zone_id: '',
+    legal_representative: client.legal_data?.legal_representative ?? '',
+    economic_activity_id: client.legal_data?.economic_activity_id ?? '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? '',
     personal_data: {
       gender: '',
       civil_status: '',
@@ -345,53 +414,117 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
   return formFields
 }
 
-export const clientFormToApi = (formData: ClientFormFields): Partial<Client> => {
-  const apiData: Partial<Client> = {}
+export const clientFormToApi = (formData: ClientFormFields): any => {
+  // Helper function to convert string to number or null
+  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null
+    const num = Number(value)
 
-  // Handle non-nested fields
-  for (const key in formData) {
-    if (Object.prototype.hasOwnProperty.call(formData, key) && key !== 'personal_data') {
-      const value = formData[key as keyof ClientFormFields]
+    return isNaN(num) ? null : num
+  }
 
-      if (value === '' || value === 0 || (Array.isArray(value) && value.length === 0) || value === undefined) {
-        // @ts-ignore
-        apiData[key as keyof Client] = null
-      } else {
-        // @ts-ignore
-        apiData[key as keyof Client] = value
-      }
+  // Helper function to format date for API (YYYY-MM-DD)
+  const formatDateForApi = (dateString: string | null | undefined): string | null => {
+    if (!dateString || dateString.trim() === '') return null
+
+    try {
+      const date = new Date(dateString)
+
+      if (isNaN(date.getTime())) return null
+
+      return date.toISOString().split('T')[0] // YYYY-MM-DD format
+    } catch {
+      return null
     }
   }
 
-  // Handle personal_data nested fields
-  if (formData.personal_data) {
-    const personalData = formData.personal_data
-    apiData.personal_data = {
-      gender: personalData.gender || null,
-      civil_status: personalData.civil_status || null,
-      height: personalData.height || null,
-      weight: personalData.weight || null,
-      smoker: personalData.smoker || null,
-      sports: personalData.sports || null,
+  // Helper function to validate email
+  const validateEmail = (email: string | null | undefined): string | null => {
+    if (!email || email.trim() === '') return null
 
-      profession_id: personalData.profession_id ? Number(personalData.profession_id) || null : null,
-      occupation_id: personalData.occupation_id ? Number(personalData.occupation_id) || null : null,
-      monthly_income: personalData.monthly_income || null,
-      pathology: personalData.pathology || null,
-      rif: personalData.rif || null
-    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    const cleanEmail = email.trim().toLowerCase()
+
+    return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
-  apiData.status = formData.status === 'active'
-  apiData.is_member_of_group = formData.is_member_of_group === 'yes'
+  // Build API payload matching EXACT specification
+  const apiData = {
+    // Boolean fields (exact match)
+    is_member_of_group: formData.is_member_of_group === 'yes',
 
-  if (apiData.id === null || apiData.id === undefined) {
-    delete apiData.id
+    // String fields (exact match)
+    client_type: formData.client_type?.trim() || 'V',
+    document_number: formData.document_number?.trim() || '',
+    first_name: formData.first_name?.trim() || '',
+    last_name: formData.last_name?.trim() || '',
+    birth_place: formData.birth_place?.trim() || '',
+    birth_date: formatDateForApi(formData.birth_date) || '2025-08-11',
+    email_1: validateEmail(formData.email_1) || 'user@example.com',
+    email_2: validateEmail(formData.email_2) || 'user@example.com',
+    join_date: formatDateForApi(formData.join_date) || '2025-08-11',
+    person_type: formData.person_type?.trim() || 'N',
+    source: formData.source || 'cliente',
+    billing_address: formData.billing_address?.trim() || '',
+    phone: formData.phone?.trim() || '',
+    mobile_1: formData.mobile_1?.trim() || '',
+    mobile_2: formData.mobile_2?.trim() || '',
+    reference: formData.reference?.trim() || '',
+    notes: formData.notes?.trim() || '',
+
+    // Numeric fields (can be 0 as per API spec)
+    city_id: toNumberOrNull(formData.city_id) || 0,
+    zone_id: toNumberOrNull(formData.zone_id) || 0,
+    client_category_id: toNumberOrNull(formData.client_category_id) || 0,
+    office_id: toNumberOrNull(formData.office_id) || 0,
+    agent_id: toNumberOrNull(formData.agent_id) || 0,
+    executive_id: toNumberOrNull(formData.executive_id) || 0,
+    client_group_id: toNumberOrNull(formData.client_group_id) || 0,
+    client_branch_id: toNumberOrNull(formData.client_branch_id) || 0,
+
+    // Personal data (exact match to API spec)
+    personal_data: {
+      gender: formData.personal_data?.gender?.trim() || 'M',
+      civil_status: formData.personal_data?.civil_status?.trim() || 'single',
+      height: formData.personal_data?.height || 0,
+      weight: formData.personal_data?.weight || 0,
+      smoker: Boolean(formData.personal_data?.smoker),
+      sports: formData.personal_data?.sports?.trim() || '',
+      rif: formData.personal_data?.rif?.trim() || '',
+      profession_id: toNumberOrNull(formData.personal_data?.profession_id) || 0,
+      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id) || 0,
+      monthly_income: formData.personal_data?.monthly_income || 0,
+      pathology: formData.personal_data?.pathology?.trim() || ''
+    },
+
+    // Legal data (exact match to API spec)
+    legal_data: {
+      legal_representative: formData.legal_representative?.trim() || '',
+      economic_activity_id: toNumberOrNull(formData.economic_activity_id) || 0
+    },
+
+    // Arrays (exact match to API spec)
+    contacts: (formData.contacts || [])
+      .filter(contact => contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim())
+      .map(contact => ({
+        full_name: contact.full_name.trim(),
+        position: contact.position?.trim() || '',
+        phone: contact.phone.trim(),
+        email: validateEmail(contact.email) || contact.email.trim().toLowerCase(),
+        notes: contact.notes?.trim() || ''
+      })),
+
+    bank_accounts: (formData.bank_accounts || []).map(account => ({
+      bank_name: account.bank_name?.trim() || '',
+      account_number: account.account_number?.trim() || '',
+      currency: account.currency?.trim() || '',
+      account_type: account.account_type?.trim() || '',
+      notes: account.notes?.trim() || ''
+    })),
+
+    risk_variables: []
   }
-
-  apiData.contacts = formData.contacts || []
-  apiData.documents = formData.documents || []
-  apiData.bank_accounts = formData.bank_accounts || []
 
   return apiData
 }
