@@ -5,8 +5,8 @@ export type Client = {
   document_number: string
   client_type: string
   is_member_of_group: boolean
-  person_type: 'natural' | 'legal' | string
-  source: 'cliente' | 'prospecto'
+  person_type: 'N' | 'J' | string
+  source: 'C' | 'P'
   birth_place: string
   birth_date: string
   join_date: string
@@ -26,7 +26,7 @@ export type Client = {
   client_branch_id: number
   city_id: number | null
   zone_id: number | null
-  
+
   personal_data: {
     gender: string | null
     civil_status: string | null
@@ -40,12 +40,12 @@ export type Client = {
     monthly_income: number | null
     pathology: string | null
   }
-  
+
   legal_data: {
     legal_representative: string | null
     economic_activity_id: number | null
   }
-  
+
   documents: {
     type: string
     expiration_date: string

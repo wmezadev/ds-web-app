@@ -16,14 +16,12 @@ import { useClientSearch } from '@/hooks/useClientSearch'
 import type { Client } from '@/types/client'
 
 const formatFullName = (client: Client) =>
-  client.client_type === 'J' ? client.last_name || '' : `${client.first_name || ''} ${client.last_name || ''}`.trim()
-
-const formatPersonType = (client: Client) => (client.client_type === 'V' ? 'Natural' : 'Jurídico')
+  client.client_type === 'J' ? client?.last_name : `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
 const formatSource = (source: string) => {
-  if (source === 'cliente') return 'Cliente'
-  
-  if (source === 'prospecto') return 'Prospecto'
+  if (source === 'C') return 'Cliente'
+
+  if (source === 'P') return 'Prospecto'
 
   return 'Cliente'
 }
@@ -103,7 +101,7 @@ const ClientsPage = () => {
       {
         key: 'type' as const,
         label: 'Tipo',
-        render: (_: any, client: Client) => formatPersonType(client)
+        render: (_: any, client: Client) => client?.person_type || ''
       },
       {
         key: 'birth_date' as const,
@@ -114,8 +112,8 @@ const ClientsPage = () => {
         key: 'source' as const,
         label: 'Tipo',
         render: (source: string) => {
-          const normalizedSource = (source === 'cliente' || source === 'prospecto') ? source : 'cliente'
-          
+          const normalizedSource = source === 'C' || source === 'P' ? source : 'cliente'
+
           return (
             <Box
               sx={{
