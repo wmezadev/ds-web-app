@@ -62,15 +62,6 @@ export const useApi = () => {
           }
 
           const errorMessage = errorData?.detail || errorData?.message || (typeof errorData === 'object' ? JSON.stringify(errorData, null, 2) : errorData)
-          
-          // Debug: Log detailed error response for debugging
-          console.log('DEBUG: Full API Error Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorData: errorData,
-            url: apiUrl,
-            method: requestOptions.method
-          })
 
           if (response.status === 401) {
             await signOut({ redirect: false })
