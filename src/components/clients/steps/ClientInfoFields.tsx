@@ -162,7 +162,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
                 <InputLabel>Tipo de Persona</InputLabel>
                 <Select {...field} label='Tipo de Persona' value={field.value ?? ''}>
                   <MenuItem value='N'>Natural</MenuItem>
-                  <MenuItem value='J'>J</MenuItem>
+                  <MenuItem value='J'>Jurídico</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -178,7 +178,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             rules={{ required: mode === 'create' ? 'El tipo de cliente es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_type}>
-                <InputLabel>Tipo</InputLabel>
+                <InputLabel>Tipo Documento</InputLabel>
                 <Select {...field} label='Tipo' value={field.value ?? ''} defaultValue='V'>
                   <MenuItem value='V'>V</MenuItem>
                   <MenuItem value='J'>J</MenuItem>
@@ -196,7 +196,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             render={({ field }) => (
               <TextField
                 {...field}
-                label='Número de Documento'
+                label='Número de Documento (C.I., RIF, Pasaporte...)'
                 error={!!errors.document_number}
                 helperText={errors.document_number?.message}
                 fullWidth

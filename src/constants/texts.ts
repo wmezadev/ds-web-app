@@ -72,7 +72,7 @@ export const CLIENTS_PAGE = {
     description: 'Búsqueda de clientes'
   },
   TITLE: 'Clientes',
-  SEARCH_PLACEHOLDER: 'Buscar clientes...',
+  SEARCH_PLACEHOLDER: 'Buscar...',
   NO_RESULTS: 'No se encontraron clientes.',
   CREATE_CLIENT: 'Crear cliente'
 }
