@@ -123,7 +123,6 @@ const ClientsPage = () => {
           } else if (source === 'C' || source === 'cliente') {
             normalizedSource = 'cliente'
           }
-          // For null/undefined/empty or any other value, keep default 'cliente'
           
           return (
             <Box
