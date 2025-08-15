@@ -18,7 +18,7 @@ import {
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
-import { useCities } from '@/hooks/useCities'
+import { useCatalogs } from '@/hooks/useCatalogs'
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -29,8 +29,8 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
     control,
     formState: { errors }
   } = useFormContext<ClientFormFields>()
-  
-  const { cities, loading: citiesLoading } = useCities()
+
+  const { catalogs, loading: citiesLoading } = useCatalogs()
 
   return (
     <Box>
@@ -130,16 +130,11 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.city_id}>
                 <InputLabel>Ciudad de Residencia</InputLabel>
-                <Select 
-                  {...field} 
-                  label='Ciudad de Residencia' 
-                  value={field.value ?? ''}
-                  disabled={citiesLoading}
-                >
+                <Select {...field} label='Ciudad de Residencia' value={field.value ?? ''} disabled={citiesLoading}>
                   <MenuItem value=''>
                     <em>Seleccionar ciudad</em>
                   </MenuItem>
-                  {cities.map((city) => (
+                  {catalogs?.cities.map(city => (
                     <MenuItem key={city.id} value={city.id}>
                       {city.name}
                     </MenuItem>
@@ -157,7 +152,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
 
         {/* Birth Place and Birth Date */}
         <Grid item xs={12} sm={6}>
-        <Controller
+          <Controller
             name='birth_place'
             control={control}
             rules={{ required: mode === 'create' ? 'El lugar de nacimiento es requerido' : false }}
