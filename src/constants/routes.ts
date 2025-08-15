@@ -17,7 +17,9 @@ export const API_ROUTES = {
   CLIENTS: {
     LIST: 'clients',
     GET: (id: string | number) => `clients/${id}`,
-    SEARCH: 'clients/search'
+    SEARCH: 'clients/search',
+    UPDATE: (id: string | number) => `clients/${id}`,
+    POST: 'clients'
   },
   QUOTATIONS: {
     LIST: '/quotations',

@@ -1,671 +1,542 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 
-import {
-  Box,
-  Typography,
-  TextField,
-  Paper,
-  Button,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox
-} from '@mui/material'
+import { useForm, FormProvider } from 'react-hook-form'
+import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 import type { Client } from '@/types/client'
+import StepperCustomDot from '@/components/stepper-dot'
 
-/* ------------------------------------------------------------------
- * Tipos del formulario: ampliados con `| null` porque la API trae null.
- * ------------------------------------------------------------------ */
-export interface ClientFormFields {
-  is_member_of_group?: boolean | null
-  client_type?: 'V' | 'E' | 'J' | string | null
+import ClientInfoFields from './steps/ClientInfoFields'
+import ContactFields from './steps/ContactFields'
+import PersonalDataFields from './steps/PersonalDataFields'
+import ContactListFields from './steps/ContactListFields'
+import DocumentFields from './steps/DocumentFields'
+import BankAccountFields from './steps/BankAccountFields'
+import RegistrationOptionsFields from './steps/RegistrationOptionsFields'
+
+const getStepsForMode = (mode: 'create' | 'edit') => {
+  const baseSteps = [
+    'Información del Cliente',
+    'Datos de Contacto',
+    'Datos Personales',
+    'Contactos'
+  ]
+  
+  if (mode === 'edit') {
+    return [...baseSteps, 'Documentos', 'Cuentas Bancarias', 'Opciones de Registro']
+  }
+  
+  // For create mode, skip Documents step
+  return [...baseSteps, 'Cuentas Bancarias', 'Opciones de Registro']
+}
+
+export type ClientFormFields = {
+  id?: string | number
+  first_name: string
+  last_name: string
+  is_member_of_group: string
+  client_type: string
   document_number: string
-  first_name?: string | null
-  last_name?: string | null
-  birth_place?: string | null
-  birth_date?: string | null
-  person_type?: 'N' | 'J' | string | null
-  status?: boolean | null
-  source?: 'C' | 'P' | string | null
-  email_1?: string | null
-  email_2?: string | null
-  phone?: string | null
-  mobile_1?: string | null
-  mobile_2?: string | null
-  billing_address?: string | null
-  city_id?: number | string | null
-  zone_id?: number | string | null
-  reference?: string | null
-  client_category_id?: number | string | null
-  office_id?: number | string | null
-  agent_id?: number | string | null
-  executive_id?: number | string | null
-  client_group_id?: number | string | null
-  client_branch_id?: number | string | null
-  join_date?: string | null
+  birth_place: string
+  birth_date: string
+  join_date: string
+  person_type: string
+  source: 'cliente' | 'prospecto'
+  email_1: string
+  mobile_1: string
+  email_2: string
+  mobile_2: string
+  phone: string
+  reference: string
+  doc: string
+  billing_address?: string
+  legal_representative?: string
+  economic_activity_id?: string | number
+  city_id?: string | number
+  zone_id?: string | number
+  client_category_id: string | number
+  office_id: string | number
+  agent_id?: string | number | null
+  executive_id?: string | number | null
+  client_group_id?: string | number | null
+  client_branch_id?: string | number | null
   notes?: string | null
-  doc?: File | null
+  personal_data: {
+    gender?: string
+    civil_status?: string
+    height?: number
+    weight?: number
+    smoker?: boolean
+    sports?: string
+    profession_id?: string | number
+    occupation_id?: string | number
+    monthly_income?: number
+    pathology?: string
+    rif?: string
+  }
+  documents?: { type: string; expiration_date: string; status: string; due: boolean; file?: File }[]
+  contacts?: {
+    full_name: string
+    position: string
+    phone: string
+    email: string
+    notes?: string | null
+  }[]
+  bank_accounts?: any[]
 }
 
-/* ------------------------------------------------------------------
- * Valores por defecto
- * ------------------------------------------------------------------ */
-const defaultValues: ClientFormFields = {
-  is_member_of_group: false,
-  client_type: 'V',
-  document_number: '',
-  first_name: '',
-  last_name: '',
-  birth_place: '',
-  birth_date: '',
-  person_type: 'N',
-  status: true,
-  source: 'C',
-  email_1: '',
-  email_2: '',
-  phone: '',
-  mobile_1: '',
-  mobile_2: '',
-  billing_address: '',
-  city_id: '',
-  zone_id: '',
-  reference: '',
-  client_category_id: '',
-  office_id: '',
-  agent_id: '',
-  executive_id: '',
-  client_group_id: '',
-  client_branch_id: '',
-  join_date: new Date().toISOString().split('T')[0],
-  notes: '',
-  doc: null
-}
-
-export type ClientFormMode = 'create' | 'edit' | 'view'
-
-interface ClientFormProps {
-  mode?: ClientFormMode
-  initialValues?: Partial<ClientFormFields>
-  onSubmit?: (values: ClientFormFields) => void | Promise<void>
+interface Props {
+  mode?: 'create' | 'edit'
+  initialValues?: ClientFormFields
+  onSubmit: (data: ClientFormFields) => void
   onCancel?: () => void
-  submitLabel?: string
-  title?: string
+  isSubmitting?: boolean
+  submitError?: string | null
 }
 
-/* ------------------------------------------------------------------
- * Adaptador API -> Form
- * ------------------------------------------------------------------ */
-export function clientApiToForm(client: Client): ClientFormFields {
-  return {
-    // si la API trae estos campos, mapéalos; si no, usa defaults
-    is_member_of_group: (client as any).is_member_of_group ?? false,
-    client_type: client.client_type ?? 'V',
-    document_number: client.document_number ?? '',
+const ClientForm: React.FC<Props> = ({
+  mode = 'create',
+  initialValues = {},
+  onSubmit,
+  onCancel,
+  isSubmitting = false
+}) => {
+  const steps = getStepsForMode(mode)
+  
+  const methods = useForm<ClientFormFields>({
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      is_member_of_group: '',
+      client_type: '',
+      document_number: '',
+      birth_place: '',
+      birth_date: '',
+      join_date: '',
+      person_type: '',
+      source: 'cliente',
+      email_1: '',
+      mobile_1: '',
+      email_2: '',
+      mobile_2: '',
+      phone: '',
+      reference: '',
+      doc: '',
+      billing_address: '',
+      legal_representative: '',
+      client_category_id: '', // Se inicializa con una cadena vacía
+      office_id: '', // Se inicializa con una cadena vacía
+      agent_id: '', // Se inicializa con una cadena vacía
+      executive_id: '',
+      client_group_id: '',
+      client_branch_id: '',
+      notes: '',
+      personal_data: {
+        gender: '',
+        civil_status: '',
+        height: undefined,
+        weight: undefined,
+        smoker: undefined,
+        sports: '',
+        profession_id: '',
+        occupation_id: '',
+        monthly_income: undefined,
+        pathology: '',
+        rif: ''
+      },
+      documents: [],
+      contacts: [],
+      bank_accounts: [],
+      ...initialValues
+    },
+    mode: 'onChange'
+  })
+
+  const [activeStep, setActiveStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+
+  const isLastStep = activeStep === steps.length - 1
+  const isFirstStep = activeStep === 0
+
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
+  const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return ['person_type', 'document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Bank Accounts (Documents step skipped)
+          return []
+        case 5: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return ['person_type', 'document_number', 'client_type']
+        case 1:
+          return ['email_1', 'mobile_1']
+        case 2:
+          return ['birth_date', 'birth_place']
+        case 3:
+          return ['email_2', 'mobile_2']
+        case 4: // Documents
+          return ['doc']
+        case 5: // Bank Accounts
+          return []
+        case 6: // Registration Options
+          return ['client_category_id', 'office_id']
+        default:
+          return []
+      }
+    }
+  }
+
+  const validateCurrentStep = async (): Promise<boolean> => {
+    const fieldsToValidate = getFieldsForStep(activeStep)
+    const result = await methods.trigger(fieldsToValidate)
+
+    if (result) {
+      setCompletedSteps(prev => new Set([...prev, activeStep]))
+    }
+
+    return result
+  }
+
+  const handleNext = async () => {
+    const isValid = await validateCurrentStep()
+
+    if (isValid) {
+      setActiveStep(prev => Math.min(prev + 1, steps.length - 1))
+    }
+  }
+
+  const handleBack = () => {
+    setActiveStep(prev => Math.max(prev - 1, 0))
+  }
+
+  const handleStepClick = async (step: number) => {
+    const isValid = await validateCurrentStep()
+
+    if (isValid || mode === 'edit') {
+      setActiveStep(step)
+    }
+  }
+
+  const renderStepContent = (step: number) => {
+    if (mode === 'create') {
+      // Create mode: no Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Bank Accounts (Documents step skipped)
+          return <BankAccountFields />
+        case 5: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
+    } else {
+      // Edit mode: includes Documents step
+      switch (step) {
+        case 0:
+          return <ClientInfoFields mode={mode} />
+        case 1:
+          return <ContactFields mode={mode} />
+        case 2:
+          return <PersonalDataFields />
+        case 3:
+          return <ContactListFields />
+        case 4: // Documents
+          return <DocumentFields />
+        case 5: // Bank Accounts
+          return <BankAccountFields />
+        case 6: // Registration Options
+          return <RegistrationOptionsFields />
+        default:
+          return <Typography variant='body2'>[Por agregar]</Typography>
+      }
+    }
+  }
+
+  const handleFinalSubmit = () => {
+    methods.handleSubmit(onSubmit)()
+  }
+
+  return (
+    <FormProvider {...methods}>
+      <Paper sx={{ p: 4 }}>
+        <form noValidate>
+          <Stepper
+            activeStep={activeStep}
+            orientation={isMobile ? 'vertical' : 'horizontal'}
+            sx={{
+              mb: 4,
+              ...(isMobile
+                ? {
+                    '& .MuiStepConnector-root': {
+                      ml: 1.25,
+                      '& .MuiStepConnector-line': {
+                        minHeight: '1px'
+                      }
+                    },
+                    '& .MuiStepLabel-root': {
+                      paddingLeft: '0px'
+                    }
+                  }
+                : {})
+            }}
+          >
+            {steps.map((label, index) => (
+              <Step key={label} completed={completedSteps.has(index)}>
+                <StepLabel
+                  StepIconComponent={StepperCustomDot}
+                  onClick={() => handleStepClick(index)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  {label}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Box
+            sx={{
+              mt: 4,
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box>{renderStepContent(activeStep)}</Box>
+
+            <Box display='flex' justifyContent='flex-end' mt={4}>
+              <Stack direction='row' spacing={2} alignItems='center'>
+                {onCancel && (
+                  <Button variant='outlined' onClick={onCancel} type='button'>
+                    Volver
+                  </Button>
+                )}
+
+                {!isFirstStep && (
+                  <Button variant='outlined' onClick={handleBack} aria-label='Paso anterior' type='button'>
+                    <ArrowBackIcon />
+                  </Button>
+                )}
+
+                {!isLastStep ? (
+                  <Button variant='contained' onClick={handleNext} aria-label='Paso siguiente' type='button'>
+                    <ArrowForwardIcon />
+                  </Button>
+                ) : (
+                  <Button type='button' variant='contained' onClick={handleFinalSubmit} disabled={isSubmitting}>
+                    {isSubmitting ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                )}
+              </Stack>
+            </Box>
+          </Box>
+        </form>
+      </Paper>
+    </FormProvider>
+  )
+}
+
+export const clientApiToForm = (client: Client): ClientFormFields => {
+  const formFields: ClientFormFields = {
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',
+    document_number: client.document_number ?? '',
+    client_type: client.client_type ?? '',
     birth_place: client.birth_place ?? '',
     birth_date: client.birth_date ?? '',
-    person_type: client.person_type ?? 'N',
-    status: client.status ?? true,
-    source: (client as any).source ?? 'C',
+    join_date: client.join_date ?? '',
+    person_type: client.person_type ?? '',
+    source: (client.source === 'cliente' || client.source === 'prospecto') ? client.source : 'cliente',
     email_1: client.email_1 ?? '',
-    email_2: client.email_2 ?? '',
-    phone: client.phone ?? '',
     mobile_1: client.mobile_1 ?? '',
+    email_2: client.email_2 ?? '',
     mobile_2: client.mobile_2 ?? '',
-    billing_address: client.billing_address ?? '',
-    city_id: client.city_id ?? '',
-    zone_id: client.zone_id ?? '',
+    phone: client.phone ?? '',
     reference: client.reference ?? '',
+    doc: client.doc ?? '',
+    is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
     client_category_id: client.client_category_id ?? '',
     office_id: client.office_id ?? '',
     agent_id: client.agent_id ?? '',
     executive_id: client.executive_id ?? '',
     client_group_id: client.client_group_id ?? '',
     client_branch_id: client.client_branch_id ?? '',
-    join_date: client.join_date ?? '',
     notes: client.notes ?? '',
-    doc: null
-  }
-}
-
-/* ------------------------------------------------------------------
- * Validación básica
- * ------------------------------------------------------------------ */
-function validate(values: ClientFormFields) {
-  const errs: Partial<Record<keyof ClientFormFields, string>> = {}
-
-  if (!values.document_number?.trim()) errs.document_number = 'Campo requerido'
-  if (!values.first_name?.trim()) errs.first_name = 'Campo requerido'
-  if (!values.mobile_1?.trim()) errs.mobile_1 = 'Teléfono móvil es requerido'
-
-  if (values.email_1 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email_1)) {
-    errs.email_1 = 'Correo electrónico no válido'
-  }
-
-  if (values.email_2 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email_2)) {
-    errs.email_2 = 'Correo electrónico no válido'
-  }
-
-  return errs
-}
-
-/* ------------------------------------------------------------------
- * Normalizador: evita pasar null/undefined a inputs controlados
- * ------------------------------------------------------------------ */
-const nv = (v: unknown): string | number => (v === null || v === undefined ? '' : (v as any))
-
-/* ------------------------------------------------------------------
- * Componente
- * ------------------------------------------------------------------ */
-const ClientForm: React.FC<ClientFormProps> = ({
-  mode = 'create',
-  initialValues = {},
-  onSubmit,
-  onCancel,
-  submitLabel,
-  title
-}) => {
-  // inicializa una vez (cuando el componente se monta)
-  const [values, setValues] = React.useState<ClientFormFields>(() => ({
-    ...defaultValues,
-    ...initialValues
-  }))
-
-  const [errors, setErrors] = React.useState<Partial<Record<keyof ClientFormFields, string>>>({})
-
-  const readOnly = mode === 'view'
-
-  // IMPORTANTE: no re-sincronizamos automáticamente para evitar loops.
-  // Cuando necesites refrescar datos (ej: vas de un cliente a otro), remonta el componente con `key={id}` desde el padre.
-  // Si quieres sincronizar, descomenta:
-  // React.useEffect(() => {
-  //   setValues(prev => ({ ...prev, ...initialValues }))
-  // }, [initialValues])
-
-  const handleFieldChange =
-    (field: keyof ClientFormFields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any) => {
-      const target = e.target as HTMLInputElement
-      const { type, value, checked } = target
-
-      setValues(prev => ({
-        ...prev,
-        [field]: type === 'checkbox' ? checked : value
-      }))
-
-      if (errors[field]) {
-        setErrors(prev => ({ ...prev, [field]: undefined }))
-      }
+    contacts: client.contacts,
+    documents: client.documents,
+    bank_accounts: client.bank_accounts,
+    id: client.id,
+    billing_address: '',
+    legal_representative: client.legal_data?.legal_representative ?? '',
+    economic_activity_id: client.legal_data?.economic_activity_id ?? '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? '',
+    personal_data: {
+      gender: '',
+      civil_status: '',
+      height: undefined,
+      weight: undefined,
+      smoker: undefined,
+      sports: '',
+      profession_id: '',
+      occupation_id: '',
+      monthly_income: undefined,
+      pathology: '',
+      rif: ''
     }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (readOnly) return
-    const errs = validate(values)
-
-    setErrors(errs)
-    if (Object.keys(errs).length > 0) return
-    await onSubmit?.(values)
   }
 
-  const resolvedTitle =
-    title || (mode === 'view' ? 'Detalles del Cliente' : mode === 'edit' ? 'Editar Cliente' : 'Crear Nuevo Cliente')
+  return formFields
+}
 
-  const resolvedSubmitLabel = submitLabel || (mode === 'edit' ? 'Actualizar Cliente' : 'Guardar Cliente')
+export const clientFormToApi = (formData: ClientFormFields): any => {
+  // Helper function to convert string to number or null
+  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null
+    const num = Number(value)
 
-  return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1000, mx: 'auto' }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant='h5' sx={{ mb: 3, fontWeight: 600 }}>
-          {resolvedTitle}
-        </Typography>
+    return isNaN(num) ? null : num
+  }
 
-        <form onSubmit={handleSubmit} noValidate>
-          <Stack spacing={4}>
-            {/* -------------------------------------- */}
-            {/* Información Básica                     */}
-            {/* -------------------------------------- */}
-            <Paper variant='outlined' sx={{ p: 3 }}>
-              <Typography variant='h6' sx={{ mb: 3, fontWeight: 500, color: 'primary.main' }}>
-                Información Básica
-              </Typography>
+  // Helper function to format date for API (YYYY-MM-DD)
+  const formatDateForApi = (dateString: string | null | undefined): string | null => {
+    
+    if (!dateString || dateString.trim() === '') return null
+    
+    try {
+      
+      const date = new Date(dateString)
+      
+      if (isNaN(date.getTime())) return null
+      
+      return date.toISOString().split('T')[0] // YYYY-MM-DD format
+    } catch {
+      return null
+    }
+  }
 
-              <Stack spacing={3}>
-                {/* Tipo persona + Origen */}
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label='Tipo de Persona'
-                    name='person_type'
-                    select
-                    value={nv(values.person_type)}
-                    onChange={handleFieldChange('person_type')}
-                    fullWidth
-                    disabled={readOnly}
-                    SelectProps={{ native: true }}
-                  >
-                    <option value='N'>Natural</option>
-                    <option value='J'>Jurídica</option>
-                  </TextField>
+  // Helper function to validate email
+  const validateEmail = (email: string | null | undefined): string | null => {
+    if (!email || email.trim() === '') return null
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    
+    const cleanEmail = email.trim().toLowerCase()
 
-                  <TextField
-                    label='Origen'
-                    name='source'
-                    select
-                    value={nv(values.source)}
-                    onChange={handleFieldChange('source')}
-                    fullWidth
-                    disabled={readOnly}
-                    SelectProps={{ native: true }}
-                  >
-                    <option value='C'>Cliente</option>
-                    <option value='P'>Prospecto</option>
-                  </TextField>
-                </Stack>
+    
+return emailRegex.test(cleanEmail) ? cleanEmail : null
+  }
 
-                {/* Tipo doc + Número */}
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems='flex-end'>
-                  <TextField
-                    label='Tipo de Documento'
-                    name='client_type'
-                    select
-                    value={nv(values.client_type)}
-                    onChange={handleFieldChange('client_type')}
-                    sx={{ width: { xs: '100%', md: '30%' } }}
-                    disabled={readOnly}
-                    SelectProps={{ native: true }}
-                  >
-                    <option value='V'>V</option>
-                    <option value='E'>E</option>
-                    <option value='J'>J</option>
-                    <option value='P'>P</option>
-                    <option value='G'>G</option>
-                  </TextField>
+  // Build API payload matching EXACT specification
+  const apiData = {
+    // Boolean fields (exact match)
+    is_member_of_group: formData.is_member_of_group === 'yes',
+    
+    // String fields (exact match)
+    client_type: formData.client_type?.trim() || 'individual',
+    document_number: formData.document_number?.trim() || '',
+    first_name: formData.first_name?.trim() || '',
+    last_name: formData.last_name?.trim() || '',
+    birth_place: formData.birth_place?.trim() || '',
+    birth_date: formatDateForApi(formData.birth_date) || '2025-08-11',
+    email_1: validateEmail(formData.email_1) || 'user@example.com',
+    email_2: validateEmail(formData.email_2) || 'user@example.com',
+    join_date: formatDateForApi(formData.join_date) || '2025-08-11',
+    person_type: formData.person_type?.trim() || 'natural',
+    source: formData.source || 'cliente',
+    billing_address: formData.billing_address?.trim() || '',
+    phone: formData.phone?.trim() || '',
+    mobile_1: formData.mobile_1?.trim() || '',
+    mobile_2: formData.mobile_2?.trim() || '',
+    reference: formData.reference?.trim() || '',
+    notes: formData.notes?.trim() || '',
+    
+    // Numeric fields (can be 0 as per API spec)
+    city_id: toNumberOrNull(formData.city_id) || 0,
+    zone_id: toNumberOrNull(formData.zone_id) || 0,
+    client_category_id: toNumberOrNull(formData.client_category_id) || 0,
+    office_id: toNumberOrNull(formData.office_id) || 0,
+    agent_id: toNumberOrNull(formData.agent_id) || 0,
+    executive_id: toNumberOrNull(formData.executive_id) || 0,
+    client_group_id: toNumberOrNull(formData.client_group_id) || 0,
+    client_branch_id: toNumberOrNull(formData.client_branch_id) || 0,
+    
+    // Personal data (exact match to API spec)
+    personal_data: {
+      gender: formData.personal_data?.gender?.trim() || 'M',
+      civil_status: formData.personal_data?.civil_status?.trim() || 'single',
+      height: formData.personal_data?.height || 0,
+      weight: formData.personal_data?.weight || 0,
+      smoker: Boolean(formData.personal_data?.smoker),
+      sports: formData.personal_data?.sports?.trim() || '',
+      rif: formData.personal_data?.rif?.trim() || '',
+      profession_id: toNumberOrNull(formData.personal_data?.profession_id) || 0,
+      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id) || 0,
+      monthly_income: formData.personal_data?.monthly_income || 0,
+      pathology: formData.personal_data?.pathology?.trim() || ''
+    },
+    
+    // Legal data (exact match to API spec)
+    legal_data: {
+      legal_representative: formData.legal_representative?.trim() || '',
+      economic_activity_id: toNumberOrNull(formData.economic_activity_id) || 0
+    },
+    
+    // Arrays (exact match to API spec)
+    contacts: (formData.contacts || []).filter(contact => 
+      contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim()
+    ).map(contact => ({
+      full_name: contact.full_name.trim(),
+      position: contact.position?.trim() || '',
+      phone: contact.phone.trim(),
+      email: validateEmail(contact.email) || contact.email.trim().toLowerCase(),
+      notes: contact.notes?.trim() || ''
+    })),
+    
+    bank_accounts: (formData.bank_accounts || []).map(account => ({
+      bank_name: account.bank_name?.trim() || '',
+      account_number: account.account_number?.trim() || '',
+      currency: account.currency?.trim() || '',
+      account_type: account.account_type?.trim() || '',
+      notes: account.notes?.trim() || ''
+    })),
+    
+    risk_variables: []
+  }
 
-                  <TextField
-                    label='Número de Documento *'
-                    name='document_number'
-                    value={nv(values.document_number)}
-                    onChange={handleFieldChange('document_number')}
-                    error={!!errors.document_number}
-                    helperText={errors.document_number}
-                    required
-                    sx={{ width: { xs: '100%', md: '70%' } }}
-                    disabled={readOnly}
-                  />
-                </Stack>
 
-                {/* Nombre + Apellido */}
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label='Nombres'
-                    name='first_name'
-                    value={nv(values.first_name)}
-                    onChange={handleFieldChange('first_name')}
-                    error={!!errors.first_name}
-                    helperText={errors.first_name}
-                    fullWidth
-                    disabled={readOnly}
-                  />
 
-                  <TextField
-                    label='Apellidos'
-                    name='last_name'
-                    value={nv(values.last_name)}
-                    onChange={handleFieldChange('last_name')}
-                    error={!!errors.last_name}
-                    helperText={errors.last_name}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-                </Stack>
-
-                {/* Fecha Nac + Lugar Nac */}
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label='Fecha de Nacimiento'
-                    name='birth_date'
-                    type='date'
-                    value={nv(values.birth_date)}
-                    onChange={handleFieldChange('birth_date')}
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-
-                  <TextField
-                    label='Lugar de Nacimiento'
-                    name='birth_place'
-                    value={nv(values.birth_place)}
-                    onChange={handleFieldChange('birth_place')}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-                </Stack>
-
-                {/* Fecha Ingreso + Grupo */}
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems='center'>
-                  <TextField
-                    label='Fecha de Ingreso'
-                    name='join_date'
-                    type='date'
-                    value={nv(values.join_date)}
-                    onChange={handleFieldChange('join_date')}
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name='is_member_of_group'
-                        checked={!!values.is_member_of_group}
-                        onChange={handleFieldChange('is_member_of_group')}
-                        color='primary'
-                        disabled={readOnly}
-                      />
-                    }
-                    label='¿Pertenece a un grupo?'
-                    sx={{ ml: { md: 2 } }}
-                  />
-                </Stack>
-
-                {/* Estado */}
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Typography variant='body2' sx={{ mr: 2, whiteSpace: 'nowrap' }}>
-                    Estado:
-                  </Typography>
-                  <Button
-                    variant={values.status ? 'contained' : 'outlined'}
-                    color={values.status ? 'success' : 'inherit'}
-                    onClick={() => !readOnly && setValues(prev => ({ ...prev, status: true }))}
-                    size='small'
-                    sx={{ mr: 1 }}
-                    disabled={readOnly}
-                  >
-                    Activo
-                  </Button>
-                  <Button
-                    variant={!values.status ? 'contained' : 'outlined'}
-                    color={!values.status ? 'error' : 'inherit'}
-                    onClick={() => !readOnly && setValues(prev => ({ ...prev, status: false }))}
-                    size='small'
-                    disabled={readOnly}
-                  >
-                    Inactivo
-                  </Button>
-                </Box>
-              </Stack>
-            </Paper>
-
-            {/* -------------------------------------- */}
-            {/* Información de Contacto                */}
-            {/* -------------------------------------- */}
-            <Paper variant='outlined' sx={{ p: 3 }}>
-              <Typography variant='h6' sx={{ mb: 3, fontWeight: 500, color: 'primary.main' }}>
-                Información de Contacto
-              </Typography>
-
-              <Stack spacing={3}>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label='Email Principal'
-                    name='email_1'
-                    type='email'
-                    value={nv(values.email_1)}
-                    onChange={handleFieldChange('email_1')}
-                    error={!!errors.email_1}
-                    helperText={errors.email_1}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-
-                  <TextField
-                    label='Email Secundario'
-                    name='email_2'
-                    type='email'
-                    value={nv(values.email_2)}
-                    onChange={handleFieldChange('email_2')}
-                    error={!!errors.email_2}
-                    helperText={errors.email_2}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-                </Stack>
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label='Teléfono Fijo'
-                    name='phone'
-                    value={nv(values.phone)}
-                    onChange={handleFieldChange('phone')}
-                    error={!!errors.phone}
-                    helperText={errors.phone}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-
-                  <TextField
-                    label='Móvil Principal *'
-                    name='mobile_1'
-                    value={nv(values.mobile_1)}
-                    onChange={handleFieldChange('mobile_1')}
-                    error={!!errors.mobile_1}
-                    helperText={errors.mobile_1 || 'Requerido'}
-                    required
-                    fullWidth
-                    disabled={readOnly}
-                  />
-                </Stack>
-
-                <TextField
-                  label='Móvil Secundario'
-                  name='mobile_2'
-                  value={nv(values.mobile_2)}
-                  onChange={handleFieldChange('mobile_2')}
-                  error={!!errors.mobile_2}
-                  helperText={errors.mobile_2}
-                  fullWidth
-                  disabled={readOnly}
-                />
-              </Stack>
-            </Paper>
-
-            {/* -------------------------------------- */}
-            {/* Dirección de Facturación               */}
-            {/* -------------------------------------- */}
-            <Paper variant='outlined' sx={{ p: 3 }}>
-              <Typography variant='h6' sx={{ mb: 3, fontWeight: 500, color: 'primary.main' }}>
-                Dirección de Facturación
-              </Typography>
-
-              <Stack spacing={3}>
-                <TextField
-                  label='Dirección Completa'
-                  name='billing_address'
-                  value={nv(values.billing_address)}
-                  onChange={handleFieldChange('billing_address')}
-                  fullWidth
-                  multiline
-                  rows={2}
-                  disabled={readOnly}
-                />
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Ciudad</InputLabel>
-                    <Select
-                      name='city_id'
-                      value={nv(values.city_id)}
-                      onChange={handleFieldChange('city_id')}
-                      label='Ciudad'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                      {/* opciones ciudad */}
-                    </Select>
-                  </FormControl>
-
-                  <TextField
-                    label='Zona'
-                    name='zone_id'
-                    value={nv(values.zone_id)}
-                    onChange={handleFieldChange('zone_id')}
-                    fullWidth
-                    disabled={readOnly}
-                  />
-                </Stack>
-
-                <TextField
-                  label='Referencia'
-                  name='reference'
-                  value={nv(values.reference)}
-                  onChange={handleFieldChange('reference')}
-                  fullWidth
-                  disabled={readOnly}
-                />
-              </Stack>
-            </Paper>
-
-            {/* -------------------------------------- */}
-            {/* Información Adicional                  */}
-            {/* -------------------------------------- */}
-            <Paper variant='outlined' sx={{ p: 3 }}>
-              <Typography variant='h6' sx={{ mb: 3, fontWeight: 500, color: 'primary.main' }}>
-                Información Adicional
-              </Typography>
-
-              <Stack spacing={3}>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Categoría de Cliente</InputLabel>
-                    <Select
-                      name='client_category_id'
-                      value={nv(values.client_category_id)}
-                      onChange={handleFieldChange('client_category_id')}
-                      label='Categoría de Cliente'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Oficina</InputLabel>
-                    <Select
-                      name='office_id'
-                      value={nv(values.office_id)}
-                      onChange={handleFieldChange('office_id')}
-                      label='Oficina'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Agente</InputLabel>
-                    <Select
-                      name='agent_id'
-                      value={nv(values.agent_id)}
-                      onChange={handleFieldChange('agent_id')}
-                      label='Agente'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Ejecutivo</InputLabel>
-                    <Select
-                      name='executive_id'
-                      value={nv(values.executive_id)}
-                      onChange={handleFieldChange('executive_id')}
-                      label='Ejecutivo'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Grupo de Cliente</InputLabel>
-                    <Select
-                      name='client_group_id'
-                      value={nv(values.client_group_id)}
-                      onChange={handleFieldChange('client_group_id')}
-                      label='Grupo de Cliente'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth disabled={readOnly}>
-                    <InputLabel>Sucursal</InputLabel>
-                    <Select
-                      name='client_branch_id'
-                      value={nv(values.client_branch_id)}
-                      onChange={handleFieldChange('client_branch_id')}
-                      label='Sucursal'
-                    >
-                      <MenuItem value=''>
-                        <em>Seleccionar</em>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-
-                <TextField
-                  label='Notas Adicionales'
-                  name='notes'
-                  value={nv(values.notes)}
-                  onChange={handleFieldChange('notes')}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  disabled={readOnly}
-                />
-              </Stack>
-            </Paper>
-
-            {/* -------------------------------------- */}
-            {/* Botones                                */}
-            {/* -------------------------------------- */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              {onCancel && (
-                <Button variant='outlined' color='inherit' onClick={onCancel}>
-                  {readOnly ? 'Volver' : 'Cancelar'}
-                </Button>
-              )}
-              {!readOnly && (
-                <Button type='submit' variant='contained' color='primary'>
-                  {resolvedSubmitLabel}
-                </Button>
-              )}
-            </Box>
-          </Stack>
-        </form>
-      </Paper>
-    </Box>
-  )
+  return apiData
 }
 
 export default ClientForm

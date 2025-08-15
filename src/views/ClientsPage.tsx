@@ -19,7 +19,14 @@ const formatFullName = (client: Client) =>
   client.client_type === 'J' ? client.last_name || '' : `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
 const formatPersonType = (client: Client) => (client.client_type === 'V' ? 'Natural' : 'Jurídico')
-const formatStatus = (status: boolean) => (status ? 'Activo' : 'Inactivo')
+
+const formatSource = (source: string) => {
+  if (source === 'cliente') return 'Cliente'
+  
+  if (source === 'prospecto') return 'Prospecto'
+
+  return 'Cliente'
+}
 
 const ClientsPage = () => {
   const { status: sessionStatus } = useSession()
@@ -104,26 +111,30 @@ const ClientsPage = () => {
         render: (date: string) => (date ? new Date(date).toLocaleDateString() : 'N/A')
       },
       {
-        key: 'status' as const,
-        label: 'Estado',
-        render: (status: boolean) => (
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              px: 1.5,
-              py: 0.5,
-              backgroundColor: status ? 'success.light' : 'error.light',
-              color: status ? 'success.contrastText' : 'error.contrastText',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5
-            }}
-          >
-            {formatStatus(status)}
-          </Box>
-        )
+        key: 'source' as const,
+        label: 'Tipo',
+        render: (source: string) => {
+          const normalizedSource = (source === 'cliente' || source === 'prospecto') ? source : 'cliente'
+          
+          return (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                px: 1.5,
+                py: 0.5,
+                backgroundColor: normalizedSource === 'cliente' ? 'primary.light' : 'warning.light',
+                color: normalizedSource === 'cliente' ? 'primary.contrastText' : 'warning.contrastText',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5
+              }}
+            >
+              {formatSource(source)}
+            </Box>
+          )
+        }
       },
       {
         key: 'actions' as const,

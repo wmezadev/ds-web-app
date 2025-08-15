@@ -7,22 +7,21 @@ interface UsePaginatedResourceOptions {
   dataKey: string // 'clients'
   initialPerPage?: number
   enabled?: boolean
-  skipParamName?: string
-  limitParamName?: string
 }
 
 interface RawPaginatedResponse {
-  total?: number
+  total: number
+  page: number
+  per_page: number
+  pages: number
   [key: string]: any
 }
 
 export function usePaginatedResource<T>({
   endpoint,
   dataKey,
-  initialPerPage = 2,
-  enabled = true,
-  skipParamName = 'skip',
-  limitParamName = 'limit'
+  initialPerPage = 10,
+  enabled = true
 }: UsePaginatedResourceOptions) {
   const { fetchApi } = useApi()
 
@@ -52,7 +51,6 @@ export function usePaginatedResource<T>({
   // ---- FETCH ----
   const runFetch = useCallback(
     async (currentPage: number, currentPerPage: number, currentParams: Record<string, any>) => {
-      // Añade currentPerPage aquí
       if (!enabled) return
 
       setLoading(true)
@@ -61,11 +59,9 @@ export function usePaginatedResource<T>({
       try {
         const searchParams = new URLSearchParams()
 
-        // paginación usando skip y limit
-        const skip = (currentPage - 1) * currentPerPage // Usa currentPerPage aquí
-
-        searchParams.set(skipParamName, String(skip))
-        searchParams.set(limitParamName, String(currentPerPage)) // Usa currentPerPage aquí
+        // paginación usando page y per_page
+        searchParams.set('page', String(currentPage))
+        searchParams.set('per_page', String(currentPerPage))
 
         // filtros
         Object.entries(currentParams).forEach(([k, v]) => {
@@ -76,31 +72,32 @@ export function usePaginatedResource<T>({
 
         const url = `${endpoint}?${searchParams.toString()}`
 
-        console.log('[usePaginatedResource] GET', url)
+
 
         const raw: RawPaginatedResponse = await fetchApi(url)
 
+
+
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
-        const apiTotal = typeof raw.total === 'number' ? raw.total : items.length
-        const apiPages = Math.max(1, Math.ceil(apiTotal / currentPerPage)) // Usa currentPerPage aquí
+        // Use the pagination data directly from the API response
+        const apiTotal = raw.total || 0
+        const apiPages = raw.pages || 1
 
         setData(items)
         setTotal(apiTotal)
         setTotalPages(apiPages)
 
-        // IMPORTANTE: NO LLAMAR A setPage o setPerPage aquí si sus valores no son diferentes
-        // Y aún mejor, si ya los pasas como argumentos al runFetch, no necesitas actualizar el estado interno
-        // aquí, ya que el estado que provocó esta ejecución ya es la "fuente de verdad"
+
       } catch (err: any) {
-        console.error('[usePaginatedResource] fetch error:', err)
+
         setError(err?.message || 'Error al cargar datos.')
         setData([])
       } finally {
         setLoading(false)
       }
     },
-    [fetchApi, enabled, skipParamName, limitParamName, dataKey, endpoint] // Remueve page y perPage de las dependencias
+    [fetchApi, enabled, dataKey, endpoint]
   )
 
   // useEffect que dispara la petición
@@ -109,9 +106,8 @@ export function usePaginatedResource<T>({
     if (!enabled) return
 
     // Ejecuta la búsqueda cuando 'page', 'perPage', 'params' o 'enabled' cambian
-    // runFetch ahora recibe estos como argumentos
     runFetch(page, perPage, params)
-  }, [page, perPage, params, enabled, runFetch]) // Las dependencias del useEffect son correctas ahora
+  }, [page, perPage, params, enabled, runFetch])
 
   return {
     data,
