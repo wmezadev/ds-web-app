@@ -114,7 +114,16 @@ const ClientsPage = () => {
         key: 'source' as const,
         label: 'Tipo',
         render: (source: string) => {
-          const normalizedSource = (source === 'cliente' || source === 'prospecto') ? source : 'cliente'
+          // Handle API format (C/P) and form format (cliente/prospecto)
+          // Default to 'cliente' for null/undefined/empty values
+          let normalizedSource = 'cliente'
+          
+          if (source === 'P' || source === 'prospecto') {
+            normalizedSource = 'prospecto'
+          } else if (source === 'C' || source === 'cliente') {
+            normalizedSource = 'cliente'
+          }
+          // For null/undefined/empty or any other value, keep default 'cliente'
           
           return (
             <Box
@@ -131,7 +140,7 @@ const ClientsPage = () => {
                 letterSpacing: 0.5
               }}
             >
-              {formatSource(source)}
+              {formatSource(normalizedSource)}
             </Box>
           )
         }

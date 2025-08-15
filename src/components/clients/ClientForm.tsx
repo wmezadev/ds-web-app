@@ -441,6 +441,10 @@ const ClientForm: React.FC<Props> = ({
 }
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
+  // Debug logging to see what the API is actually returning
+  console.log('API client data received:', JSON.stringify(client, null, 2))
+  console.log('API source value:', client.source, 'Type:', typeof client.source)
+  
   const formFields: ClientFormFields = {
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',
@@ -452,7 +456,20 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     // Convert API format back to form format
     person_type: client.person_type === 'J' ? 'juridica' : 'natural',
     // Convert API source format back to form format: "C" -> "cliente", "P" -> "prospecto"
-    source: client.source === 'C' ? 'cliente' : 'prospecto',
+    // Handle both API format (C/P) and form format (cliente/prospecto)
+    // Handle null/undefined/empty values by defaulting to 'cliente' to match list behavior
+    source: (() => {
+      if (!client.source || client.source === '' || client.source === null) {
+        console.log('Source is null/empty, defaulting to cliente')
+        return 'cliente'
+      }
+      if (client.source === 'P' || client.source === 'prospecto') {
+        console.log('Source is prospecto:', client.source)
+        return 'prospecto'
+      }
+      console.log('Source defaulting to cliente for value:', client.source)
+      return 'cliente'
+    })(),
     email_1: client.email_1 ?? '',
     mobile_1: client.mobile_1 ?? '',
     email_2: client.email_2 ?? '',
@@ -532,7 +549,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   const normalizedSource = formData.source === 'cliente' ? 'C' : 'P'
 
   // Ensure is_member_of_group is boolean
-  const isMemberOfGroup = formData.is_member_of_group === 'yes' || formData.is_member_of_group === true
+  const isMemberOfGroup = formData.is_member_of_group === 'yes' || formData.is_member_of_group === 'true' || formData.is_member_of_group === true
 
   // Normalize client_type to single character (V, J, G, P)
   const normalizedClientType = normalizeStringField(formData.client_type)
