@@ -125,15 +125,14 @@ const ClientForm: React.FC<Props> = ({
 
   const methods = useForm<ClientFormFields>({
     defaultValues: {
-      ...initialValues,
-      first_name: '',
-      last_name: '',
-      is_member_of_group: '',
-      client_type: 'V',
-      document_number: '',
-      birth_place: '',
-      birth_date: '',
-      join_date: (() => {
+      first_name: initialValues.first_name || '',
+      last_name: initialValues.last_name || '',
+      is_member_of_group: initialValues.is_member_of_group || '',
+      client_type: initialValues.client_type || 'V',
+      document_number: initialValues.document_number || '',
+      birth_place: initialValues.birth_place || '',
+      birth_date: initialValues.birth_date || '',
+      join_date: initialValues.join_date || (() => {
         const d = new Date()
         const yyyy = d.getFullYear()
         const mm = String(d.getMonth() + 1).padStart(2, '0')
@@ -141,27 +140,43 @@ const ClientForm: React.FC<Props> = ({
 
         return `${yyyy}-${mm}-${dd}`
       })(),
-      person_type: '',
-      source: 'C',
-      email_1: '',
-      mobile_1: '',
-      email_2: '',
-      mobile_2: '',
-      phone: '',
-      reference: '',
-      doc: '',
-      billing_address: '',
-      legal_representative: '',
-      client_category_id: '', // Se inicializa con una cadena vacía
-      office_id: '', // Se inicializa con una cadena vacía
-      agent_id: '', // Se inicializa con una cadena vacía
-      executive_id: '',
-      client_group_id: '',
-      client_branch_id: '',
-      notes: '',
-      documents: [],
-      contacts: [],
-      bank_accounts: []
+      person_type: initialValues.person_type || '',
+      source: initialValues.source || 'C',
+      email_1: initialValues.email_1 || '',
+      mobile_1: initialValues.mobile_1 || '',
+      email_2: initialValues.email_2 || '',
+      mobile_2: initialValues.mobile_2 || '',
+      phone: initialValues.phone || '',
+      reference: initialValues.reference || '',
+      doc: initialValues.doc || '',
+      billing_address: initialValues.billing_address || '',
+      legal_representative: initialValues.legal_representative || '',
+      city_id: initialValues.city_id || '',
+      zone_id: initialValues.zone_id || '',
+      economic_activity_id: initialValues.economic_activity_id || '',
+      client_category_id: initialValues.client_category_id || '', // Se inicializa con una cadena vacía
+      office_id: initialValues.office_id || '', // Se inicializa con una cadena vacía
+      agent_id: initialValues.agent_id || '', // Se inicializa con una cadena vacía
+      executive_id: initialValues.executive_id || '',
+      client_group_id: initialValues.client_group_id || '',
+      client_branch_id: initialValues.client_branch_id || '',
+      notes: initialValues.notes || '',
+      personal_data: initialValues.personal_data || {
+        gender: '',
+        civil_status: '',
+        height: undefined,
+        weight: undefined,
+        smoker: false,
+        sports: '',
+        profession_id: '',
+        occupation_id: '',
+        monthly_income: undefined,
+        pathology: '',
+        rif: ''
+      },
+      documents: initialValues.documents || [],
+      contacts: initialValues.contacts || [],
+      bank_accounts: initialValues.bank_accounts || []
     },
     mode: 'onChange'
   })
@@ -536,7 +551,11 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
-  const normalizeStringField = (val: unknown) => String(val)
+  const normalizeStringField = (value: string | null | undefined): string | null => {
+    if (value === null || value === undefined) return null
+    const trimmed = String(value).trim()
+    return trimmed === '' ? null : trimmed
+  }
 
   const apiData = {
     // Boolean fields (exact match)
@@ -561,15 +580,15 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     reference: formData.reference?.trim() || '',
     notes: formData.notes?.trim() || '',
 
-    // Numeric fields (can be 0 as per API spec)
-    city_id: toNumberOrNull(formData.city_id) || 0,
-    zone_id: toNumberOrNull(formData.zone_id) || 0,
-    client_category_id: toNumberOrNull(formData.client_category_id) || 0,
-    office_id: toNumberOrNull(formData.office_id) || 0,
-    agent_id: toNumberOrNull(formData.agent_id) || 0,
-    executive_id: toNumberOrNull(formData.executive_id) || 0,
-    client_group_id: toNumberOrNull(formData.client_group_id) || 0,
-    client_branch_id: toNumberOrNull(formData.client_branch_id) || 0,
+    // Numeric fields (null for unset foreign keys to avoid constraint violations)
+    city_id: toNumberOrNull(formData.city_id),
+    zone_id: toNumberOrNull(formData.zone_id),
+    client_category_id: toNumberOrNull(formData.client_category_id),
+    office_id: toNumberOrNull(formData.office_id),
+    agent_id: toNumberOrNull(formData.agent_id),
+    executive_id: toNumberOrNull(formData.executive_id),
+    client_group_id: toNumberOrNull(formData.client_group_id),
+    client_branch_id: toNumberOrNull(formData.client_branch_id),
 
     // Personal data (exact match to API spec)
     personal_data: {
@@ -580,8 +599,8 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       smoker: Boolean(formData.personal_data?.smoker),
       sports: formData.personal_data?.sports?.trim() || '',
       rif: formData.personal_data?.rif?.trim() || '',
-      profession_id: toNumberOrNull(formData.personal_data?.profession_id) || 0,
-      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id) || 0,
+      profession_id: toNumberOrNull(formData.personal_data?.profession_id),
+      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id),
       monthly_income: formData.personal_data?.monthly_income || 0,
       pathology: formData.personal_data?.pathology?.trim() || ''
     },
@@ -589,7 +608,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     // Legal data (exact match to API spec)
     legal_data: {
       legal_representative: formData.legal_representative?.trim() || '',
-      economic_activity_id: toNumberOrNull(formData.economic_activity_id) || 0
+      economic_activity_id: toNumberOrNull(formData.economic_activity_id)
     },
 
     // Arrays (exact match to API spec)
