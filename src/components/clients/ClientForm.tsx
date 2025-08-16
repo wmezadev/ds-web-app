@@ -536,26 +536,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     return emailRegex.test(cleanEmail) ? cleanEmail : null
   }
 
-  // Normalize person_type: "natural" -> "N", "juridica" -> "J"
-  const normalizedPersonType = formData.person_type === 'juridica' ? 'J' : 'N'
-
-  // Normalize source: "cliente" -> "C", "prospecto" -> "P"
-  const normalizedSource = formData.source === 'cliente' ? 'C' : 'P'
-
-  // Ensure is_member_of_group is boolean
-  const isMemberOfGroup = formData.is_member_of_group === 'yes' || formData.is_member_of_group === 'true'
-
-  // Normalize client_type to single character (V, J, G, P)
-  const normalizedClientType = normalizeStringField(formData.client_type)
-
-  // legal_data only if person_type is "J" (juridica)
-  const legalData =
-    normalizedPersonType === 'J'
-      ? {
-          legal_representative: normalizeStringField(formData.legal_representative),
-          economic_activity_id: toNumberOrNull(formData.economic_activity_id)
-        }
-      : null
+  const normalizeStringField = (val: unknown) => String(val)
 
   const apiData = {
     // Boolean fields (exact match)
