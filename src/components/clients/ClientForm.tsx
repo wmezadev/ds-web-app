@@ -132,14 +132,16 @@ const ClientForm: React.FC<Props> = ({
       document_number: initialValues.document_number || '',
       birth_place: initialValues.birth_place || '',
       birth_date: initialValues.birth_date || '',
-      join_date: initialValues.join_date || (() => {
-        const d = new Date()
-        const yyyy = d.getFullYear()
-        const mm = String(d.getMonth() + 1).padStart(2, '0')
-        const dd = String(d.getDate()).padStart(2, '0')
+      join_date:
+        initialValues.join_date ||
+        (() => {
+          const d = new Date()
+          const yyyy = d.getFullYear()
+          const mm = String(d.getMonth() + 1).padStart(2, '0')
+          const dd = String(d.getDate()).padStart(2, '0')
 
-        return `${yyyy}-${mm}-${dd}`
-      })(),
+          return `${yyyy}-${mm}-${dd}`
+        })(),
       person_type: initialValues.person_type || '',
       source: initialValues.source || 'C',
       email_1: initialValues.email_1 || '',
@@ -554,6 +556,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   const normalizeStringField = (value: string | null | undefined): string | null => {
     if (value === null || value === undefined) return null
     const trimmed = String(value).trim()
+
     return trimmed === '' ? null : trimmed
   }
 
