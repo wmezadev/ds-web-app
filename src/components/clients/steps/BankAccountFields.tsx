@@ -1,10 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-
 import { Box, Typography, Button, Stack, Grid, TextField, IconButton } from '@mui/material'
 import { Add, Delete } from '@mui/icons-material'
-import Save from '@mui/icons-material/Save'
 
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
@@ -18,8 +15,6 @@ const BankAccountFields = () => {
     name: 'bank_accounts'
   })
 
-  const [savingIndex, setSavingIndex] = useState<number | null>(null)
-
   const handleAddAccount = () => {
     append({
       bank_name: '',
@@ -28,19 +23,6 @@ const BankAccountFields = () => {
       account_type: '',
       notes: ''
     })
-  }
-
-  const handleSaveContact = async (index: number) => {
-    setSavingIndex(index)
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-    } catch (error) {
-
-    } finally {
-      setSavingIndex(null)
-    }
   }
 
   return (
