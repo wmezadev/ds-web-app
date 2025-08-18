@@ -99,7 +99,9 @@ const DocumentFields = () => {
                       type='file'
                       accept='.pdf'
                       hidden
-                      ref={(el) => { fileInputRefs.current[index] = el; }}
+                      ref={el => {
+                        fileInputRefs.current[index] = el
+                      }}
                       onChange={e => handleFileChange(e, index)}
                     />
                     <Tooltip title='Subir archivo'>

@@ -37,7 +37,6 @@ const BankAccountFields = () => {
       await new Promise(resolve => setTimeout(resolve, 1500))
 
     } catch (error) {
-
     } finally {
       setSavingIndex(null)
     }

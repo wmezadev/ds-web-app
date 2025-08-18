@@ -68,7 +68,7 @@ export default function ClientDetailPage() {
 
       try {
         const apiPayload = clientFormToApi(values)
-        
+
         // Debug: Log the payload being sent to API
         console.log('DEBUG: API Payload being sent:', JSON.stringify(apiPayload, null, 2))
 
@@ -90,7 +90,7 @@ export default function ClientDetailPage() {
         }, 2000)
       } catch (err: any) {
         console.error('Error al actualizar cliente:', err)
-        
+
         // Debug: Log detailed error information
         console.log('DEBUG: Error details:', {
           message: err.message,
@@ -99,12 +99,12 @@ export default function ClientDetailPage() {
           stack: err.stack,
           fullError: err
         })
-        
+
         // Try to extract more detailed error information
         if (err.message && err.message.includes('[object Object]')) {
           console.log('DEBUG: Error contains object, trying to parse...')
         }
-        
+
         alert(`DEBUG: Fallo en la actualización: ${err.message}`)
       }
     },
@@ -120,16 +120,15 @@ export default function ClientDetailPage() {
             'Content-Type': 'application/json'
           }
         })
-        
+
         // Mostrar snackbar de eliminación exitosa
         setSuccessMessage('Cliente eliminado con éxito')
         setShowSuccessSnackbar(true)
-        
+
         // Redirigir después de mostrar el snackbar
         setTimeout(() => {
           router.push(ROUTES.CLIENTS.INDEX)
         }, 2000)
-        
       } catch (err: any) {
         // Verificar si el error es un 500 pero la eliminación fue exitosa
         if (err.message && err.message.includes('status: 500')) {
