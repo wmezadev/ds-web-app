@@ -28,18 +28,15 @@ const ContactListFields = () => {
   useEffect(() => {
     if (clientId) {
       const savedContacts = localStorage.getItem(localStorageKey)
-      
+
       if (savedContacts) {
         try {
-          const contacts = JSON.parse(savedContacts) 
-          
+          const contacts = JSON.parse(savedContacts)
+
           if (contacts.length > 0 && fields.length === 0) {
-          
             contacts.forEach((contact: any) => append(contact))
           }
-        } catch (error) {
-
-        }
+        } catch (error) {}
       }
     }
   }, [clientId, localStorageKey, append, fields.length])
@@ -48,7 +45,6 @@ const ContactListFields = () => {
   const saveToLocalStorage = (contacts: any[]) => {
     if (clientId) {
       localStorage.setItem(localStorageKey, JSON.stringify(contacts))
-
     }
   }
 
@@ -65,23 +61,17 @@ const ContactListFields = () => {
   const handleDeleteContact = (index: number) => {
     // Remove from form
     remove(index)
-    
+
     // Update localStorage with remaining contacts
     const formData = getValues()
-    
+
     const remainingContacts = (formData.contacts || []).filter((_, i) => i !== index)
-    
+
     saveToLocalStorage(remainingContacts)
-    
+
     setDeleteMessage('Contacto eliminado')
     setTimeout(() => setDeleteMessage(null), 2000)
-    
-
   }
-
-
-
-
 
   return (
     <Box>
