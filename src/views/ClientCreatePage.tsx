@@ -28,10 +28,8 @@ export default function ClientCreatePage() {
       setSnackbar(prev => ({ ...prev, open: false }))
 
       try {
-
         const apiPayload = clientFormToApi(formData)
-        
-      
+
         await fetchApi(API_ROUTES.CLIENTS.POST, {
           method: 'POST',
           body: apiPayload,
@@ -51,7 +49,7 @@ export default function ClientCreatePage() {
         }, 1500)
       } catch (error: any) {
         console.error('Error creating client:', error)
-        
+
         setSnackbar({
           open: true,
           message: `Error al crear el cliente: ${error.message}`,

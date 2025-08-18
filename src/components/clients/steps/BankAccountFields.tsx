@@ -36,9 +36,7 @@ const BankAccountFields = () => {
     try {
       // Aquí puedes añadir la lógica real para guardar la cuenta bancaria, como llamadas a API
       await new Promise(resolve => setTimeout(resolve, 1500)) // Simula un retardo
-
     } catch (error) {
-
     } finally {
       setSavingIndex(null)
     }
