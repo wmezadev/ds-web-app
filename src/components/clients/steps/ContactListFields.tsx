@@ -44,7 +44,6 @@ const ContactListFields = () => {
     }
   }, [clientId, localStorageKey, append, fields.length])
 
-  // Save contacts to localStorage whenever they change
   const saveToLocalStorage = (contacts: any[]) => {
     if (clientId) {
       localStorage.setItem(localStorageKey, JSON.stringify(contacts))
@@ -63,10 +62,8 @@ const ContactListFields = () => {
   }
 
   const handleDeleteContact = (index: number) => {
-    // Remove from form
     remove(index)
     
-    // Update localStorage with remaining contacts
     const formData = getValues()
     
     const remainingContacts = (formData.contacts || []).filter((_, i) => i !== index)
@@ -78,14 +75,9 @@ const ContactListFields = () => {
     
 
   }
-
-
-
-
-
+  
   return (
     <Box>
-      {/* Header con botón */}
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h6'>Contactos</Typography>
         <Button variant='outlined' onClick={handleAddContact} startIcon={<Add />}>
@@ -93,7 +85,6 @@ const ContactListFields = () => {
         </Button>
       </Stack>
 
-      {/* Delete Message */}
       {deleteMessage && (
         <Alert severity='info' sx={{ mb: 2 }}>
           {deleteMessage}
@@ -144,7 +135,7 @@ const ContactListFields = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={7}>
                 <TextField
                   fullWidth
                   label='Notas'
@@ -152,7 +143,7 @@ const ContactListFields = () => {
                   {...register(`contacts.${index}.notes`)}
                 />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={1}>
                 <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
                   <IconButton onClick={() => handleDeleteContact(index)} color='error' size='large'>
                     <Delete />
