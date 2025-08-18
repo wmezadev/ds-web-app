@@ -169,7 +169,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Client Type and Document Number */}
         <Grid item xs={4} sm={2}>
           <Controller
             name='client_type'
@@ -178,13 +177,19 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             rules={{ required: mode === 'create' ? 'El tipo de cliente es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.client_type}>
-                <InputLabel>Tipo Documento</InputLabel>
-                <Select {...field} label='Tipo' value={field.value ?? ''} defaultValue='V'>
-                  <MenuItem value='V'>V</MenuItem>
-                  <MenuItem value='J'>J</MenuItem>
-                  <MenuItem value='E'>E</MenuItem>
-                </Select>
-              </FormControl>
+              <InputLabel id="client-type-label">Tipo Documento</InputLabel>
+              <Select
+                {...field}
+                labelId="client-type-label"
+                label="Tipo Documento"
+                value={field.value ?? ''}
+                defaultValue="V"
+              >
+                <MenuItem value="V">V</MenuItem>
+                <MenuItem value="J">J</MenuItem>
+                <MenuItem value="E">E</MenuItem>
+              </Select>
+            </FormControl>
             )}
           />
         </Grid>
