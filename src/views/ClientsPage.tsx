@@ -24,15 +24,18 @@ const ClientsPage = () => {
   const apiEnabled = sessionStatus === 'authenticated'
 
   const [search, setSearch] = useState('')
+  const [searchPage, setSearchPage] = useState(1)
 
   const { data: clientsPaginated, loading, error, page, perPage, totalPages, setPage } = useClients(10, apiEnabled)
-  const { results: searchResults, loading: searchLoading, error: searchError } = useClientSearch(search, apiEnabled)
+  const { results: searchResults, totalPages: searchTotalPages, loading: searchLoading, error: searchError } = useClientSearch(search, searchPage, perPage, apiEnabled)
 
   const showingSearch = search.trim().length > 0
   const clientsToShow = showingSearch ? searchResults : clientsPaginated
 
-  // Para búsqueda, paginación local
-  const localTotalPages = showingSearch ? Math.max(1, Math.ceil(searchResults.length / perPage)) : totalPages || 1
+  // Usar las páginas correctas según el contexto
+  const currentTotalPages = showingSearch ? searchTotalPages : totalPages || 1
+  const currentPage = showingSearch ? searchPage : page
+  const currentSetPage = showingSearch ? setSearchPage : setPage
 
   const columns = useMemo(
     () => [
@@ -125,6 +128,7 @@ const ClientsPage = () => {
   const handleSearch = useCallback(
     (query: string) => {
       setSearch(query)
+      setSearchPage(1)
       setPage(1)
     },
     [setPage]
@@ -165,6 +169,7 @@ const ClientsPage = () => {
           onChange={handleSearch}
           onClear={() => {
             setSearch('')
+            setSearchPage(1)
             setPage(1)
           }}
           extraActions={
@@ -183,11 +188,11 @@ const ClientsPage = () => {
           columns={columns}
           rows={clientsToShow}
           emptyMessage={CLIENTS_PAGE.NO_RESULTS}
-          page={page}
-          onPageChange={setPage}
+          page={currentPage}
+          onPageChange={currentSetPage}
           itemsPerPage={perPage}
-          totalPages={localTotalPages}
-          paginateLocally={showingSearch}
+          totalPages={currentTotalPages}
+          paginateLocally={false}
         />
       </Box>
     </Box>
