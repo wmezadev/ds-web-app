@@ -188,6 +188,8 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
                 <MenuItem value="V">V</MenuItem>
                 <MenuItem value="J">J</MenuItem>
                 <MenuItem value="E">E</MenuItem>
+                <MenuItem value="E">P</MenuItem>
+                <MenuItem value="E">G</MenuItem>
               </Select>
             </FormControl>
             )}
