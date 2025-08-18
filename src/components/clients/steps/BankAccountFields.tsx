@@ -22,11 +22,11 @@ const BankAccountFields = () => {
 
   const handleAddAccount = () => {
     append({
-      bank: '',
+      bank_name: '',
       account_number: '',
       currency: '',
       account_type: '',
-      observations: ''
+      notes: ''
     })
   }
 
@@ -66,7 +66,7 @@ const BankAccountFields = () => {
                     fullWidth
                     label='Banco'
                     placeholder='Nombre del banco'
-                    {...register(`bank_accounts.${index}.bank`)}
+                    {...register(`bank_accounts.${index}.bank_name`)}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -97,7 +97,7 @@ const BankAccountFields = () => {
                   <TextField
                     label='Observaciones'
                     placeholder='Notas adicionales...'
-                    {...register(`bank_accounts.${index}.observations`)}
+                    {...register(`bank_accounts.${index}.notes`)}
                     fullWidth
                   />
                 </Grid>
