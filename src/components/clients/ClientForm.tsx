@@ -595,7 +595,9 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
 
     // Personal data (exact match to API spec)
     personal_data: {
-      gender: formData.personal_data?.gender?.trim() || 'M',
+      gender: formData.personal_data?.gender === 'Masculino' ? 'M' : 
+              formData.personal_data?.gender === 'Femenino' ? 'F' : 
+              formData.personal_data?.gender?.trim() || null,
       civil_status: formData.personal_data?.civil_status?.trim() || 'single',
       height: formData.personal_data?.height || 0,
       weight: formData.personal_data?.weight || 0,
