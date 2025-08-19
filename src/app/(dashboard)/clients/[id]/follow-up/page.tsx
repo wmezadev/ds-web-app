@@ -9,6 +9,7 @@ import { Box, Typography, Paper, CircularProgress, TextField, Button, Stack, Gri
 import { useForm, Controller } from 'react-hook-form'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
+import { useFollowUpTypes } from '@/hooks/useFollowUpTypes'
 
 interface FollowUpFormData {
   currentDate: string
@@ -17,6 +18,7 @@ interface FollowUpFormData {
   description: string
   assignedBy: string | number
   assignedTo: string | number
+  gestion: string | number
 }
 
 interface FollowUpRecord extends FollowUpFormData {
@@ -24,6 +26,7 @@ interface FollowUpRecord extends FollowUpFormData {
   createdAt: Date
   assignedByName: string
   assignedToName: string
+  gestionName: string
 }
 
 const ClientFollowUpPage = () => {
@@ -31,6 +34,7 @@ const ClientFollowUpPage = () => {
   const clientId = params.id as string
   const { data: client, isLoading, error } = useClient(clientId)
   const { catalogs, loading: loadingCatalogs } = useCatalogs()
+  const { followUpTypes, loading: loadingFollowUpTypes } = useFollowUpTypes()
   
   // Local state for follow-up records
   const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([])
@@ -42,14 +46,16 @@ const ClientFollowUpPage = () => {
       subject: '',
       description: '',
       assignedBy: '',
-      assignedTo: ''
+      assignedTo: '',
+      gestion: ''
     }
   })
 
   const onSubmit = (data: FollowUpFormData) => {
-    // Find agent and executive names
+    // Find agent, executive and gestión names
     const assignedByName = catalogs?.agents.find(agent => agent.id === data.assignedBy)?.name || ''
     const assignedToName = catalogs?.executives.find(executive => executive.id === data.assignedTo)?.name || ''
+    const gestionName = followUpTypes.find(type => type.id === data.gestion)?.name || ''
     
     // Create new follow-up record
     const newRecord: FollowUpRecord = {
@@ -57,7 +63,8 @@ const ClientFollowUpPage = () => {
       id: Date.now().toString(), // Simple ID generation
       createdAt: new Date(),
       assignedByName,
-      assignedToName
+      assignedToName,
+      gestionName
     }
     
     // Add to records list
@@ -70,7 +77,8 @@ const ClientFollowUpPage = () => {
       subject: '',
       description: '',
       assignedBy: '',
-      assignedTo: ''
+      assignedTo: '',
+      gestion: ''
     })
     
     console.log('Seguimiento guardado:', newRecord)
@@ -181,6 +189,9 @@ const ClientFollowUpPage = () => {
                   />
                 </Grid>
 
+                {/* Gestión - Tipo de Seguimiento */}
+                
+
                 <Grid item xs={12}>
                   <Controller
                     name="description"
@@ -203,7 +214,7 @@ const ClientFollowUpPage = () => {
                 </Grid>
 
                 {/* Asignado Por - Agentes */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Controller
                     name="assignedBy"
                     control={control}
@@ -242,7 +253,7 @@ const ClientFollowUpPage = () => {
                 </Grid>
 
                 {/* Asignado A - Ejecutivos */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Controller
                     name="assignedTo"
                     control={control}
@@ -273,6 +284,43 @@ const ClientFollowUpPage = () => {
                         {errors.assignedTo && (
                           <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                             {errors.assignedTo.message}
+                          </Typography>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name="gestion"
+                    control={control}
+                    rules={{ required: 'El tipo de gestión es requerido' }}
+                    render={({ field }) => (
+                      <FormControl fullWidth error={!!errors.gestion}>
+                        <InputLabel>Tipo de Gestión</InputLabel>
+                        <Select 
+                          {...field} 
+                          label="Tipo de Gestión" 
+                          value={field.value ?? ''} 
+                          disabled={loadingFollowUpTypes}
+                        >
+                          <MenuItem value="">
+                            <em>Seleccionar tipo de gestión</em>
+                          </MenuItem>
+                          {followUpTypes.map(type => (
+                            <MenuItem key={type.id} value={type.id}>
+                              {type.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {loadingFollowUpTypes && (
+                          <Typography variant="caption" color="textSecondary">
+                            Cargando tipos de gestión...
+                          </Typography>
+                        )}
+                        {errors.gestion && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                            {errors.gestion.message}
                           </Typography>
                         )}
                       </FormControl>
@@ -342,6 +390,12 @@ const ClientFollowUpPage = () => {
                             size="small"
                             variant="outlined"
                             color="secondary"
+                          />
+                          <Chip 
+                            label={`Gestión: ${record.gestionName}`}
+                            size="small"
+                            variant="filled"
+                            color="info"
                           />
                         </Box>
                       </Box>
