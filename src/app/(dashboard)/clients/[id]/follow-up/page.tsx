@@ -1,10 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 
 import { useParams } from 'next/navigation'
 
-import { Box, Typography, Paper, CircularProgress, TextField, Button, Stack, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
+import { Box, Typography, Paper, CircularProgress, TextField, Button, Stack, Grid, FormControl, InputLabel, Select, MenuItem, List, ListItem, ListItemText, Divider, Chip, Avatar } from '@mui/material'
 
 import { useForm, Controller } from 'react-hook-form'
 import { useClient } from '@/hooks/useClient'
@@ -19,13 +19,23 @@ interface FollowUpFormData {
   assignedTo: string | number
 }
 
+interface FollowUpRecord extends FollowUpFormData {
+  id: string
+  createdAt: Date
+  assignedByName: string
+  assignedToName: string
+}
+
 const ClientFollowUpPage = () => {
   const params = useParams()
   const clientId = params.id as string
   const { data: client, isLoading, error } = useClient(clientId)
   const { catalogs, loading: loadingCatalogs } = useCatalogs()
   
-  const { control, handleSubmit, formState: { errors } } = useForm<FollowUpFormData>({
+  // Local state for follow-up records
+  const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([])
+  
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<FollowUpFormData>({
     defaultValues: {
       currentDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
       nextFollowUpDate: '',
@@ -37,10 +47,33 @@ const ClientFollowUpPage = () => {
   })
 
   const onSubmit = (data: FollowUpFormData) => {
-    console.log('Datos del seguimiento:', {
+    // Find agent and executive names
+    const assignedByName = catalogs?.agents.find(agent => agent.id === data.assignedBy)?.name || ''
+    const assignedToName = catalogs?.executives.find(executive => executive.id === data.assignedTo)?.name || ''
+    
+    // Create new follow-up record
+    const newRecord: FollowUpRecord = {
       ...data,
-      clientId
+      id: Date.now().toString(), // Simple ID generation
+      createdAt: new Date(),
+      assignedByName,
+      assignedToName
+    }
+    
+    // Add to records list
+    setFollowUpRecords(prev => [newRecord, ...prev]) // Add to beginning for chronological order
+    
+    // Reset form
+    reset({
+      currentDate: new Date().toISOString().split('T')[0],
+      nextFollowUpDate: '',
+      subject: '',
+      description: '',
+      assignedBy: '',
+      assignedTo: ''
     })
+    
+    console.log('Seguimiento guardado:', newRecord)
   }
 
   if (isLoading) {
@@ -268,9 +301,104 @@ const ClientFollowUpPage = () => {
             Historial de Seguimiento
           </Typography>
           
-          <Typography variant='body1' color='text.secondary'>
-            Aquí se mostrará el historial de seguimiento del cliente.
-          </Typography>
+          {followUpRecords.length === 0 ? (
+            <Typography variant='body1' color='text.secondary'>
+              No hay seguimientos registrados para este cliente.
+            </Typography>
+          ) : (
+            <List sx={{ width: '100%' }}>
+              {followUpRecords.map((record, index) => (
+                <React.Fragment key={record.id}>
+                  <ListItem 
+                    alignItems="flex-start" 
+                    sx={{ 
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      py: 2,
+                      px: 0
+                    }}
+                  >
+                    {/* Header with date, subject and assignment info */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start',
+                      width: '100%',
+                      mb: 1
+                    }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          {record.subject}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <Chip 
+                            label={`Fecha: ${new Date(record.currentDate).toLocaleDateString('es-ES')}`}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                          />
+                          <Chip 
+                            label={`Próximo: ${new Date(record.nextFollowUpDate).toLocaleDateString('es-ES')}`}
+                            size="small"
+                            variant="outlined"
+                            color="secondary"
+                          />
+                        </Box>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 2, minWidth: 'fit-content' }}>
+                        {record.createdAt.toLocaleString('es-ES')}
+                      </Typography>
+                    </Box>
+
+                    {/* Description */}
+                    <Box sx={{ mb: 2, width: '100%' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
+                        Descripción:
+                      </Typography>
+                      <Paper 
+                        variant="outlined" 
+                        sx={{ 
+                          p: 2, 
+                          backgroundColor: 'grey.50',
+                          borderRadius: 1
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                          {record.description}
+                        </Typography>
+                      </Paper>
+                    </Box>
+
+                    {/* Assignment info */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      flexWrap: 'wrap',
+                      alignItems: 'center'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
+                          {record.assignedByName.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography variant="caption" color="text.secondary">
+                          <strong>Asignado por:</strong> {record.assignedByName}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'secondary.main' }}>
+                          {record.assignedToName.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography variant="caption" color="text.secondary">
+                          <strong>Asignado a:</strong> {record.assignedToName}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </ListItem>
+                  {index < followUpRecords.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
         </Paper>
       </Stack>
     </Box>
