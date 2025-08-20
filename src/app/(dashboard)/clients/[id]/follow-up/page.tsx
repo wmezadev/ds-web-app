@@ -29,6 +29,7 @@ import {
 
 import { useForm, Controller } from 'react-hook-form'
 import { useClient } from '@/hooks/useClient'
+import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
 
 interface FollowUpFormData {
   currentDate: string
@@ -75,8 +76,8 @@ const UserFollowUpPage = () => {
 
         setUsers(usersArray)
       } catch (err: any) {
-        console.error('❌ Error loading users:', err)
-        console.error('📝 Error details:', {
+        console.error('Error loading users:', err)
+        console.error('Error details:', {
           message: err.message,
           stack: err.stack
         })
@@ -109,7 +110,6 @@ const UserFollowUpPage = () => {
     try {
       setIsSubmitting(true)
       
-      // Transform form data to API format
       const followUpData = {
         subject: data.subject,
         reminder_date: data.nextFollowUpDate,
@@ -123,12 +123,11 @@ const UserFollowUpPage = () => {
       await createFollowUp(followUpData)
       alert('Seguimiento creado con éxito')
 
-      // Reset form after successful submission
       reset({
         currentDate: new Date().toISOString().split('T')[0],
         nextFollowUpDate: '',
         subject: '',
-        description: '',
+        description: '', 
         assignedBy: '',
         assignedTo: '',
         gestion: ''
@@ -136,7 +135,7 @@ const UserFollowUpPage = () => {
     } catch (err: any) {
       alert('Error al crear el seguimiento')
       console.error('Error creating follow-up:', err)
-      // You could add a toast notification here
+
     } finally {
       setIsSubmitting(false)
     }
@@ -216,12 +215,13 @@ const UserFollowUpPage = () => {
                       helperText={errors.nextFollowUpDate?.message}
                       variant='outlined'
                       inputProps={{
-                        min: new Date().toISOString().split('T')[0] // Minimum date is today
+                        min: new Date().toISOString().split('T')[0] 
                       }}
                     />
                   )}
                 />
               </Grid>
+
               <Grid item xs={12}>
                 <Controller
                   name='subject'
@@ -242,22 +242,22 @@ const UserFollowUpPage = () => {
               </Grid>
 
               <Grid item xs={12}>
+                <Typography variant='subtitle1' sx={{ mb: 1 }}>
+                  Descripción
+                </Typography>
                 <Controller
                   name='description'
                   control={control}
                   rules={{ required: 'La descripción es requerida' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='Descripción'
-                      multiline
-                      rows={4}
-                      fullWidth
-                      variant='outlined'
-                      error={!!errors.description}
-                      helperText={errors.description?.message}
-                      placeholder='Describe el seguimiento...'
-                    />
+                  render={({ field, fieldState }) => (
+                    <>
+                      <RichTextEditorComponent name={field.name} control={control} />
+                      {fieldState.error && (
+                        <Typography color='error' variant='caption' sx={{ mt: 1, display: 'block' }}>
+                          {fieldState.error.message}
+                        </Typography>
+                      )}
+                    </>
                   )}
                 />
               </Grid>
@@ -365,7 +365,6 @@ const UserFollowUpPage = () => {
                 />
               </Grid>
 
-              {/* Botón Guardar */}
               <Grid item xs={12} container justifyContent='flex-end'>
                 <Button 
                   type='submit' 
@@ -467,18 +466,14 @@ const UserFollowUpPage = () => {
                         <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500, mb: 0.5 }}>
                           Descripción:
                         </Typography>
-                        <Paper
-                          variant='outlined'
+                        <Box
                           sx={{
-                            p: 2,
-                            backgroundColor: 'grey.50',
-                            borderRadius: 1
+                            '& p': { m: 0 },
+                            '& ul, & ol': { pl: 3, m: 0 },
+                            lineHeight: 1.6
                           }}
-                        >
-                          <Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                            {record.description}
-                          </Typography>
-                        </Paper>
+                          dangerouslySetInnerHTML={{ __html: record.description }}
+                        />
                       </Box>
 
                       <Box
