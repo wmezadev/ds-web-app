@@ -35,7 +35,8 @@ interface UseClientReturn {
   followUpRecords: FollowUpRecord[]
   isLoading: boolean
   error: string | null
-  createFollowUp: (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<FollowUpRecord>
+  createFollowUp: (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<FollowUpRecord>,
+  updateFollowUpStatus: (followUpId: number, status: boolean) => Promise<void>
   refreshFollowUps: () => Promise<void>
 }
 
@@ -104,6 +105,29 @@ export const useClient = (clientId: string): UseClientReturn => {
     }
   }
 
+  const updateFollowUpStatus = async (followUpId: number, status: boolean): Promise<void> => {
+    try {
+      await fetchApi(`clients/${clientId}/follow-up/${followUpId}/status`, {
+        method: 'PATCH',
+        body: { status }
+      })
+
+      setFollowUpRecords(prev =>
+        prev.map(record => {
+          if (record.id === followUpId) {
+            return { ...record, status: status }
+          } else if (status) {
+            // If the current follow-up is being activated, deactivate all others
+            return { ...record, status: false }
+          }
+          return record
+        })
+      )
+    } catch (err: any) {
+      throw new Error(err.message || 'Error al actualizar el estado del seguimiento')
+    }
+  }
+
   const refreshFollowUps = async (): Promise<void> => {
     try {
       const response = await fetchApi(`clients/${clientId}/follow-up`)
@@ -114,7 +138,7 @@ export const useClient = (clientId: string): UseClientReturn => {
     }
   }
 
-  return { data, followUpTypes, followUpRecords, isLoading, error, createFollowUp, refreshFollowUps }
+  return { data, followUpTypes, followUpRecords, isLoading, error, createFollowUp, refreshFollowUps, updateFollowUpStatus }
 }
 
 export const useFollowUpTypes = (): UseFollowUpTypesReturn => {

@@ -22,7 +22,9 @@ import {
   ListItemText,
   Divider,
   Chip,
-  Avatar
+  Avatar,
+  Switch,
+  FormControlLabel
 } from '@mui/material'
 
 import { useForm, Controller } from 'react-hook-form'
@@ -39,10 +41,11 @@ interface FollowUpFormData {
 }
 
 const UserFollowUpPage = () => {
-  const params = useParams()
+    const params = useParams()
   const userId = params.id as string
-  const { data: client, followUpTypes, followUpRecords, isLoading, error, createFollowUp } = useClient(userId)
+  const { data: client, followUpTypes, followUpRecords, isLoading, error, createFollowUp, updateFollowUpStatus } = useClient(userId)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
 
@@ -118,6 +121,7 @@ const UserFollowUpPage = () => {
       }
 
       await createFollowUp(followUpData)
+      alert('Seguimiento creado con éxito')
 
       // Reset form after successful submission
       reset({
@@ -130,6 +134,7 @@ const UserFollowUpPage = () => {
         gestion: ''
       })
     } catch (err: any) {
+      alert('Error al crear el seguimiento')
       console.error('Error creating follow-up:', err)
       // You could add a toast notification here
     } finally {
@@ -418,6 +423,26 @@ const UserFollowUpPage = () => {
                             {record.subject}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={record.status}
+                                  onChange={async e => {
+                                    setUpdatingStatus(record.id)
+                                    try {
+                                      await updateFollowUpStatus(record.id, e.target.checked)
+                                      alert('Estado actualizado con éxito')
+                                    } catch (error) {
+                                      alert('Error al actualizar el estado')
+                                    } finally {
+                                      setUpdatingStatus(null)
+                                    }
+                                  }}
+                                  disabled={updatingStatus === record.id}
+                                />
+                              }
+                              label={record.status ? 'Activo' : 'Inactivo'}
+                            />
                             <Chip
                               label={`Creado: ${createdDate.toLocaleDateString('es-ES')}`}
                               size='small'
@@ -431,12 +456,6 @@ const UserFollowUpPage = () => {
                               color='secondary'
                             />
                             <Chip label={`Gestión: ${typeName}`} size='small' variant='filled' color='info' />
-                            <Chip 
-                              label={record.status ? 'Activo' : 'Inactivo'} 
-                              size='small' 
-                              variant='filled' 
-                              color={record.status ? 'success' : 'default'} 
-                            />
                           </Box>
                         </Box>
                         <Typography variant='caption' color='text.secondary' sx={{ ml: 2, minWidth: 'fit-content' }}>
