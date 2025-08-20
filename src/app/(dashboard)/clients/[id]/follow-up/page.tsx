@@ -38,20 +38,11 @@ interface FollowUpFormData {
   gestion: string | number
 }
 
-interface FollowUpRecord extends FollowUpFormData {
-  id: string
-  createdAt: Date
-  assignedByName: string
-  assignedToName: string
-  gestionName: string
-}
-
 const UserFollowUpPage = () => {
   const params = useParams()
   const userId = params.id as string
-  const { data: client, followUpTypes, isLoading, error } = useClient(userId)
-
-  const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([])
+  const { data: client, followUpTypes, followUpRecords, isLoading, error, createFollowUp } = useClient(userId)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
 
@@ -111,31 +102,39 @@ const UserFollowUpPage = () => {
     }
   })
 
-  const onSubmit = (data: FollowUpFormData) => {
-    const assignedByName = users.find(user => user.id === data.assignedBy)?.full_name || ''
-    const assignedToName = users.find(user => user.id === data.assignedTo)?.full_name || ''
-    const gestionName = followUpTypes.find(type => type.id === data.gestion)?.name || ''
+  const onSubmit = async (data: FollowUpFormData) => {
+    try {
+      setIsSubmitting(true)
+      
+      // Transform form data to API format
+      const followUpData = {
+        subject: data.subject,
+        reminder_date: data.nextFollowUpDate,
+        description: data.description,
+        assigned_to: Number(data.assignedTo),
+        assigned_by: Number(data.assignedBy),
+        type_id: Number(data.gestion),
+        status: true
+      }
 
-    const newRecord: FollowUpRecord = {
-      ...data,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      assignedByName,
-      assignedToName,
-      gestionName
+      await createFollowUp(followUpData)
+
+      // Reset form after successful submission
+      reset({
+        currentDate: new Date().toISOString().split('T')[0],
+        nextFollowUpDate: '',
+        subject: '',
+        description: '',
+        assignedBy: '',
+        assignedTo: '',
+        gestion: ''
+      })
+    } catch (err: any) {
+      console.error('Error creating follow-up:', err)
+      // You could add a toast notification here
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setFollowUpRecords(prev => [newRecord, ...prev])
-
-    reset({
-      currentDate: new Date().toISOString().split('T')[0],
-      nextFollowUpDate: '',
-      subject: '',
-      description: '',
-      assignedBy: '',
-      assignedTo: '',
-      gestion: ''
-    })
   }
 
   if (isLoading) {
@@ -363,8 +362,14 @@ const UserFollowUpPage = () => {
 
               {/* Botón Guardar */}
               <Grid item xs={12} container justifyContent='flex-end'>
-                <Button type='submit' variant='contained' size='large' sx={{ mt: 2 }}>
-                  Guardar Seguimiento
+                <Button 
+                  type='submit' 
+                  variant='contained' 
+                  size='large' 
+                  sx={{ mt: 2 }}
+                  disabled={isSubmitting || isLoading}
+                >
+                  {isSubmitting ? 'Guardando...' : 'Guardar Seguimiento'}
                 </Button>
               </Grid>
             </Grid>
@@ -382,98 +387,111 @@ const UserFollowUpPage = () => {
             </Typography>
           ) : (
             <List sx={{ width: '100%' }}>
-              {followUpRecords.map((record, index) => (
-                <React.Fragment key={record.id}>
-                  <ListItem
-                    alignItems='flex-start'
-                    sx={{
-                      flexDirection: 'column',
-                      alignItems: 'stretch',
-                      py: 2,
-                      px: 0
-                    }}
-                  >
-                    <Box
+              {followUpRecords.map((record, index) => {
+                const assignedByName = users.find(user => user.id === record.assigned_by)?.full_name || record.assigned_by_name || 'Usuario desconocido'
+                const assignedToName = users.find(user => user.id === record.assigned_to)?.full_name || record.assigned_to_name || 'Usuario desconocido'
+                const typeName = followUpTypes.find(type => type.id === record.type_id)?.name || record.type_name || 'Tipo desconocido'
+                const createdDate = record.created_at ? new Date(record.created_at) : new Date()
+                
+                return (
+                  <React.Fragment key={record.id}>
+                    <ListItem
+                      alignItems='flex-start'
                       sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        width: '100%',
-                        mb: 1
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
+                        py: 2,
+                        px: 0
                       }}
                     >
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant='h6' component='div' sx={{ fontWeight: 600, mb: 0.5 }}>
-                          {record.subject}
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                          <Chip
-                            label={`Fecha: ${new Date(record.currentDate).toLocaleDateString('es-ES')}`}
-                            size='small'
-                            variant='outlined'
-                            color='primary'
-                          />
-                          <Chip
-                            label={`Próximo: ${new Date(record.nextFollowUpDate).toLocaleDateString('es-ES')}`}
-                            size='small'
-                            variant='outlined'
-                            color='secondary'
-                          />
-                          <Chip label={`Gestión: ${record.gestionName}`} size='small' variant='filled' color='info' />
-                        </Box>
-                      </Box>
-                      <Typography variant='caption' color='text.secondary' sx={{ ml: 2, minWidth: 'fit-content' }}>
-                        {record.createdAt.toLocaleString('es-ES')}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ mb: 2, width: '100%' }}>
-                      <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500, mb: 0.5 }}>
-                        Descripción:
-                      </Typography>
-                      <Paper
-                        variant='outlined'
+                      <Box
                         sx={{
-                          p: 2,
-                          backgroundColor: 'grey.50',
-                          borderRadius: 1
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          width: '100%',
+                          mb: 1
                         }}
                       >
-                        <Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                          {record.description}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant='h6' component='div' sx={{ fontWeight: 600, mb: 0.5 }}>
+                            {record.subject}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <Chip
+                              label={`Creado: ${createdDate.toLocaleDateString('es-ES')}`}
+                              size='small'
+                              variant='outlined'
+                              color='primary'
+                            />
+                            <Chip
+                              label={`Próximo: ${new Date(record.reminder_date).toLocaleDateString('es-ES')}`}
+                              size='small'
+                              variant='outlined'
+                              color='secondary'
+                            />
+                            <Chip label={`Gestión: ${typeName}`} size='small' variant='filled' color='info' />
+                            <Chip 
+                              label={record.status ? 'Activo' : 'Inactivo'} 
+                              size='small' 
+                              variant='filled' 
+                              color={record.status ? 'success' : 'default'} 
+                            />
+                          </Box>
+                        </Box>
+                        <Typography variant='caption' color='text.secondary' sx={{ ml: 2, minWidth: 'fit-content' }}>
+                          {createdDate.toLocaleString('es-ES')}
                         </Typography>
-                      </Paper>
-                    </Box>
+                      </Box>
 
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 2,
-                        flexWrap: 'wrap',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
-                          {record.assignedByName.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant='caption' color='text.secondary'>
-                          <strong>Asignado por:</strong> {record.assignedByName}
+                      <Box sx={{ mb: 2, width: '100%' }}>
+                        <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500, mb: 0.5 }}>
+                          Descripción:
                         </Typography>
+                        <Paper
+                          variant='outlined'
+                          sx={{
+                            p: 2,
+                            backgroundColor: 'grey.50',
+                            borderRadius: 1
+                          }}
+                        >
+                          <Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                            {record.description}
+                          </Typography>
+                        </Paper>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'secondary.main' }}>
-                          {record.assignedToName.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant='caption' color='text.secondary'>
-                          <strong>Asignado a:</strong> {record.assignedToName}
-                        </Typography>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 2,
+                          flexWrap: 'wrap',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
+                            {assignedByName.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Typography variant='caption' color='text.secondary'>
+                            <strong>Asignado por:</strong> {assignedByName}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'secondary.main' }}>
+                            {assignedToName.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Typography variant='caption' color='text.secondary'>
+                            <strong>Asignado a:</strong> {assignedToName}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </ListItem>
-                  {index < followUpRecords.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
+                    </ListItem>
+                    {index < followUpRecords.length - 1 && <Divider />}
+                  </React.Fragment>
+                )
+              })}
             </List>
           )}
         </Paper>

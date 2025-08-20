@@ -13,16 +13,36 @@ interface UseFollowUpTypesReturn {
   error: string | null
 }
 
+interface FollowUpRecord {
+  id: number
+  subject: string
+  reminder_date: string
+  description: string
+  assigned_to: number
+  assigned_by: number
+  type_id: number
+  status: boolean
+  created_at?: string
+  updated_at?: string
+  assigned_to_name?: string
+  assigned_by_name?: string
+  type_name?: string
+}
+
 interface UseClientReturn {
   data: Client | null
   followUpTypes: FollowUpType[]
+  followUpRecords: FollowUpRecord[]
   isLoading: boolean
   error: string | null
+  createFollowUp: (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<FollowUpRecord>
+  refreshFollowUps: () => Promise<void>
 }
 
 export const useClient = (clientId: string): UseClientReturn => {
   const [data, setData] = useState<Client | null>(null)
   const [followUpTypes, setFollowUpTypes] = useState<FollowUpType[]>([])
+  const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { fetchApi } = useApi()
@@ -39,21 +59,25 @@ export const useClient = (clientId: string): UseClientReturn => {
         setIsLoading(true)
         setError(null)
         
-        // Fetch both client data and follow-up types in parallel
-        const [clientResponse, followUpTypesResponse] = await Promise.all([
+        // Fetch client data, follow-up types, and follow-up records in parallel
+        const [clientResponse, followUpTypesResponse, followUpRecordsResponse] = await Promise.all([
           fetchApi(`clients/${clientId}`),
-          fetchApi('follow-up-types')
+          fetchApi('follow-up-types'),
+          fetchApi(`clients/${clientId}/follow-up`)
         ])
         
         const clientData = clientResponse.data || clientResponse.client || clientResponse
         const followUpTypesData = followUpTypesResponse.data || followUpTypesResponse.follow_up_types || followUpTypesResponse || []
+        const followUpRecordsData = followUpRecordsResponse.data || followUpRecordsResponse.follow_ups || followUpRecordsResponse || []
         
         setData(clientData)
         setFollowUpTypes(followUpTypesData)
+        setFollowUpRecords(followUpRecordsData)
       } catch (err: any) {
         setError(err.message || 'Error al cargar los datos')
         setData(null)
         setFollowUpTypes([])
+        setFollowUpRecords([])
       } finally {
         setIsLoading(false)
       }
@@ -62,7 +86,35 @@ export const useClient = (clientId: string): UseClientReturn => {
     fetchData()
   }, [clientId, fetchApi])
 
-  return { data, followUpTypes, isLoading, error }
+  const createFollowUp = async (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>): Promise<FollowUpRecord> => {
+    try {
+      const response = await fetchApi(`clients/${clientId}/follow-up`, {
+        method: 'POST',
+        body: followUpData
+      })
+      
+      const newFollowUp = response.data || response.follow_up || response
+      
+      // Add the new follow-up to the local state
+      setFollowUpRecords(prev => [newFollowUp, ...prev])
+      
+      return newFollowUp
+    } catch (err: any) {
+      throw new Error(err.message || 'Error al crear el seguimiento')
+    }
+  }
+
+  const refreshFollowUps = async (): Promise<void> => {
+    try {
+      const response = await fetchApi(`clients/${clientId}/follow-up`)
+      const followUpRecordsData = response.data || response.follow_ups || response || []
+      setFollowUpRecords(followUpRecordsData)
+    } catch (err: any) {
+      console.error('Error refreshing follow-ups:', err)
+    }
+  }
+
+  return { data, followUpTypes, followUpRecords, isLoading, error, createFollowUp, refreshFollowUps }
 }
 
 export const useFollowUpTypes = (): UseFollowUpTypesReturn => {
