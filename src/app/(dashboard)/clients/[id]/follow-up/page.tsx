@@ -42,9 +42,17 @@ interface FollowUpFormData {
 }
 
 const UserFollowUpPage = () => {
-    const params = useParams()
+  const params = useParams()
   const userId = params.id as string
-  const { data: client, followUpTypes, followUpRecords, isLoading, error, createFollowUp, updateFollowUpStatus } = useClient(userId)
+  const {
+    data: client,
+    followUpTypes,
+    followUpRecords,
+    isLoading,
+    error,
+    createFollowUp,
+    updateFollowUpStatus
+  } = useClient(userId)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
@@ -109,7 +117,7 @@ const UserFollowUpPage = () => {
   const onSubmit = async (data: FollowUpFormData) => {
     try {
       setIsSubmitting(true)
-      
+
       const followUpData = {
         subject: data.subject,
         reminder_date: data.nextFollowUpDate,
@@ -127,7 +135,7 @@ const UserFollowUpPage = () => {
         currentDate: new Date().toISOString().split('T')[0],
         nextFollowUpDate: '',
         subject: '',
-        description: '', 
+        description: '',
         assignedBy: '',
         assignedTo: '',
         gestion: ''
@@ -135,7 +143,6 @@ const UserFollowUpPage = () => {
     } catch (err: any) {
       alert('Error al crear el seguimiento')
       console.error('Error creating follow-up:', err)
-
     } finally {
       setIsSubmitting(false)
     }
@@ -215,7 +222,7 @@ const UserFollowUpPage = () => {
                       helperText={errors.nextFollowUpDate?.message}
                       variant='outlined'
                       inputProps={{
-                        min: new Date().toISOString().split('T')[0] 
+                        min: new Date().toISOString().split('T')[0]
                       }}
                     />
                   )}
@@ -335,12 +342,7 @@ const UserFollowUpPage = () => {
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.gestion}>
                       <InputLabel>Tipo de Gestión</InputLabel>
-                      <Select
-                        {...field}
-                        label='Tipo de Gestión'
-                        value={field.value ?? ''}
-                        disabled={isLoading}
-                      >
+                      <Select {...field} label='Tipo de Gestión' value={field.value ?? ''} disabled={isLoading}>
                         <MenuItem value=''>
                           <em>Seleccionar tipo de gestión</em>
                         </MenuItem>
@@ -366,10 +368,10 @@ const UserFollowUpPage = () => {
               </Grid>
 
               <Grid item xs={12} container justifyContent='flex-end'>
-                <Button 
-                  type='submit' 
-                  variant='contained' 
-                  size='large' 
+                <Button
+                  type='submit'
+                  variant='contained'
+                  size='large'
                   sx={{ mt: 2 }}
                   disabled={isSubmitting || isLoading}
                 >
@@ -392,11 +394,18 @@ const UserFollowUpPage = () => {
           ) : (
             <List sx={{ width: '100%' }}>
               {followUpRecords.map((record, index) => {
-                const assignedByName = users.find(user => user.id === record.assigned_by)?.full_name || record.assigned_by_name || 'Usuario desconocido'
-                const assignedToName = users.find(user => user.id === record.assigned_to)?.full_name || record.assigned_to_name || 'Usuario desconocido'
-                const typeName = followUpTypes.find(type => type.id === record.type_id)?.name || record.type_name || 'Tipo desconocido'
+                const assignedByName =
+                  users.find(user => user.id === record.assigned_by)?.full_name ||
+                  record.assigned_by_name ||
+                  'Usuario desconocido'
+                const assignedToName =
+                  users.find(user => user.id === record.assigned_to)?.full_name ||
+                  record.assigned_to_name ||
+                  'Usuario desconocido'
+                const typeName =
+                  followUpTypes.find(type => type.id === record.type_id)?.name || record.type_name || 'Tipo desconocido'
                 const createdDate = record.created_at ? new Date(record.created_at) : new Date()
-                
+
                 return (
                   <React.Fragment key={record.id}>
                     <ListItem

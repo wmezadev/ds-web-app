@@ -27,7 +27,12 @@ const ClientsPage = () => {
   const [searchPage, setSearchPage] = useState(1)
 
   const { data: clientsPaginated, loading, error, page, perPage, totalPages, setPage } = useClients(10, apiEnabled)
-  const { results: searchResults, totalPages: searchTotalPages, loading: searchLoading, error: searchError } = useClientSearch(search, searchPage, perPage, apiEnabled)
+  const {
+    results: searchResults,
+    totalPages: searchTotalPages,
+    loading: searchLoading,
+    error: searchError
+  } = useClientSearch(search, searchPage, perPage, apiEnabled)
 
   const showingSearch = search.trim().length > 0
   const clientsToShow = showingSearch ? searchResults : clientsPaginated

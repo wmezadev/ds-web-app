@@ -31,37 +31,36 @@ const RichTextEditorComponent = ({ name, control }: Props) => {
         }
       }}
       ref={rteRef}
-      extensions={[StarterKit, Underline]} 
-      content={field.value} 
+      extensions={[StarterKit, Underline]}
+      content={field.value}
       onUpdate={({ editor }) => {
         field.onChange(editor.getHTML())
       }}
-      
       renderControls={() => (
         <MenuBar>
           <MenuControlsContainer>
             <MenuButton
-              value="bold"
-              tooltipLabel="Bold"
-              size="small"
+              value='bold'
+              tooltipLabel='Bold'
+              size='small'
               onClick={() => rteRef.current?.editor?.chain().focus().toggleBold().run()}
               selected={rteRef.current?.editor?.isActive('bold')}
             >
               <FormatBoldIcon />
             </MenuButton>
             <MenuButton
-              value="italic"
-              tooltipLabel="Italic"
-              size="small"
+              value='italic'
+              tooltipLabel='Italic'
+              size='small'
               onClick={() => rteRef.current?.editor?.chain().focus().toggleItalic().run()}
               selected={rteRef.current?.editor?.isActive('italic')}
             >
               <FormatItalicIcon />
             </MenuButton>
             <MenuButton
-              value="underline"
-              tooltipLabel="Underline"
-              size="small"
+              value='underline'
+              tooltipLabel='Underline'
+              size='small'
               onClick={() => rteRef.current?.editor?.chain().focus().toggleUnderline().run()}
               selected={rteRef.current?.editor?.isActive('underline')}
             >
@@ -69,18 +68,18 @@ const RichTextEditorComponent = ({ name, control }: Props) => {
             </MenuButton>
             <MenuDivider />
             <MenuButton
-              value="bulletList"
-              tooltipLabel="Bullet List"
-              size="small"
+              value='bulletList'
+              tooltipLabel='Bullet List'
+              size='small'
               onClick={() => rteRef.current?.editor?.chain().focus().toggleBulletList().run()}
               selected={rteRef.current?.editor?.isActive('bulletList')}
             >
               <FormatListBulletedIcon />
             </MenuButton>
             <MenuButton
-              value="orderedList"
-              tooltipLabel="Ordered List"
-              size="small"
+              value='orderedList'
+              tooltipLabel='Ordered List'
+              size='small'
               onClick={() => rteRef.current?.editor?.chain().focus().toggleOrderedList().run()}
               selected={rteRef.current?.editor?.isActive('orderedList')}
             >
