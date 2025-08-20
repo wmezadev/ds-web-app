@@ -27,6 +27,7 @@ const ClientsPage = () => {
   const [searchPage, setSearchPage] = useState(1)
 
   const { data: clientsPaginated, loading, error, page, perPage, totalPages, setPage } = useClients(10, apiEnabled)
+
   const {
     results: searchResults,
     totalPages: searchTotalPages,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 import { useApi } from './useApi'
 import type { Client } from '@/types/client'
 
@@ -52,6 +53,7 @@ export const useClient = (clientId: string): UseClientReturn => {
     if (!clientId) {
       setData(null)
       setIsLoading(false)
+
       return
     }
 
@@ -68,8 +70,10 @@ export const useClient = (clientId: string): UseClientReturn => {
         ])
 
         const clientData = clientResponse.data || clientResponse.client || clientResponse
+
         const followUpTypesData =
           followUpTypesResponse.data || followUpTypesResponse.follow_up_types || followUpTypesResponse || []
+
         const followUpRecordsData =
           followUpRecordsResponse.data || followUpRecordsResponse.follow_ups || followUpRecordsResponse || []
 
@@ -124,6 +128,7 @@ export const useClient = (clientId: string): UseClientReturn => {
             // If the current follow-up is being activated, deactivate all others
             return { ...record, status: false }
           }
+
           return record
         })
       )
@@ -136,6 +141,7 @@ export const useClient = (clientId: string): UseClientReturn => {
     try {
       const response = await fetchApi(`clients/${clientId}/follow-up`)
       const followUpRecordsData = response.data || response.follow_ups || response || []
+
       setFollowUpRecords(followUpRecordsData)
     } catch (err: any) {
       console.error('Error refreshing follow-ups:', err)
@@ -167,6 +173,7 @@ export const useFollowUpTypes = (): UseFollowUpTypesReturn => {
         setError(null)
         const response = await fetchApi('follow-up-types')
         const data = response.data || response.follow_up_types || response || []
+
         setFollowUpTypes(data)
       } catch (err) {
         setError('Error al cargar los tipos de gestión')

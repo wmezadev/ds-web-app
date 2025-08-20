@@ -1,15 +1,18 @@
 'use client'
 
-import { useController, Control } from 'react-hook-form'
+import { useRef } from 'react'
+
+import type { Control } from 'react-hook-form'
+import { useController } from 'react-hook-form'
 import FormatBoldIcon from '@mui/icons-material/FormatBold'
 import FormatItalicIcon from '@mui/icons-material/FormatItalic'
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined'
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered'
-import { RichTextEditor, MenuBar, MenuControlsContainer, MenuButton, MenuDivider, RichTextEditorRef } from 'mui-tiptap'
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import { useRef } from 'react'
+import type { RichTextEditorRef } from 'mui-tiptap'
+import { RichTextEditor, MenuBar, MenuControlsContainer, MenuButton, MenuDivider } from 'mui-tiptap'
+import { StarterKit } from '@tiptap/starter-kit'
+import { Underline } from '@tiptap/extension-underline'
 
 interface Props {
   name: string

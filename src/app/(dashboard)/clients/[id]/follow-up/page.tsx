@@ -19,7 +19,6 @@ import {
   MenuItem,
   List,
   ListItem,
-  ListItemText,
   Divider,
   Chip,
   Avatar,
@@ -28,6 +27,7 @@ import {
 } from '@mui/material'
 
 import { useForm, Controller } from 'react-hook-form'
+
 import { useClient } from '@/hooks/useClient'
 import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
 
@@ -44,6 +44,7 @@ interface FollowUpFormData {
 const UserFollowUpPage = () => {
   const params = useParams()
   const userId = params.id as string
+
   const {
     data: client,
     followUpTypes,
@@ -53,6 +54,7 @@ const UserFollowUpPage = () => {
     createFollowUp,
     updateFollowUpStatus
   } = useClient(userId)
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
@@ -94,6 +96,7 @@ const UserFollowUpPage = () => {
         setLoadingUsers(false)
       }
     }
+
     loadUsers()
   }, [])
 
@@ -398,12 +401,15 @@ const UserFollowUpPage = () => {
                   users.find(user => user.id === record.assigned_by)?.full_name ||
                   record.assigned_by_name ||
                   'Usuario desconocido'
+
                 const assignedToName =
                   users.find(user => user.id === record.assigned_to)?.full_name ||
                   record.assigned_to_name ||
                   'Usuario desconocido'
+
                 const typeName =
                   followUpTypes.find(type => type.id === record.type_id)?.name || record.type_name || 'Tipo desconocido'
+
                 const createdDate = record.created_at ? new Date(record.created_at) : new Date()
 
                 return (
@@ -437,6 +443,7 @@ const UserFollowUpPage = () => {
                                   checked={record.status}
                                   onChange={async e => {
                                     setUpdatingStatus(record.id)
+
                                     try {
                                       await updateFollowUpStatus(record.id, e.target.checked)
                                       alert('Estado actualizado con éxito')
