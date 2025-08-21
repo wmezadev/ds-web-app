@@ -22,7 +22,7 @@ export function useClientSearch(query: string, page: number = 1, perPage: number
       setResults([])
       setTotal(0)
       setTotalPages(1)
-      
+
       return
     }
 
