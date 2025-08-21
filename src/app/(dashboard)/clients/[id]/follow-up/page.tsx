@@ -143,7 +143,20 @@ const UserFollowUpPage = () => {
         status: true
       }
 
-      await createFollowUp(followUpData)
+      const newFollowUp = await createFollowUp(followUpData)
+
+      if (newFollowUp && followUpRecords.length > 0) {
+        const previousFollowUp = followUpRecords[0]
+
+        if (previousFollowUp && previousFollowUp.id !== newFollowUp.id) {
+          try {
+            await updateFollowUpStatus(previousFollowUp.id, false)
+          } catch (err) {
+            console.error('Error deactivating previous follow-up:', err)
+          }
+        }
+      }
+
       setSnackbar({ open: true, message: 'Seguimiento creado con éxito', severity: 'success' })
 
       reset({
@@ -468,9 +481,17 @@ const UserFollowUpPage = () => {
 
                                     try {
                                       await updateFollowUpStatus(record.id, e.target.checked)
-                                      setSnackbar({ open: true, message: 'Estado actualizado con éxito', severity: 'success' })
+                                      setSnackbar({
+                                        open: true,
+                                        message: 'Estado actualizado con éxito',
+                                        severity: 'success'
+                                      })
                                     } catch (error) {
-                                      setSnackbar({ open: true, message: 'Error al actualizar el estado', severity: 'error' })
+                                      setSnackbar({
+                                        open: true,
+                                        message: 'Error al actualizar el estado',
+                                        severity: 'error'
+                                      })
                                     } finally {
                                       setUpdatingStatus(null)
                                     }
