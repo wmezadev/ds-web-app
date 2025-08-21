@@ -23,7 +23,9 @@ import {
   Chip,
   Avatar,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Snackbar,
+  Alert
 } from '@mui/material'
 
 import { useForm, Controller } from 'react-hook-form'
@@ -59,6 +61,16 @@ const UserFollowUpPage = () => {
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error'
+  })
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }))
+  }
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -132,7 +144,7 @@ const UserFollowUpPage = () => {
       }
 
       await createFollowUp(followUpData)
-      alert('Seguimiento creado con éxito')
+      setSnackbar({ open: true, message: 'Seguimiento creado con éxito', severity: 'success' })
 
       reset({
         currentDate: new Date().toISOString().split('T')[0],
@@ -144,7 +156,7 @@ const UserFollowUpPage = () => {
         gestion: ''
       })
     } catch (err: any) {
-      alert('Error al crear el seguimiento')
+      setSnackbar({ open: true, message: 'Error al crear el seguimiento', severity: 'error' })
       console.error('Error creating follow-up:', err)
     } finally {
       setIsSubmitting(false)
@@ -176,6 +188,16 @@ const UserFollowUpPage = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
         Seguimiento del Usuario{' '}
         <Box component='span' sx={{ color: 'primary.main', fontWeight: 700 }}>
@@ -446,9 +468,9 @@ const UserFollowUpPage = () => {
 
                                     try {
                                       await updateFollowUpStatus(record.id, e.target.checked)
-                                      alert('Estado actualizado con éxito')
+                                      setSnackbar({ open: true, message: 'Estado actualizado con éxito', severity: 'success' })
                                     } catch (error) {
-                                      alert('Error al actualizar el estado')
+                                      setSnackbar({ open: true, message: 'Error al actualizar el estado', severity: 'error' })
                                     } finally {
                                       setUpdatingStatus(null)
                                     }
@@ -473,9 +495,6 @@ const UserFollowUpPage = () => {
                             <Chip label={`Gestión: ${typeName}`} size='small' variant='filled' color='info' />
                           </Box>
                         </Box>
-                        <Typography variant='caption' color='text.secondary' sx={{ ml: 2, minWidth: 'fit-content' }}>
-                          {createdDate.toLocaleString('es-ES')}
-                        </Typography>
                       </Box>
 
                       <Box sx={{ mb: 2, width: '100%' }}>
@@ -501,7 +520,7 @@ const UserFollowUpPage = () => {
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
+                          <Avatar sx={{ width: 40, height: 40, fontSize: '1rem', bgcolor: 'primary.main' }}>
                             {assignedByName.charAt(0).toUpperCase()}
                           </Avatar>
                           <Typography variant='caption' color='text.secondary'>
@@ -509,7 +528,7 @@ const UserFollowUpPage = () => {
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: 'secondary.main' }}>
+                          <Avatar sx={{ width: 40, height: 40, fontSize: '1rem', bgcolor: 'secondary.main' }}>
                             {assignedToName.charAt(0).toUpperCase()}
                           </Avatar>
                           <Typography variant='caption' color='text.secondary'>
