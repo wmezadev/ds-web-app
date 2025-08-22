@@ -34,6 +34,7 @@ import {
   AccountBalance
 } from '@mui/icons-material'
 import { useTheme } from '@mui/material/styles'
+import ClientPersonalData from '@/components/clients/ClientPersonalData'
 
 // --- Mock Data ---
 const mockClientData: Partial<Client> = {
@@ -48,6 +49,20 @@ const mockClientData: Partial<Client> = {
   mobile_1: '(0414)-351-3899',
   phone: '(0414)-565-23-22',
   city: 'Barquisimeto',
+  source: 'C',
+  personal_data: {
+    gender: 'Masculino',
+    civil_status: 'Soltero',
+    height: 180,
+    weight: 75,
+    smoker: false,
+    sports: 'Fútbol',
+    rif: 'V-27902796-0',
+    profession_id: 1,
+    occupation_id: 1,
+    monthly_income: 5000,
+    pathology: 'Ninguna'
+  },
   zone: 'Oeste',
   billing_address: 'CALLE 45 ENTRE CARRERAS 14 Y 15 CASA N° 14-44 SECTOR OESTE',
   birth_date: '1960-10-30',
@@ -286,7 +301,7 @@ const ClientMainContent = () => {
 
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
-          {value === 0 && <Box>{/* Contenido Documentos */}</Box>}
+          {value === 0 && <ClientPersonalData client={mockClientData} />}
           {value === 1 && (
             <Box>
               <Typography>Aquí irá la lista de Contactos</Typography>
