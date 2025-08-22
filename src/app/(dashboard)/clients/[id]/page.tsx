@@ -1,40 +1,23 @@
 'use client'
 
 import React from 'react'
-import { Client } from '@/types/client'
+
 import {
-  Card,
-  CardContent,
-  Avatar,
-  Typography,
-  Grid,
-  Box,
-  Divider,
-  Tabs,
-  Tab,
-  Alert,
-  IconButton,
-  Button,
-  Paper
-} from '@mui/material'
-import {
-  Email,
-  Phone,
+  AccountBalance,
   Business,
   Cake,
-  Home,
-  Place,
-  Person,
-  Lock,
-  Security,
-  Devices,
-  Edit,
-  Description,
   ContactPage,
-  AccountBalance
+  Description,
+  Email,
+  Home,
+  Person,
+  Phone,
+  Place
 } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
+import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typography } from '@mui/material'
+
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
+import type { Client } from '@/types/client'
 
 // --- Mock Data ---
 const mockClientData: Partial<Client> = {
@@ -48,7 +31,7 @@ const mockClientData: Partial<Client> = {
   email_2: 'wmeza@seguiconsult.com',
   mobile_1: '(0414)-351-3899',
   phone: '(0414)-565-23-22',
-  city: 'Barquisimeto',
+  city_id: 1,
   source: 'C',
   personal_data: {
     gender: 'Masculino',
@@ -63,23 +46,19 @@ const mockClientData: Partial<Client> = {
     monthly_income: 5000,
     pathology: 'Ninguna'
   },
-  zone: 'Oeste',
+  zone_id: 1,
   billing_address: 'CALLE 45 ENTRE CARRERAS 14 Y 15 CASA N° 14-44 SECTOR OESTE',
   birth_date: '1960-10-30',
-  birth_place: 'BARQUISIMETO',
-  policies: 12,
-  premiums: '200,074',
-  status: 'Activo',
-  avatarUrl: '/images/avatars/1.png'
+  birth_place: 'BARQUISIMETO'
 }
 
-const mockRecentDevices = [
-  { id: 1, name: 'Google Chrome', browser: 'Chrome on macOS', location: 'USA, New York', ip: '192.168.1.1' },
-  { id: 2, name: 'Firefox', browser: 'Firefox on Windows', location: 'Venezuela, Lara', ip: '10.0.0.5' }
-]
+interface DetailItemProps {
+  icon: React.ElementType
+  label: string
+  value: React.ReactNode
+}
 
-const DetailItem = ({ icon: Icon, label, value }) => {
-  const theme = useTheme()
+const DetailItem: React.FC<DetailItemProps> = ({ icon: Icon, label, value }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
       <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
@@ -102,7 +81,6 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
         <Avatar
           sx={{ width: 90, height: 90, mb: 1, border: '2px solid', borderColor: 'divider' }}
           alt={`${client.first_name} ${client.last_name}`}
-          src={client.avatarUrl}
         />
         <Typography variant='h6' fontWeight='bold' sx={{ textAlign: 'center' }}>
           {`${client.first_name} ${client.last_name}`}
@@ -117,25 +95,6 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
           Cliente
         </Typography>
       </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-around', gap: 4, mt: 3, mb: 2 }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant='h6' fontWeight='bold' color='primary.main'>
-            {client.policies}
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            Pólizas
-          </Typography>
-        </Box>
-        <Divider orientation='vertical' flexItem />
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant='h6' fontWeight='bold' color='primary.main'>
-            ${client.premiums}
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            Primas
-          </Typography>
-        </Box>
-      </Box>
     </CardContent>
   </Card>
 )
@@ -146,19 +105,18 @@ const ClientDetailsCard = ({ client }: { client: Partial<Client> }) => (
       <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
         Details
       </Typography>
-      <DetailItem icon={Person} label='Estado' value={client.status} />
-      <DetailItem icon={Cake} label='Fecha Ingreso' value={new Date(client.join_date).toLocaleDateString('es-ES')} />
+      <DetailItem icon={Cake} label='Fecha Ingreso' value={client.join_date ? new Date(client.join_date).toLocaleDateString('es-ES') : 'N/A'} />
       <Divider sx={{ my: 1 }} />
       <DetailItem icon={Phone} label='Teléfonos' value={`${client.mobile_1} | ${client.phone}`} />
       <DetailItem icon={Email} label='Correos' value={`${client.email_1} | ${client.email_2}`} />
       <Divider sx={{ my: 1 }} />
-      <DetailItem icon={Business} label='Ciudad/Zona' value={`${client.city} / ${client.zone}`} />
+      <DetailItem icon={Business} label='Ciudad/Zona' value={'Barquisimeto / Oeste'} />
       <DetailItem icon={Home} label='Dirección' value={client.billing_address} />
       <Divider sx={{ my: 1 }} />
       <DetailItem
         icon={Cake}
         label='Fecha Nac./Fund.'
-        value={new Date(client.birth_date).toLocaleDateString('es-ES')}
+        value={client.birth_date ? new Date(client.birth_date).toLocaleDateString('es-ES') : 'N/A'}
       />
       <DetailItem icon={Place} label='Lugar de Nac./Fund.' value={client.birth_place} />
     </CardContent>
@@ -167,82 +125,60 @@ const ClientDetailsCard = ({ client }: { client: Partial<Client> }) => (
 
 // --- Panel de la derecha ---
 
-const DocumentList = () => (
-  <Card elevation={0} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-    <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
-      Aquí irán los Documentos
-    </Typography>
-  </Card>
-)
-
-const TwoStepVerificationSection = () => (
-  <Card elevation={0} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-    <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
-      Two-step verification
-    </Typography>
-    <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-      Keep your account secure with authentication step.
-    </Typography>
-    <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
-      <Typography variant='subtitle2' color='text.secondary'>
-        SMS
-      </Typography>
-      <Typography variant='body1' fontWeight='bold'>
-        +{mockClientData.phone.replace(' ', '')}
-      </Typography>
-    </Box>
-  </Card>
-)
+const tabs = [
+  { label: 'Datos Personales', icon: <Person /> },
+  { label: 'Documentos', icon: <Description /> },
+  { label: 'Contactos', icon: <ContactPage /> },
+  { label: 'Info. Bancaria', icon: <AccountBalance /> },
+  { label: 'Registro', icon: <i className='ri-history-line' /> }
+]
 
 const ClientMainContent = () => {
   const [value, setValue] = React.useState(0)
-  const theme = useTheme()
 
-  const tabs = [
-    { label: 'Datos Personales', icon: <Person /> },
-    { label: 'Documentos', icon: <Description /> },
-    { label: 'Contactos', icon: <ContactPage /> },
-    { label: 'Info. Bancaria', icon: <AccountBalance /> },
-    { label: 'Registro', icon: <i className='ri-history-line' /> }
-  ]
-
-  const handleChange = newValue => {
+  const handleChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)
-  }
+  }, [])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const [showArrows, setShowArrows] = React.useState({ left: false, right: false })
 
-  const checkArrows = () => {
+  const checkArrows = React.useCallback(() => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
       const left = scrollLeft > 0
       const right = scrollLeft < scrollWidth - clientWidth - 1
+
       setShowArrows({ left, right })
     }
-  }
+  }, [])
 
   React.useEffect(() => {
     const scrollElement = scrollRef.current
+
     if (scrollElement) {
       checkArrows()
+
       const resizeObserver = new ResizeObserver(checkArrows)
+
       resizeObserver.observe(scrollElement)
       scrollElement.addEventListener('scroll', checkArrows)
 
       return () => {
         resizeObserver.unobserve(scrollElement)
+
         scrollElement.removeEventListener('scroll', checkArrows)
       }
     }
-  }, [tabs])
+  }, [checkArrows])
 
-  const handleScroll = (direction: 'left' | 'right') => {
+  const handleScroll = React.useCallback((direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const scrollAmount = direction === 'left' ? -200 : 200
+
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
     }
-  }
+  }, [])
 
   return (
     <>
@@ -278,7 +214,7 @@ const ClientMainContent = () => {
             <Button
               key={index}
               variant={index === value ? 'contained' : 'text'}
-              onClick={() => handleChange(index)}
+              onClick={e => handleChange(e, index)}
               sx={{
                 textTransform: 'none',
                 minWidth: 'auto',
@@ -322,6 +258,7 @@ const ClientMainContent = () => {
     </>
   )
 }
+
 // --- Página Principal ---
 
 const ClientDetailPage = () => {

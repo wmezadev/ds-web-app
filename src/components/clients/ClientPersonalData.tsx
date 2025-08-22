@@ -1,8 +1,8 @@
 'use client'
 
-import React from 'react'
 import { Typography, Grid, Box } from '@mui/material'
-import { Client } from '@/types/client'
+
+import type { Client } from '@/types/client'
 
 interface DetailItemProps {
   label: string
