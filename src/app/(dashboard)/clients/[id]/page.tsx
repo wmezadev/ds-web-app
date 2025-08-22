@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { Client } from '@/types/client'
 import {
   Card,
   CardContent,
@@ -35,7 +36,7 @@ import {
 import { useTheme } from '@mui/material/styles'
 
 // --- Mock Data ---
-const mockClientData = {
+const mockClientData: Partial<Client> = {
   id: 879861,
   first_name: 'Willian Ernesto',
   last_name: 'Meza Moncada',
@@ -79,7 +80,7 @@ const DetailItem = ({ icon: Icon, label, value }) => {
   )
 }
 
-const ClientProfileCard = ({ client }) => (
+const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
   <Card elevation={0} sx={{ borderRadius: 2, p: 2 }}>
     <CardContent>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
@@ -124,7 +125,7 @@ const ClientProfileCard = ({ client }) => (
   </Card>
 )
 
-const ClientDetailsCard = ({ client }) => (
+const ClientDetailsCard = ({ client }: { client: Partial<Client> }) => (
   <Card elevation={0} sx={{ borderRadius: 2 }}>
     <CardContent>
       <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
@@ -230,7 +231,6 @@ const ClientMainContent = () => {
 
   return (
     <>
-      {/* Contenedor de botones de navegación con flechas */}
       <Box
         sx={{
           position: 'relative',
@@ -284,7 +284,6 @@ const ClientMainContent = () => {
         )}
       </Box>
 
-      {/* Contenedor de contenido */}
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
           {value === 0 && <Box>{/* Contenido Documentos */}</Box>}
@@ -311,60 +310,57 @@ const ClientMainContent = () => {
 // --- Página Principal ---
 
 const ClientDetailPage = () => {
-  const [currentTab, setCurrentTab] = React.useState('resumen')
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-    setCurrentTab(newValue)
-  }
-
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', md: 'center' },
           borderBottom: 1,
-          borderColor: 'divider'
+          borderColor: 'divider',
+          pb: 2,
+          mb: 4
         }}
       >
-        <Typography variant='h5' fontWeight='bold'>
+        <Typography variant='h5' fontWeight='bold' sx={{ mb: { xs: 2, md: 0 } }}>
           Cliente #{mockClientData.id}
         </Typography>
-        <Tabs value={currentTab} onChange={handleTabChange}>
-          <Tab label='Resumen' value='resumen' />
-          <Tab label='Seguimientos' value='seguimientos' />
-          <Tab label='Pólizas' value='polizas' />
-          <Tab label='Recibos' value='recibos' />
-          <Tab label='Certificados' value='certificados' />
-          <Tab label='Siniestros' value='siniestros' />
-        </Tabs>
+        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
+          <Button variant='text' startIcon={<i className='ri-line-chart-line' />}>
+            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Seguimientos</Typography>
+          </Button>
+          <Button variant='text' startIcon={<i className='ri-shield-check-line' />}>
+            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Pólizas</Typography>
+          </Button>
+          <Button variant='text' startIcon={<i className='ri-receipt-line' />}>
+            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Recibos</Typography>
+          </Button>
+          <Button variant='text' startIcon={<i className='ri-shield-star-line' />}>
+            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Certificados</Typography>
+          </Button>
+          <Button variant='text' startIcon={<i className='ri-fire-line' />}>
+            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Siniestros</Typography>
+          </Button>
+        </Box>
       </Box>
 
-      <Box sx={{ mt: 4 }}>
-        {currentTab === 'resumen' && (
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <Grid container direction='column' spacing={4}>
-                <Grid item xs={12}>
-                  <ClientProfileCard client={mockClientData} />
-                </Grid>
-                <Grid item xs={12}>
-                  <ClientDetailsCard client={mockClientData} />
-                </Grid>
-              </Grid>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={4}>
+          <Grid container direction='column' spacing={4}>
+            <Grid item xs={12}>
+              <ClientProfileCard client={mockClientData} />
             </Grid>
-            <Grid item xs={12} md={8}>
-              <ClientMainContent />
+            <Grid item xs={12}>
+              <ClientDetailsCard client={mockClientData} />
             </Grid>
           </Grid>
-        )}
-        {currentTab === 'seguimientos' && <Typography>Contenido de Seguimientos</Typography>}
-        {currentTab === 'polizas' && <Typography>Contenido de Pólizas</Typography>}
-        {currentTab === 'recibos' && <Typography>Contenido de Recibos</Typography>}
-        {currentTab === 'certificados' && <Typography>Contenido de Certificados</Typography>}
-        {currentTab === 'siniestros' && <Typography>Contenido de Siniestros</Typography>}
-      </Box>
+        </Grid>
+        <Grid item xs={12} md={8}>
+          <ClientMainContent />
+        </Grid>
+      </Grid>
     </Box>
   )
 }
