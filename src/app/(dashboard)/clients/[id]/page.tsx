@@ -1,20 +1,36 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent, Avatar, Typography, Grid, Box, Divider, Tabs, Tab, Alert, IconButton } from '@mui/material'
+import {
+  Card,
+  CardContent,
+  Avatar,
+  Typography,
+  Grid,
+  Box,
+  Divider,
+  Tabs,
+  Tab,
+  Alert,
+  IconButton,
+  Button,
+  Paper
+} from '@mui/material'
 import {
   Email,
   Phone,
   Business,
   Cake,
-  AssignmentInd,
   Home,
   Place,
   Person,
   Lock,
   Security,
   Devices,
-  Edit
+  Edit,
+  Description,
+  ContactPage,
+  AccountBalance
 } from '@mui/icons-material'
 import { useTheme } from '@mui/material/styles'
 
@@ -164,30 +180,134 @@ const TwoStepVerificationSection = () => (
 
 const ClientMainContent = () => {
   const [value, setValue] = React.useState(0)
+  const theme = useTheme()
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const tabs = [
+    { label: 'Datos Personales', icon: <Person /> },
+    { label: 'Documentos', icon: <Description /> },
+    { label: 'Contactos', icon: <ContactPage /> },
+    { label: 'Info. Bancaria', icon: <AccountBalance /> },
+    { label: 'Registro', icon: <i className='ri-history-line' /> }
+  ]
+
+  const handleChange = newValue => {
     setValue(newValue)
   }
 
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+  const [showArrows, setShowArrows] = React.useState({ left: false, right: false })
+
+  const checkArrows = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      const left = scrollLeft > 0
+      const right = scrollLeft < scrollWidth - clientWidth - 1
+      setShowArrows({ left, right })
+    }
+  }
+
+  React.useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (scrollElement) {
+      checkArrows()
+      const resizeObserver = new ResizeObserver(checkArrows)
+      resizeObserver.observe(scrollElement)
+      scrollElement.addEventListener('scroll', checkArrows)
+
+      return () => {
+        resizeObserver.unobserve(scrollElement)
+        scrollElement.removeEventListener('scroll', checkArrows)
+      }
+    }
+  }, [tabs])
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -200 : 200
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
+
   return (
-    <Card elevation={0} sx={{ borderRadius: 2 }}>
-      <Tabs value={value} onChange={handleChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tab label='Documentos' />
-        <Tab label='Contactos' />
-        <Tab label='Info Bancaria' />
-        <Tab label='Registro' />
-      </Tabs>
-      <Box sx={{ p: 3 }}>
-        {value === 0 && (
-          <Box>
-            <DocumentList />
-          </Box>
+    <>
+      {/* Contenedor de botones de navegación con flechas */}
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 4
+        }}
+      >
+        {showArrows.left && (
+          <IconButton onClick={() => handleScroll('left')} size='small' sx={{ mr: 1 }}>
+            <i className='ri-arrow-left-s-line' />
+          </IconButton>
+        )}
+        <Box
+          ref={scrollRef}
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            overflowX: 'auto',
+            flexGrow: 1,
+            '::-webkit-scrollbar': { display: 'none' },
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
+          }}
+        >
+          {tabs.map((tab, index) => (
+            <Button
+              key={index}
+              variant={index === value ? 'contained' : 'text'}
+              onClick={() => handleChange(index)}
+              sx={{
+                textTransform: 'none',
+                minWidth: 'auto',
+                whiteSpace: 'nowrap',
+                mr: 2,
+                py: 1.5
+              }}
+              startIcon={tab.icon}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </Box>
+        {showArrows.right && (
+          <IconButton onClick={() => handleScroll('right')} size='small' sx={{ ml: 1 }}>
+            <i className='ri-arrow-right-s-line' />
+          </IconButton>
         )}
       </Box>
-    </Card>
+
+      {/* Contenedor de contenido */}
+      <Card elevation={0} sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ p: 3 }}>
+          {value === 0 && <Box>{/* Contenido Documentos */}</Box>}
+          {value === 1 && (
+            <Box>
+              <Typography>Aquí irá la lista de Contactos</Typography>
+            </Box>
+          )}
+          {value === 2 && (
+            <Box>
+              <Typography>Aquí irá la Información Bancaria</Typography>
+            </Box>
+          )}
+          {value === 3 && (
+            <Box>
+              <Typography>Aquí irá la sección de Dispositivos</Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </>
   )
 }
-
 // --- Página Principal ---
 
 const ClientDetailPage = () => {
