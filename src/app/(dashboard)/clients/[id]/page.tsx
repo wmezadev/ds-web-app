@@ -1,185 +1,252 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import React from 'react'
+import { Card, CardContent, Avatar, Typography, Grid, Box, Divider, Tabs, Tab, Alert, IconButton } from '@mui/material'
+import {
+  Email,
+  Phone,
+  Business,
+  Cake,
+  AssignmentInd,
+  Home,
+  Place,
+  Person,
+  Lock,
+  Security,
+  Devices,
+  Edit
+} from '@mui/icons-material'
+import { useTheme } from '@mui/material/styles'
 
-import { useParams, useRouter } from 'next/navigation'
+// --- Mock Data ---
+const mockClientData = {
+  id: 879861,
+  first_name: 'Willian Ernesto',
+  last_name: 'Meza Moncada',
+  person_type: 'N',
+  document_number: 'V-27902796',
+  join_date: '2025-08-21T10:00:00Z',
+  email_1: 'wmeza@willianmeza.com',
+  email_2: 'wmeza@seguiconsult.com',
+  mobile_1: '(0414)-351-3899',
+  phone: '(0414)-565-23-22',
+  city: 'Barquisimeto',
+  zone: 'Oeste',
+  billing_address: 'CALLE 45 ENTRE CARRERAS 14 Y 15 CASA N° 14-44 SECTOR OESTE',
+  birth_date: '1960-10-30',
+  birth_place: 'BARQUISIMETO',
+  policies: 12,
+  premiums: '200,074',
+  status: 'Activo',
+  avatarUrl: '/images/avatars/1.png'
+}
 
-import { Box, CircularProgress, Typography, Snackbar, Alert } from '@mui/material'
+const mockRecentDevices = [
+  { id: 1, name: 'Google Chrome', browser: 'Chrome on macOS', location: 'USA, New York', ip: '192.168.1.1' },
+  { id: 2, name: 'Firefox', browser: 'Firefox on Windows', location: 'Venezuela, Lara', ip: '10.0.0.5' }
+]
 
-import type { ClientFormFields } from '@/components/clients/ClientForm'
-import ClientForm, { clientApiToForm, clientFormToApi } from '@/components/clients/ClientForm'
-import { useApi } from '@/hooks/useApi'
-import { API_ROUTES, ROUTES } from '@/constants/routes'
-import type { Client } from '@/types/client'
-
-export default function ClientDetailPage() {
-  const { id } = useParams()
-  const router = useRouter()
-  const { fetchApi } = useApi()
-  const [formData, setFormData] = useState<ClientFormFields | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Nuevo estado para controlar Snackbar
-  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false)
-  const [successMessage, setSuccessMessage] = useState('')
-
-  useEffect(() => {
-    if (!id) return
-
-    const loadClientData = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const clientId = Array.isArray(id) ? id[0] : id
-
-        if (!clientId) {
-          console.error('Client ID is empty after parsing URL parameters.')
-          setError('Client ID is missing.')
-
-          return
-        }
-
-        const data: Client = await fetchApi(API_ROUTES.CLIENTS.GET(clientId))
-
-        setFormData(clientApiToForm(data))
-      } catch (err: any) {
-        console.error('Error al cargar el cliente:', err)
-        setError(err?.message || 'No se pudo cargar el cliente.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadClientData()
-  }, [id, fetchApi])
-
-  const handleSubmit = useCallback(
-    async (values: ClientFormFields) => {
-      const clientId = Array.isArray(id) ? id[0] : id
-
-      if (!clientId) {
-        console.error('handleSubmit: ID del cliente no disponible para actualizar.')
-        alert('DEBUG: No hay ID de cliente para actualizar.')
-
-        return
-      }
-
-      try {
-        const apiPayload = clientFormToApi(values)
-
-        // Debug: Log the payload being sent to API
-        console.log('DEBUG: API Payload being sent:', JSON.stringify(apiPayload, null, 2))
-
-        await fetchApi(API_ROUTES.CLIENTS.UPDATE(clientId), {
-          method: 'PUT',
-          body: apiPayload,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-
-        // Mostrar snackbar de actualización exitosa
-        setSuccessMessage('Cliente actualizado exitosamente')
-        setShowSuccessSnackbar(true)
-
-        // Esperar 2 segundos antes de redirigir
-        setTimeout(() => {
-          router.push(ROUTES.CLIENTS.INDEX)
-        }, 2000)
-      } catch (err: any) {
-        console.error('Error al actualizar cliente:', err)
-
-        // Debug: Log detailed error information
-        console.log('DEBUG: Error details:', {
-          message: err.message,
-          status: err.status,
-          response: err.response,
-          stack: err.stack,
-          fullError: err
-        })
-
-        // Try to extract more detailed error information
-        if (err.message && err.message.includes('[object Object]')) {
-          console.log('DEBUG: Error contains object, trying to parse...')
-        }
-
-        alert(`DEBUG: Fallo en la actualización: ${err.message}`)
-      }
-    },
-    [id, fetchApi, router]
-  )
-
-  const handleDelete = useCallback(
-    async (clientId: string | number) => {
-      try {
-        await fetchApi(API_ROUTES.CLIENTS.DELETE(String(clientId)), {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-
-        // Mostrar snackbar de eliminación exitosa
-        setSuccessMessage('Cliente eliminado con éxito')
-        setShowSuccessSnackbar(true)
-
-        // Redirigir después de mostrar el snackbar
-        setTimeout(() => {
-          router.push(ROUTES.CLIENTS.INDEX)
-        }, 2000)
-      } catch (err: any) {
-        // Verificar si el error es un 500 pero la eliminación fue exitosa
-        if (err.message && err.message.includes('status: 500')) {
-          setSuccessMessage('Cliente eliminado con éxito')
-          setShowSuccessSnackbar(true)
-          setTimeout(() => {
-            router.push(ROUTES.CLIENTS.INDEX)
-          }, 2000)
-        } else {
-          // Error real
-          console.error('Error al eliminar cliente:', err)
-          alert(`Error al eliminar cliente: ${err.message}`)
-        }
-      }
-    },
-    [fetchApi, router, setShowSuccessSnackbar]
-  )
-
-  if (loading) {
-    return (
-      <Box display='flex' justifyContent='center' alignItems='center' minHeight='200px'>
-        <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Cargando cliente...</Typography>
-      </Box>
-    )
-  }
-
-  if (error) return <Typography color='error'>{error}</Typography>
-  if (!formData) return <Typography>No se encontró el cliente.</Typography>
-
+const DetailItem = ({ icon: Icon, label, value }) => {
+  const theme = useTheme()
   return (
-    <>
-      <ClientForm
-        key={String(id)}
-        mode='edit'
-        initialValues={formData}
-        onSubmit={handleSubmit}
-        onDelete={handleDelete}
-        onCancel={() => router.back()}
-      />
-
-      <Snackbar
-        open={showSuccessSnackbar}
-        autoHideDuration={2000}
-        onClose={() => setShowSuccessSnackbar(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity='success' sx={{ width: '100%' }} onClose={() => setShowSuccessSnackbar(false)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </>
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+      <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
+      <Typography variant='body2' sx={{ color: 'text.primary' }}>
+        <Box component='span' sx={{ color: 'text.secondary' }}>
+          {label}:
+        </Box>
+        <Box component='span' fontWeight='bold' sx={{ ml: 1 }}>
+          {value}
+        </Box>
+      </Typography>
+    </Box>
   )
 }
+
+const ClientProfileCard = ({ client }) => (
+  <Card elevation={0} sx={{ borderRadius: 2, p: 2 }}>
+    <CardContent>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+        <Avatar
+          sx={{ width: 90, height: 90, mb: 1, border: '2px solid', borderColor: 'divider' }}
+          alt={`${client.first_name} ${client.last_name}`}
+          src={client.avatarUrl}
+        />
+        <Typography variant='h6' fontWeight='bold' sx={{ textAlign: 'center' }}>
+          {`${client.first_name} ${client.last_name}`}
+        </Typography>
+        <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
+          {client.person_type === 'N' ? 'Natural' : 'Jurídica'}
+        </Typography>
+        <Typography
+          variant='caption'
+          sx={{ bgcolor: 'primary.lightOpacity', color: 'primary.main', p: 0.5, borderRadius: 1 }}
+        >
+          Cliente
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-around', gap: 4, mt: 3, mb: 2 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant='h6' fontWeight='bold' color='primary.main'>
+            {client.policies}
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Pólizas
+          </Typography>
+        </Box>
+        <Divider orientation='vertical' flexItem />
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant='h6' fontWeight='bold' color='primary.main'>
+            ${client.premiums}
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Primas
+          </Typography>
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+)
+
+const ClientDetailsCard = ({ client }) => (
+  <Card elevation={0} sx={{ borderRadius: 2 }}>
+    <CardContent>
+      <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
+        Details
+      </Typography>
+      <DetailItem icon={Person} label='Estado' value={client.status} />
+      <DetailItem icon={Cake} label='Fecha Ingreso' value={new Date(client.join_date).toLocaleDateString('es-ES')} />
+      <Divider sx={{ my: 1 }} />
+      <DetailItem icon={Phone} label='Teléfonos' value={`${client.mobile_1} | ${client.phone}`} />
+      <DetailItem icon={Email} label='Correos' value={`${client.email_1} | ${client.email_2}`} />
+      <Divider sx={{ my: 1 }} />
+      <DetailItem icon={Business} label='Ciudad/Zona' value={`${client.city} / ${client.zone}`} />
+      <DetailItem icon={Home} label='Dirección' value={client.billing_address} />
+      <Divider sx={{ my: 1 }} />
+      <DetailItem
+        icon={Cake}
+        label='Fecha Nac./Fund.'
+        value={new Date(client.birth_date).toLocaleDateString('es-ES')}
+      />
+      <DetailItem icon={Place} label='Lugar de Nac./Fund.' value={client.birth_place} />
+    </CardContent>
+  </Card>
+)
+
+// --- Panel de la derecha ---
+
+const DocumentList = () => (
+  <Card elevation={0} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+    <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
+      Aquí irán los Documentos
+    </Typography>
+  </Card>
+)
+
+const TwoStepVerificationSection = () => (
+  <Card elevation={0} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+    <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
+      Two-step verification
+    </Typography>
+    <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+      Keep your account secure with authentication step.
+    </Typography>
+    <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
+      <Typography variant='subtitle2' color='text.secondary'>
+        SMS
+      </Typography>
+      <Typography variant='body1' fontWeight='bold'>
+        +{mockClientData.phone.replace(' ', '')}
+      </Typography>
+    </Box>
+  </Card>
+)
+
+const ClientMainContent = () => {
+  const [value, setValue] = React.useState(0)
+
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue)
+  }
+
+  return (
+    <Card elevation={0} sx={{ borderRadius: 2 }}>
+      <Tabs value={value} onChange={handleChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tab label='Documentos' />
+        <Tab label='Contactos' />
+        <Tab label='Info Bancaria' />
+        <Tab label='Registro' />
+      </Tabs>
+      <Box sx={{ p: 3 }}>
+        {value === 0 && (
+          <Box>
+            <DocumentList />
+          </Box>
+        )}
+      </Box>
+    </Card>
+  )
+}
+
+// --- Página Principal ---
+
+const ClientDetailPage = () => {
+  const [currentTab, setCurrentTab] = React.useState('resumen')
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setCurrentTab(newValue)
+  }
+
+  return (
+    <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Typography variant='h5' fontWeight='bold'>
+          Cliente #{mockClientData.id}
+        </Typography>
+        <Tabs value={currentTab} onChange={handleTabChange}>
+          <Tab label='Resumen' value='resumen' />
+          <Tab label='Seguimientos' value='seguimientos' />
+          <Tab label='Pólizas' value='polizas' />
+          <Tab label='Recibos' value='recibos' />
+          <Tab label='Certificados' value='certificados' />
+          <Tab label='Siniestros' value='siniestros' />
+        </Tabs>
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        {currentTab === 'resumen' && (
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Grid container direction='column' spacing={4}>
+                <Grid item xs={12}>
+                  <ClientProfileCard client={mockClientData} />
+                </Grid>
+                <Grid item xs={12}>
+                  <ClientDetailsCard client={mockClientData} />
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <ClientMainContent />
+            </Grid>
+          </Grid>
+        )}
+        {currentTab === 'seguimientos' && <Typography>Contenido de Seguimientos</Typography>}
+        {currentTab === 'polizas' && <Typography>Contenido de Pólizas</Typography>}
+        {currentTab === 'recibos' && <Typography>Contenido de Recibos</Typography>}
+        {currentTab === 'certificados' && <Typography>Contenido de Certificados</Typography>}
+        {currentTab === 'siniestros' && <Typography>Contenido de Siniestros</Typography>}
+      </Box>
+    </Box>
+  )
+}
+
+export default ClientDetailPage
