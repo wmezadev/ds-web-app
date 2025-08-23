@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert, Snackbar } from '@mui/material'
+import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert, Snackbar, Divider } from '@mui/material'
 import { Add, Delete, Save } from '@mui/icons-material'
 import { useFieldArray, useForm } from 'react-hook-form'
 
@@ -60,17 +60,12 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }
   const onSubmit = async (data: ContactFormFields) => {
     setIsSubmitting(true)
 
-    // We need to send the whole client object back, not just contacts.
     const payload = {
       ...client,
       ...client.personal_data,
       ...client.legal_data,
       contacts: data.contacts.map(c => ({ ...c, id: c.id || undefined }))
     }
-
-    // The API expects certain fields to be null if empty, and others to be numbers.
-    // This is a simplified payload construction. For a real app, we'd use a utility
-    // function like the one in ClientForm.tsx to ensure data integrity.
 
     try {
       await fetchApi(`clients/${client.id}`, {
@@ -109,9 +104,9 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }
           </Typography>
         ) : (
           fields.map((field, index) => (
-            <Box key={field.id} mb={3} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
+            <Box key={field.id} mb={3} p={2}>
               <Grid container spacing={2} alignItems='center'>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={5}>
                   <TextField fullWidth label='Nombre Completo' {...register(`contacts.${index}.full_name`)} required />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -120,10 +115,10 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }
                 <Grid item xs={12} md={4}>
                   <TextField fullWidth label='Teléfono' {...register(`contacts.${index}.phone`)} required />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={5}>
                   <TextField fullWidth label='Email' type='email' {...register(`contacts.${index}.email`)} required />
                 </Grid>
-                <Grid item xs={12} md={5}>
+                <Grid item xs={12} md={6}>
                   <TextField fullWidth label='Notas' {...register(`contacts.${index}.notes`)} />
                 </Grid>
                 <Grid item xs={12} md={1}>
@@ -132,6 +127,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }
                   </IconButton>
                 </Grid>
               </Grid>
+              {index < fields.length - 1 && <Divider sx={{ my: 2 }} />}
             </Box>
           ))
         )}
