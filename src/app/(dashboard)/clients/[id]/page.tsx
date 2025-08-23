@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 import {
   AccountBalance,
@@ -257,6 +257,7 @@ const ClientMainContent = ({
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
+  const router = useRouter()
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
@@ -308,7 +309,11 @@ const ClientDetailPage = () => {
           Cliente #{client.id}
         </Typography>
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
-          <Button variant='text' startIcon={<i className='ri-line-chart-line' />}>
+          <Button
+            variant='text'
+            startIcon={<i className='ri-line-chart-line' />}
+            onClick={() => router.push(`/clients/${clientId}/follow-up`)}
+          >
             <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Seguimientos</Typography>
           </Button>
           <Button variant='text' startIcon={<i className='ri-shield-check-line' />}>
