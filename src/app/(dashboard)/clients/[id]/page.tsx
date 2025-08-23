@@ -20,6 +20,7 @@ import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typo
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
+import ClientRegistration from '@/components/clients/ClientRegistration'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
@@ -220,7 +221,7 @@ const ClientMainContent = ({
           )}
           {value === 4 && (
             <Box>
-              <Typography>Aquí irá el Registro</Typography>
+              <ClientRegistration client={client} />
             </Box>
           )}
         </CardContent>
