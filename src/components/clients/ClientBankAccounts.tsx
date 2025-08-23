@@ -1,7 +1,7 @@
-'use client'
+import React, { useState } from 'react'
 
-import { Typography, Grid, Box, Stack, Divider } from '@mui/material'
-
+import { Box, Button, Grid, Stack, Typography } from '@mui/material'
+import { Add } from '@mui/icons-material'
 import type { Client } from '@/types/client'
 
 interface DetailItemProps {
@@ -15,7 +15,7 @@ const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
       <Typography variant='body2' color='text.secondary'>
         {label}
       </Typography>
-      <Typography variant='body1' sx={{ mt: 0.5 }}>
+      <Typography variant='body1' fontWeight='medium'>
         {value || '-'}
       </Typography>
     </Box>
@@ -27,56 +27,38 @@ interface ClientBankAccountsProps {
 }
 
 const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
-  const bankAccounts = client.bank_accounts || []
+  const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
+
+  const handleAddAccount = () => {
+    setBankAccounts(prev => [...prev, { bank_name: '', account_number: '', currency: '', account_type: '', notes: '' }])
+  }
 
   return (
     <Box>
-      <Typography variant='h6' fontWeight='bold' sx={{ mb: 4 }}>
-        Información Bancaria
-      </Typography>
-      
+      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
+        <Typography variant='h6' fontWeight='bold'>
+          Información Bancaria
+        </Typography>
+        <Button variant='outlined' startIcon={<Add />} onClick={handleAddAccount}>
+          Nueva Cuenta
+        </Button>
+      </Stack>
+
       {bankAccounts.length === 0 ? (
         <Typography variant='body2' color='text.secondary'>
           No hay cuentas bancarias registradas.
         </Typography>
       ) : (
-        <Stack spacing={3}>
+        <Stack spacing={2}>
           {bankAccounts.map((account, index) => (
-            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: 'background.paper' }}>
-              <Typography variant='subtitle1' fontWeight='bold' sx={{ mb: 2 }}>
-                Cuenta Bancaria #{index + 1}
-              </Typography>
+            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
               <Grid container spacing={3}>
-                <DetailItem 
-                  label='Banco' 
-                  value={account.bank_name} 
-                />
-                <DetailItem 
-                  label='Número de Cuenta' 
-                  value={account.account_number} 
-                />
-                <DetailItem 
-                  label='Moneda' 
-                  value={account.currency} 
-                />
-                <DetailItem 
-                  label='Tipo de Cuenta' 
-                  value={account.account_type} 
-                />
-                {account.notes && (
-                  <Grid item xs={12}>
-                    <Box>
-                      <Typography variant='body2' color='text.secondary'>
-                        Observaciones
-                      </Typography>
-                      <Typography variant='body1' sx={{ mt: 0.5 }}>
-                        {account.notes}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
+                <DetailItem label='Banco' value={account.bank_name} />
+                <DetailItem label='Número de Cuenta' value={account.account_number} />
+                <DetailItem label='Moneda' value={account.currency} />
+                <DetailItem label='Tipo de Cuenta' value={account.account_type} />
+                {account.notes && <DetailItem label='Notas' value={account.notes} />}
               </Grid>
-              {index < bankAccounts.length - 1 && <Divider sx={{ mt: 2 }} />}
             </Box>
           ))}
         </Stack>

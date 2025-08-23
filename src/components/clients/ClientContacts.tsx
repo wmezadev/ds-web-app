@@ -2,151 +2,73 @@
 
 import { useState } from 'react'
 
-import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert, Snackbar, Divider } from '@mui/material'
-import { Add, Delete, Save } from '@mui/icons-material'
-import { useFieldArray, useForm } from 'react-hook-form'
-
-import { useApi } from '@/hooks/useApi'
+import { Box, Grid, Stack, Typography, Button } from '@mui/material'
+import { Add } from '@mui/icons-material'
 import type { Client } from '@/types/client'
+
+interface DetailItemProps {
+  label: string
+  value: React.ReactNode
+}
+
+const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
+  <Grid item xs={12} sm={6} md={4}>
+    <Box>
+      <Typography variant='body2' color='text.secondary'>
+        {label}
+      </Typography>
+      <Typography variant='body1' fontWeight='medium'>
+        {value || '-'}
+      </Typography>
+    </Box>
+  </Grid>
+)
 
 interface ClientContactsProps {
   client: Partial<Client>
-  refreshClient: () => Promise<void>
 }
 
-interface ContactFormFields {
-  contacts: {
-    id?: number
-    full_name: string
-    position: string
-    phone: string
-    email: string
-    notes: string | null
-  }[]
-}
-
-const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }) => {
-  const { control, register, handleSubmit } = useForm<ContactFormFields>({
-    defaultValues: {
-      contacts: client.contacts || []
-    }
-  })
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'contacts'
-  })
-
-  const { fetchApi } = useApi()
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  })
+const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
+  const [contacts, setContacts] = useState(client.contacts || [])
 
   const handleAddContact = () => {
-    append({
-      full_name: '',
-      position: '',
-      phone: '',
-      email: '',
-      notes: ''
-    })
-  }
-
-  const onSubmit = async (data: ContactFormFields) => {
-    setIsSubmitting(true)
-
-    const payload = {
-      ...client,
-      ...client.personal_data,
-      ...client.legal_data,
-      contacts: data.contacts.map(c => ({ ...c, id: c.id || undefined }))
-    }
-
-    try {
-      await fetchApi(`clients/${client.id}`, {
-        method: 'PUT',
-        body: payload
-      })
-
-      setSnackbar({ open: true, message: 'Contactos actualizados con éxito', severity: 'success' })
-      await refreshClient()
-    } catch (error) {
-      console.error('Error updating contacts:', error)
-      setSnackbar({ open: true, message: 'Error al actualizar los contactos', severity: 'error' })
-    } finally {
-      setIsSubmitting(false)
-    }
+    setContacts(prev => [
+      ...prev,
+      { full_name: '', position: '', phone: '', email: '', notes: '' }
+    ])
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
-          <Typography variant='h6'>Contactos</Typography>
-          <Box>
-            <Button variant='outlined' onClick={handleAddContact} startIcon={<Add />}>
-              Nuevo Contacto
-            </Button>
-            <Button type='submit' variant='contained' startIcon={<Save />} sx={{ ml: 2 }} disabled={isSubmitting}>
-              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-          </Box>
-        </Stack>
+    <Box>
+      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
+        <Typography variant='h6' fontWeight='bold'>
+          Contactos
+        </Typography>
+        <Button variant='outlined' startIcon={<Add />} onClick={handleAddContact}>
+          Nuevo Contacto
+        </Button>
+      </Stack>
 
-        {fields.length === 0 ? (
-          <Typography variant='body2' color='text.secondary'>
-            No hay contactos añadidos aún.
-          </Typography>
-        ) : (
-          fields.map((field, index) => (
-            <Box key={field.id} mb={3} p={2}>
-              <Grid container spacing={2} alignItems='center'>
-                <Grid item xs={12} md={5}>
-                  <TextField fullWidth label='Nombre Completo' {...register(`contacts.${index}.full_name`)} required />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField fullWidth label='Posición/Cargo' {...register(`contacts.${index}.position`)} />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <TextField fullWidth label='Teléfono' {...register(`contacts.${index}.phone`)} required />
-                </Grid>
-                <Grid item xs={12} md={5}>
-                  <TextField fullWidth label='Email' type='email' {...register(`contacts.${index}.email`)} required />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField fullWidth label='Notas' {...register(`contacts.${index}.notes`)} />
-                </Grid>
-                <Grid item xs={12} md={1}>
-                  <IconButton onClick={() => remove(index)} color='error'>
-                    <Delete />
-                  </IconButton>
-                </Grid>
+      {contacts.length === 0 ? (
+        <Typography variant='body2' color='text.secondary'>
+          No hay contactos registrados.
+        </Typography>
+      ) : (
+        <Stack spacing={2}>
+          {contacts.map((contact, index) => (
+            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+              <Grid container spacing={3}>
+                <DetailItem label='Nombre Completo' value={contact.full_name} />
+                <DetailItem label='Posición/Cargo' value={contact.position} />
+                <DetailItem label='Teléfono' value={contact.phone} />
+                <DetailItem label='Email' value={contact.email} />
+                {contact.notes && <DetailItem label='Notas' value={contact.notes} />}
               </Grid>
-              {index < fields.length - 1 && <Divider sx={{ my: 2 }} />}
             </Box>
-          ))
-        )}
-      </form>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </>
+          ))}
+        </Stack>
+      )}
+    </Box>
   )
 }
 
