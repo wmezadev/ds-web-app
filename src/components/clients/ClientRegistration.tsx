@@ -28,11 +28,7 @@ interface ClientRegistrationProps {
 }
 
 const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client }) => {
-  const { catalogs, loading: catalogsLoading } = useCatalogs()
-
-  if (catalogsLoading) {
-    return <Typography>Cargando información de registro...</Typography>
-  }
+  const { catalogs } = useCatalogs()
 
   const categoryName = catalogs?.client_categories.find(c => c.id === client.client_category_id)?.name || '-'
   const officeName = catalogs?.offices.find(o => o.id === client.office_id)?.name || '-'
