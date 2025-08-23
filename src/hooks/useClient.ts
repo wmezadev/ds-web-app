@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 import { useApi } from './useApi'
 import type { Client } from '@/types/client'
@@ -39,6 +39,7 @@ interface UseClientReturn {
   createFollowUp: (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<FollowUpRecord>
   updateFollowUpStatus: (followUpId: number, status: boolean) => Promise<void>
   refreshFollowUps: () => Promise<void>
+  refreshClient: () => Promise<void>
 }
 
 export const useClient = (clientId: string): UseClientReturn => {
@@ -49,7 +50,7 @@ export const useClient = (clientId: string): UseClientReturn => {
   const [error, setError] = useState<string | null>(null)
   const { fetchApi } = useApi()
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!clientId) {
       setData(null)
       setIsLoading(false)
@@ -57,41 +58,41 @@ export const useClient = (clientId: string): UseClientReturn => {
       return
     }
 
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+    try {
+      setIsLoading(true)
+      setError(null)
 
-        // Fetch client data, follow-up types, and follow-up records in parallel
-        const [clientResponse, followUpTypesResponse, followUpRecordsResponse] = await Promise.all([
-          fetchApi(`clients/${clientId}`),
-          fetchApi('follow-up-types'),
-          fetchApi(`clients/${clientId}/follow-up`)
-        ])
+      // Fetch client data, follow-up types, and follow-up records in parallel
+      const [clientResponse, followUpTypesResponse, followUpRecordsResponse] = await Promise.all([
+        fetchApi(`clients/${clientId}`),
+        fetchApi('follow-up-types'),
+        fetchApi(`clients/${clientId}/follow-up`)
+      ])
 
-        const clientData = clientResponse.data || clientResponse.client || clientResponse
+      const clientData = clientResponse.data || clientResponse.client || clientResponse
 
-        const followUpTypesData =
-          followUpTypesResponse.data || followUpTypesResponse.follow_up_types || followUpTypesResponse || []
+      const followUpTypesData =
+        followUpTypesResponse.data || followUpTypesResponse.follow_up_types || followUpTypesResponse || []
 
-        const followUpRecordsData =
-          followUpRecordsResponse.data || followUpRecordsResponse.follow_ups || followUpRecordsResponse || []
+      const followUpRecordsData =
+        followUpRecordsResponse.data || followUpRecordsResponse.follow_ups || followUpRecordsResponse || []
 
-        setData(clientData)
-        setFollowUpTypes(followUpTypesData)
-        setFollowUpRecords(followUpRecordsData)
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar los datos')
-        setData(null)
-        setFollowUpTypes([])
-        setFollowUpRecords([])
-      } finally {
-        setIsLoading(false)
-      }
+      setData(clientData)
+      setFollowUpTypes(followUpTypesData)
+      setFollowUpRecords(followUpRecordsData)
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar los datos')
+      setData(null)
+      setFollowUpTypes([])
+      setFollowUpRecords([])
+    } finally {
+      setIsLoading(false)
     }
-
-    fetchData()
   }, [clientId, fetchApi])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const createFollowUp = async (
     followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>
@@ -156,7 +157,8 @@ export const useClient = (clientId: string): UseClientReturn => {
     error,
     createFollowUp,
     refreshFollowUps,
-    updateFollowUpStatus
+    updateFollowUpStatus,
+    refreshClient: fetchData
   }
 }
 

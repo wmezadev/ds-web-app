@@ -19,6 +19,7 @@ import {
 import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typography } from '@mui/material'
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
+import ClientContacts from '@/components/clients/ClientContacts'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
@@ -102,16 +103,18 @@ const ClientDetailsCard = ({ client }: { client: Partial<Client> & { cityName?: 
 
 const tabs = [
   { label: 'Datos Personales', icon: <Person /> },
-  { label: 'Documentos', icon: <Description /> },
   { label: 'Contactos', icon: <ContactPage /> },
+  { label: 'Documentos', icon: <Description /> },
   { label: 'Info. Bancaria', icon: <AccountBalance /> },
   { label: 'Registro', icon: <i className='ri-history-line' /> }
 ]
 
 const ClientMainContent = ({
-  client
+  client,
+  refreshClient
 }: {
   client: Partial<Client> & { professionName?: string; occupationName?: string }
+  refreshClient: () => Promise<void>
 }) => {
   const [value, setValue] = React.useState(0)
 
@@ -225,17 +228,22 @@ const ClientMainContent = ({
           )}
           {value === 1 && (
             <Box>
-              <Typography>Aquí irá la lista de Contactos</Typography>
+              <ClientContacts client={client as Client} refreshClient={refreshClient} />
             </Box>
           )}
           {value === 2 && (
             <Box>
-              <Typography>Aquí irá la Información Bancaria</Typography>
+              <Typography>Aquí irá la sección de Documentos</Typography>
             </Box>
           )}
           {value === 3 && (
             <Box>
-              <Typography>Aquí irá la sección de Dispositivos</Typography>
+              <Typography>Aquí irá la Información Bancaria</Typography>
+            </Box>
+          )}
+          {value === 4 && (
+            <Box>
+              <Typography>Aquí irá el Registro</Typography>
             </Box>
           )}
         </CardContent>
@@ -249,7 +257,7 @@ const ClientMainContent = ({
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
-  const { data: client, isLoading, error } = useClient(clientId)
+  const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
   if (isLoading || catalogsLoading) {
@@ -266,7 +274,7 @@ const ClientDetailPage = () => {
 
   const cityName = catalogs?.cities.find(c => c.id === client.city_id)?.name || 'N/A'
 
-  const zoneName = catalogs?.zones.find(z => z.id === client.zone_id)?.name || 'N/A'
+  const zoneName = catalogs?.zones.find(z => z.id === client.zone_id)?.description || 'N/A'
 
   const professionName =
     catalogs?.client_professions.find(p => p.id === client.personal_data?.profession_id)?.name || 'N/A'
@@ -330,7 +338,7 @@ const ClientDetailPage = () => {
           </Grid>
         </Grid>
         <Grid item xs={12} md={8}>
-          <ClientMainContent client={clientWithDetails} />
+          <ClientMainContent client={clientWithDetails} refreshClient={refreshClient} />
         </Grid>
       </Grid>
     </Box>
