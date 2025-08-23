@@ -10,7 +10,7 @@ import { useApi } from '@/hooks/useApi'
 import type { Client } from '@/types/client'
 
 interface ClientContactsProps {
-  client: Client
+  client: Partial<Client>
   refreshClient: () => Promise<void>
 }
 

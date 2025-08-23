@@ -21,6 +21,7 @@ import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typo
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
+import LegalData from '@/components/clients/LegalData'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
@@ -52,7 +53,7 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
     <CardContent>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
         <Avatar
-          src="/images/avatars/1.png"
+          src='/images/avatars/1.png'
           sx={{ width: 90, height: 90, mb: 1, border: '2px solid', borderColor: 'divider' }}
           alt={`${client.first_name} ${client.last_name}`}
         />
@@ -198,15 +199,22 @@ const ClientMainContent = ({
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
           {value === 0 && (
-            <ClientPersonalData
-              client={client}
-              professionName={client.professionName}
-              occupationName={client.occupationName}
-            />
+            <>
+              {client.person_type === 'J' ? (
+                <LegalData client={client} />
+              ) : (
+                <ClientPersonalData
+                  client={client}
+                  professionName={client.professionName}
+                  occupationName={client.occupationName}
+                />
+              )}
+            </>
           )}
+
           {value === 1 && (
             <Box>
-              <ClientContacts client={client as Client} refreshClient={refreshClient} />
+              <ClientContacts client={client} refreshClient={refreshClient} />
             </Box>
           )}
           {value === 2 && (
@@ -284,7 +292,7 @@ const ClientDetailPage = () => {
         }}
       >
         <Typography variant='h5' fontWeight='bold' sx={{ mb: { xs: 2, md: 0 } }}>
-          Cliente #{client.id}
+          {`Cliente ${client.first_name} ${client.last_name}`}
         </Typography>
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
           <Button
