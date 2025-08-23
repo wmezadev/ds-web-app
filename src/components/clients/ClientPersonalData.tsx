@@ -24,9 +24,11 @@ const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
 
 interface ClientPersonalDataProps {
   client: Partial<Client>
+  professionName?: string
+  occupationName?: string
 }
 
-const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client }) => {
+const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, professionName, occupationName }) => {
   const { personal_data } = client
 
   if (!personal_data) {
@@ -46,8 +48,8 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client }) => {
         <DetailItem label='Fumador' value={personal_data.smoker ? 'Sí' : 'No'} />
         <DetailItem label='Deportes' value={personal_data.sports} />
         <DetailItem label='Patología' value={personal_data.pathology} />
-        <DetailItem label='Profesión' value={personal_data.profession_id} />
-        <DetailItem label='Ocupación' value={personal_data.occupation_id} />
+        <DetailItem label='Profesión' value={professionName} />
+        <DetailItem label='Ocupación' value={occupationName} />
         <DetailItem label='Ingreso Mensual' value={personal_data.monthly_income} />
         <DetailItem label='RIF' value={personal_data.rif} />
       </Grid>

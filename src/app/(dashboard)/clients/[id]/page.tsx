@@ -2,6 +2,8 @@
 
 import React from 'react'
 
+import { useParams } from 'next/navigation'
+
 import {
   AccountBalance,
   Business,
@@ -17,40 +19,9 @@ import {
 import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typography } from '@mui/material'
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
+import { useClient } from '@/hooks/useClient'
+import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
-
-// --- Mock Data ---
-const mockClientData: Partial<Client> = {
-  id: 879861,
-  first_name: 'Willian Ernesto',
-  last_name: 'Meza Moncada',
-  person_type: 'N',
-  document_number: 'V-27902796',
-  join_date: '2025-08-21T10:00:00Z',
-  email_1: 'wmeza@willianmeza.com',
-  email_2: 'wmeza@seguiconsult.com',
-  mobile_1: '(0414)-351-3899',
-  phone: '(0414)-565-23-22',
-  city_id: 1,
-  source: 'C',
-  personal_data: {
-    gender: 'Masculino',
-    civil_status: 'Soltero',
-    height: 180,
-    weight: 75,
-    smoker: false,
-    sports: 'Fútbol',
-    rif: 'V-27902796-0',
-    profession_id: 1,
-    occupation_id: 1,
-    monthly_income: 5000,
-    pathology: 'Ninguna'
-  },
-  zone_id: 1,
-  billing_address: 'CALLE 45 ENTRE CARRERAS 14 Y 15 CASA N° 14-44 SECTOR OESTE',
-  birth_date: '1960-10-30',
-  birth_place: 'BARQUISIMETO'
-}
 
 interface DetailItemProps {
   icon: React.ElementType
@@ -86,7 +57,7 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
           {`${client.first_name} ${client.last_name}`}
         </Typography>
         <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
-          {client.person_type === 'N' ? 'Natural' : 'Jurídica'}
+          {client.person_type === 'N' ? 'Natural' : 'Jurídica'} - {client.document_number}
         </Typography>
         <Typography
           variant='caption'
@@ -99,18 +70,22 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
   </Card>
 )
 
-const ClientDetailsCard = ({ client }: { client: Partial<Client> }) => (
+const ClientDetailsCard = ({ client }: { client: Partial<Client> & { cityName?: string; zoneName?: string } }) => (
   <Card elevation={0} sx={{ borderRadius: 2 }}>
     <CardContent>
       <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
         Details
       </Typography>
-      <DetailItem icon={Cake} label='Fecha Ingreso' value={client.join_date ? new Date(client.join_date).toLocaleDateString('es-ES') : 'N/A'} />
+      <DetailItem
+        icon={Cake}
+        label='Fecha Ingreso'
+        value={client.join_date ? new Date(client.join_date).toLocaleDateString('es-ES') : 'N/A'}
+      />
       <Divider sx={{ my: 1 }} />
       <DetailItem icon={Phone} label='Teléfonos' value={`${client.mobile_1} | ${client.phone}`} />
       <DetailItem icon={Email} label='Correos' value={`${client.email_1} | ${client.email_2}`} />
       <Divider sx={{ my: 1 }} />
-      <DetailItem icon={Business} label='Ciudad/Zona' value={'Barquisimeto / Oeste'} />
+      <DetailItem icon={Business} label='Ciudad/Zona' value={`${client.cityName} / ${client.zoneName}`} />
       <DetailItem icon={Home} label='Dirección' value={client.billing_address} />
       <Divider sx={{ my: 1 }} />
       <DetailItem
@@ -133,7 +108,11 @@ const tabs = [
   { label: 'Registro', icon: <i className='ri-history-line' /> }
 ]
 
-const ClientMainContent = () => {
+const ClientMainContent = ({
+  client
+}: {
+  client: Partial<Client> & { professionName?: string; occupationName?: string }
+}) => {
   const [value, setValue] = React.useState(0)
 
   const handleChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
@@ -237,7 +216,13 @@ const ClientMainContent = () => {
 
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
-          {value === 0 && <ClientPersonalData client={mockClientData} />}
+          {value === 0 && (
+            <ClientPersonalData
+              client={client}
+              professionName={client.professionName}
+              occupationName={client.occupationName}
+            />
+          )}
           {value === 1 && (
             <Box>
               <Typography>Aquí irá la lista de Contactos</Typography>
@@ -262,6 +247,41 @@ const ClientMainContent = () => {
 // --- Página Principal ---
 
 const ClientDetailPage = () => {
+  const params = useParams()
+  const clientId = typeof params.id === 'string' ? params.id : ''
+  const { data: client, isLoading, error } = useClient(clientId)
+  const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
+
+  if (isLoading || catalogsLoading) {
+    return <Typography>Cargando...</Typography>
+  }
+
+  if (error || catalogsError) {
+    return <Typography>Error: {error || catalogsError}</Typography>
+  }
+
+  if (!client) {
+    return <Typography>No se encontró el cliente.</Typography>
+  }
+
+  const cityName = catalogs?.cities.find(c => c.id === client.city_id)?.name || 'N/A'
+
+  const zoneName = catalogs?.zones.find(z => z.id === client.zone_id)?.name || 'N/A'
+
+  const professionName =
+    catalogs?.client_professions.find(p => p.id === client.personal_data?.profession_id)?.name || 'N/A'
+
+  const occupationName =
+    catalogs?.client_occupations.find(o => o.id === client.personal_data?.occupation_id)?.name || 'N/A'
+
+  const clientWithDetails = {
+    ...client,
+    cityName,
+    zoneName,
+    professionName,
+    occupationName
+  }
+
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
       <Box
@@ -277,7 +297,7 @@ const ClientDetailPage = () => {
         }}
       >
         <Typography variant='h5' fontWeight='bold' sx={{ mb: { xs: 2, md: 0 } }}>
-          Cliente #{mockClientData.id}
+          Cliente #{client.id}
         </Typography>
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
           <Button variant='text' startIcon={<i className='ri-line-chart-line' />}>
@@ -302,15 +322,15 @@ const ClientDetailPage = () => {
         <Grid item xs={12} md={4}>
           <Grid container direction='column' spacing={4}>
             <Grid item xs={12}>
-              <ClientProfileCard client={mockClientData} />
+              <ClientProfileCard client={client} />
             </Grid>
             <Grid item xs={12}>
-              <ClientDetailsCard client={mockClientData} />
+              <ClientDetailsCard client={clientWithDetails} />
             </Grid>
           </Grid>
         </Grid>
         <Grid item xs={12} md={8}>
-          <ClientMainContent />
+          <ClientMainContent client={clientWithDetails} />
         </Grid>
       </Grid>
     </Box>
