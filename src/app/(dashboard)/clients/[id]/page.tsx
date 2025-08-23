@@ -16,7 +16,22 @@ import {
   Phone,
   Place
 } from '@mui/icons-material'
-import { Avatar, Box, Button, Card, CardContent, Divider, Grid, Typography } from '@mui/material'
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  Grid,
+  Typography,
+  IconButton,
+  TextField,
+  Tooltip,
+  Snackbar
+} from '@mui/material'
+import Alert from '@mui/material/Alert'
+import { DriveFileRenameOutline as EditIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
@@ -26,6 +41,8 @@ import LegalData from '@/components/clients/LegalData'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
+import { useApi } from '@/hooks/useApi'
+import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
 
 interface DetailItemProps {
   icon: React.ElementType
@@ -45,6 +62,146 @@ const DetailItem: React.FC<DetailItemProps> = ({ icon: Icon, label, value }) => 
           {value}
         </Box>
       </Typography>
+    </Box>
+  )
+}
+
+interface DetailItemEditableProps {
+  icon: React.ElementType
+  label: string
+  value: string | undefined | null
+  onSave: (v: string) => Promise<void> | void
+  placeholder?: string
+}
+
+const DetailItemEditable: React.FC<DetailItemEditableProps> = ({ icon: Icon, label, value, onSave, placeholder }) => {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+      <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
+      <Typography variant='body2' sx={{ color: 'text.primary' }}>
+        <Box component='span' sx={{ color: 'text.secondary' }}>
+          {label}:
+        </Box>
+        <Box component='span' sx={{ ml: 1, display: 'inline-flex', alignItems: 'center' }}>
+          <EditableText value={value} onSave={onSave} placeholder={placeholder} />
+        </Box>
+      </Typography>
+    </Box>
+  )
+}
+
+interface EditableTextProps {
+  value: string | undefined | null
+  label?: string
+  onSave: (newValue: string) => Promise<void> | void
+  placeholder?: string
+}
+
+const EditableText: React.FC<EditableTextProps> = ({ value, label, onSave, placeholder }) => {
+  const [editing, setEditing] = React.useState(false)
+  const [local, setLocal] = React.useState(value ?? '')
+  const [saving, setSaving] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
+
+  React.useEffect(() => {
+    setLocal(value ?? '')
+  }, [value])
+
+  const handleSave = async () => {
+    if (saving) return
+    const trimmed = (local ?? '').trim()
+    if (trimmed === (value ?? '')) {
+      setEditing(false)
+      return
+    }
+    try {
+      setSaving(true)
+      await onSave(trimmed)
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSave()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setLocal(value ?? '')
+      setEditing(false)
+    }
+  }
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {editing ? (
+        <>
+          <TextField
+            inputRef={inputRef}
+            size='small'
+            variant='standard'
+            hiddenLabel
+            value={local}
+            onChange={e => setLocal(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            InputProps={{
+              sx: {
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                fontWeight: 700,
+                px: 0.25,
+                py: 0,
+                minHeight: 24
+              },
+              disableUnderline: true
+            }}
+            sx={{ minWidth: 120, alignSelf: 'center' }}
+          />
+          <Tooltip title='Guardar'>
+            <span>
+              <IconButton size='small' color='primary' onClick={handleSave} disabled={saving} sx={{ p: 0.25 }}>
+                <CheckIcon fontSize='inherit' sx={{ fontSize: 16 }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title='Cancelar'>
+            <IconButton
+              size='small'
+              color='secondary'
+              onClick={() => {
+                setLocal(value ?? '')
+                setEditing(false)
+              }}
+              sx={{ p: 0.25 }}
+            >
+              <CloseIcon fontSize='inherit' sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        </>
+      ) : (
+        <>
+          <Typography variant='body2' sx={{ color: 'text.primary' }}>
+            <Box component='span' fontWeight='bold'>
+              {value || placeholder || '—'}
+            </Box>
+          </Typography>
+          <Tooltip title='Editar'>
+            <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
+              <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        </>
+      )}
     </Box>
   )
 }
@@ -75,35 +232,122 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
   </Card>
 )
 
-const ClientDetailsCard = ({ client }: { client: Partial<Client> & { cityName?: string; zoneName?: string } }) => (
-  <Card elevation={0} sx={{ borderRadius: 2 }}>
-    <CardContent>
-      <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
-        Detalles
-      </Typography>
-      <DetailItem
-        icon={Cake}
-        label='Fecha Ingreso'
-        value={client.join_date ? new Date(client.join_date).toLocaleDateString('es-ES') : 'N/A'}
-      />
-      <Divider sx={{ my: 1 }} />
-      <DetailItem icon={Phone} label='Teléfonos' value={`${client.mobile_1} | ${client.phone}`} />
-      <DetailItem icon={Email} label='Correos' value={`${client.email_1} | ${client.email_2}`} />
-      <Divider sx={{ my: 1 }} />
-      <DetailItem icon={Business} label='Ciudad/Zona' value={`${client.cityName} / ${client.zoneName}`} />
-      <DetailItem icon={Home} label='Dirección' value={client.billing_address} />
-      <Divider sx={{ my: 1 }} />
-      <DetailItem
-        icon={Cake}
-        label='Fecha Nac./Fund.'
-        value={client.birth_date ? new Date(client.birth_date).toLocaleDateString('es-ES') : 'N/A'}
-      />
-      <DetailItem icon={Place} label='Lugar de Nac./Fund.' value={client.birth_place} />
-    </CardContent>
-  </Card>
-)
+const ClientDetailsCard = ({
+  client,
+  clientId,
+  onUpdated
+}: {
+  client: Partial<Client> & { cityName?: string; zoneName?: string }
+  clientId: string
+  onUpdated: () => Promise<void>
+}) => {
+  const { fetchApi } = useApi()
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false)
+  const [snackbarMessage, setSnackbarMessage] = React.useState('')
+  const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success')
+  const [localDetails, setLocalDetails] = React.useState({
+    billing_address: client.billing_address || '',
+    birth_place: client.birth_place || ''
+  })
 
-// --- Panel de la derecha ---
+  React.useEffect(() => {
+    setLocalDetails({
+      billing_address: client.billing_address || '',
+      birth_place: client.birth_place || ''
+    })
+  }, [client.billing_address, client.birth_place])
+
+  const updateClient = async (patch: Partial<ClientFormFields>) => {
+    try {
+      const formFromApi = clientApiToForm(client as Client)
+      const mergedForm: ClientFormFields = { ...formFromApi, ...patch }
+      const apiPayload = clientFormToApi(mergedForm)
+
+      await fetchApi(`clients/${clientId}`, {
+        method: 'PUT',
+        body: apiPayload
+      })
+
+      setLocalDetails(prev => ({
+        billing_address: patch.billing_address ?? prev.billing_address,
+        birth_place: patch.birth_place ?? prev.birth_place
+      }))
+
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Cliente actualizado exitosamente')
+      setSnackbarOpen(true)
+    } catch (err: any) {
+      const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
+      setSnackbarSeverity('error')
+      setSnackbarMessage(apiMsg)
+      setSnackbarOpen(true)
+      throw err
+    }
+  }
+
+  const saveBirthPlace = async (newBirthPlace: string) => {
+    await updateClient({ birth_place: newBirthPlace })
+  }
+
+  const saveBillingAddress = async (newBillingAddress: string) => {
+    await updateClient({ billing_address: newBillingAddress })
+  }
+
+  return (
+    <Card elevation={0} sx={{ borderRadius: 2 }}>
+      <CardContent>
+        <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
+          Detalles
+        </Typography>
+        <DetailItem
+          icon={Cake}
+          label='Fecha Ingreso'
+          value={client.join_date ? new Date(client.join_date).toLocaleDateString('es-ES') : 'N/A'}
+        />
+        <Divider sx={{ my: 1 }} />
+        <DetailItem icon={Phone} label='Teléfonos' value={`${client.mobile_1} | ${client.phone}`} />
+        <DetailItem icon={Email} label='Correos' value={`${client.email_1} | ${client.email_2}`} />
+        <Divider sx={{ my: 1 }} />
+        <DetailItem icon={Business} label='Ciudad/Zona' value={`${client.cityName} / ${client.zoneName}`} />
+        <DetailItemEditable
+          icon={Home}
+          label='Dirección'
+          value={localDetails.billing_address}
+          onSave={saveBillingAddress}
+          placeholder='Ingrese la dirección'
+        />
+        <Divider sx={{ my: 1 }} />
+        <DetailItem
+          icon={Cake}
+          label='Fecha Nac./Fund.'
+          value={client.birth_date ? new Date(client.birth_date).toLocaleDateString('es-ES') : 'N/A'}
+        />
+        <DetailItemEditable
+          icon={Place}
+          label='Lugar de Nac./Fund.'
+          value={localDetails.birth_place}
+          onSave={saveBirthPlace}
+          placeholder='Ingrese el lugar'
+        />
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            variant='filled'
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </CardContent>
+    </Card>
+  )
+}
 
 const tabs = [
   { label: 'Datos Personales', icon: <Person /> },
@@ -230,8 +474,6 @@ const ClientMainContent = ({
   )
 }
 
-// --- Página Principal ---
-
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
@@ -316,7 +558,7 @@ const ClientDetailPage = () => {
               <ClientProfileCard client={client} />
             </Grid>
             <Grid item xs={12}>
-              <ClientDetailsCard client={clientWithDetails} />
+              <ClientDetailsCard client={clientWithDetails} clientId={clientId} onUpdated={refreshClient} />
             </Grid>
           </Grid>
         </Grid>
