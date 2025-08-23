@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 
 import { Box, Button, Grid, Stack, Typography } from '@mui/material'
+
 import { Add } from '@mui/icons-material'
+
 import type { Client } from '@/types/client'
 
 interface DetailItemProps {

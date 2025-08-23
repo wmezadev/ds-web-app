@@ -3,7 +3,9 @@
 import { useState } from 'react'
 
 import { Box, Grid, Stack, Typography, Button } from '@mui/material'
+
 import { Add } from '@mui/icons-material'
+
 import type { Client } from '@/types/client'
 
 interface DetailItemProps {
@@ -26,16 +28,14 @@ const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
 
 interface ClientContactsProps {
   client: Partial<Client>
+  refreshClient: () => Promise<void>
 }
 
-const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
+const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }) => {
   const [contacts, setContacts] = useState(client.contacts || [])
 
   const handleAddContact = () => {
-    setContacts(prev => [
-      ...prev,
-      { full_name: '', position: '', phone: '', email: '', notes: '' }
-    ])
+    setContacts(prev => [...prev, { full_name: '', position: '', phone: '', email: '', notes: '' }])
   }
 
   return (

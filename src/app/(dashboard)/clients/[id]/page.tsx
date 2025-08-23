@@ -16,7 +16,7 @@ import {
   Phone,
   Place
 } from '@mui/icons-material'
-import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typography } from '@mui/material'
+import { Avatar, Box, Button, Card, CardContent, Divider, Grid, Typography } from '@mui/material'
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
@@ -121,13 +121,13 @@ const ClientMainContent = ({
   refreshClient: () => Promise<void>
 }) => {
   const [value, setValue] = React.useState(0)
+  const [showArrows, setShowArrows] = React.useState({ left: false, right: false })
 
   const handleChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)
   }, [])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
-  const [showArrows, setShowArrows] = React.useState({ left: false, right: false })
 
   const checkArrows = React.useCallback(() => {
     if (scrollRef.current) {
@@ -157,15 +157,6 @@ const ClientMainContent = ({
       }
     }
   }, [checkArrows])
-
-  const handleScroll = React.useCallback((direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { scrollWidth, clientWidth } = scrollRef.current
-      const scrollLeft = direction === 'left' ? 0 : scrollWidth
-
-      scrollRef.current.scrollTo({ left: scrollLeft, behavior: 'smooth' })
-    }
-  }, [])
 
   return (
     <>
