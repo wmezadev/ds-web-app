@@ -1,6 +1,7 @@
 'use client'
 
 import { Typography, Grid, Box } from '@mui/material'
+import { useMemo } from 'react'
 
 import type { Client } from '@/types/client'
 import { useCatalogs } from '@/hooks/useCatalogs'
@@ -30,12 +31,27 @@ interface ClientRegistrationProps {
 const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client }) => {
   const { catalogs } = useCatalogs()
 
-  const categoryName = catalogs?.client_categories.find(c => c.id === client.client_category_id)?.name || '-'
-  const officeName = catalogs?.offices.find(o => o.id === client.office_id)?.name || '-'
-  const agentName = catalogs?.agents.find(a => a.id === client.agent_id)?.name || '-'
-  const executiveName = catalogs?.executives.find(e => e.id === client.executive_id)?.name || '-'
-  const groupName = catalogs?.client_groups.find(g => g.id === client.client_group_id)?.name || '-'
-  const branchName = catalogs?.client_branches.find(b => b.id === client.client_branch_id)?.name || '-'
+  const catalogNames = useMemo(() => {
+    if (!catalogs) return {
+      categoryName: '-',
+      officeName: '-',
+      agentName: '-',
+      executiveName: '-',
+      groupName: '-',
+      branchName: '-'
+    }
+
+    return {
+      categoryName: catalogs.client_categories.find(c => c.id === client.client_category_id)?.name || '-',
+      officeName: catalogs.offices.find(o => o.id === client.office_id)?.name || '-',
+      agentName: catalogs.agents.find(a => a.id === client.agent_id)?.name || '-',
+      executiveName: catalogs.executives.find(e => e.id === client.executive_id)?.name || '-',
+      groupName: catalogs.client_groups.find(g => g.id === client.client_group_id)?.name || '-',
+      branchName: catalogs.client_branches.find(b => b.id === client.client_branch_id)?.name || '-'
+    }
+  }, [catalogs, client.client_category_id, client.office_id, client.agent_id, client.executive_id, client.client_group_id, client.client_branch_id])
+
+  const { categoryName, officeName, agentName, executiveName, groupName, branchName } = catalogNames
 
   return (
     <Box>
