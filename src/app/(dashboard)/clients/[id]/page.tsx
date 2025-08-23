@@ -51,6 +51,7 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
     <CardContent>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
         <Avatar
+          src="/images/avatars/1.png"
           sx={{ width: 90, height: 90, mb: 1, border: '2px solid', borderColor: 'divider' }}
           alt={`${client.first_name} ${client.last_name}`}
         />
@@ -75,7 +76,7 @@ const ClientDetailsCard = ({ client }: { client: Partial<Client> & { cityName?: 
   <Card elevation={0} sx={{ borderRadius: 2 }}>
     <CardContent>
       <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
-        Details
+        Detalles
       </Typography>
       <DetailItem
         icon={Cake}
@@ -156,9 +157,10 @@ const ClientMainContent = ({
 
   const handleScroll = React.useCallback((direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -200 : 200
+      const { scrollWidth, clientWidth } = scrollRef.current
+      const scrollLeft = direction === 'left' ? 0 : scrollWidth
 
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+      scrollRef.current.scrollTo({ left: scrollLeft, behavior: 'smooth' })
     }
   }, [])
 
@@ -166,55 +168,30 @@ const ClientMainContent = ({
     <>
       <Box
         sx={{
-          position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          borderBottom: 1,
-          borderColor: 'divider',
           mb: 4
         }}
       >
-        {showArrows.left && (
-          <IconButton onClick={() => handleScroll('left')} size='small' sx={{ mr: 1 }}>
-            <i className='ri-arrow-left-s-line' />
-          </IconButton>
-        )}
-        <Box
-          ref={scrollRef}
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            overflowX: 'auto',
-            flexGrow: 1,
-            '::-webkit-scrollbar': { display: 'none' },
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none'
-          }}
-        >
-          {tabs.map((tab, index) => (
-            <Button
-              key={index}
-              variant={index === value ? 'contained' : 'text'}
-              onClick={e => handleChange(e, index)}
-              sx={{
-                textTransform: 'none',
-                minWidth: 'auto',
-                whiteSpace: 'nowrap',
-                mr: 2,
-                py: 1.5
-              }}
-              startIcon={tab.icon}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </Box>
-        {showArrows.right && (
-          <IconButton onClick={() => handleScroll('right')} size='small' sx={{ ml: 1 }}>
-            <i className='ri-arrow-right-s-line' />
-          </IconButton>
-        )}
+        {tabs.map((tab, index) => (
+          <Button
+            key={index}
+            variant={index === value ? 'contained' : 'text'}
+            onClick={e => handleChange(e, index)}
+            sx={{
+              textTransform: 'none',
+              minWidth: 'auto',
+              whiteSpace: 'nowrap',
+              mr: 1.5,
+              py: 1.5,
+              px: 1.8,
+              fontSize: '0.9rem'
+            }}
+            startIcon={tab.icon}
+          >
+            {tab.label}
+          </Button>
+        ))}
       </Box>
 
       <Card elevation={0} sx={{ borderRadius: 2 }}>

@@ -4,6 +4,20 @@ import { Typography, Grid, Box } from '@mui/material'
 
 import type { Client } from '@/types/client'
 
+const getCivilStatusDisplay = (status: string | null): string => {
+  if (!status) return '-'
+  
+  // Map known values to Spanish display text
+  const statusMap: Record<string, string> = {
+    'single': 'Soltero',
+    'married': 'Casado', 
+    'divorced': 'Divorciado',
+    'widowed': 'Viudo'
+  }
+  
+  return statusMap[status] || status
+}
+
 interface DetailItemProps {
   label: string
   value: React.ReactNode
@@ -42,7 +56,7 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, profess
       </Typography>
       <Grid container spacing={4}>
         <DetailItem label='Género' value={personal_data.gender} />
-        <DetailItem label='Estado Civil' value={personal_data.civil_status} />
+        <DetailItem label='Estado Civil' value={getCivilStatusDisplay(personal_data.civil_status)} />
         <DetailItem label='Altura (cm)' value={personal_data.height} />
         <DetailItem label='Peso (kg)' value={personal_data.weight} />
         <DetailItem label='Fumador' value={personal_data.smoker ? 'Sí' : 'No'} />
