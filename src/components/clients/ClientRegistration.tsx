@@ -1,7 +1,8 @@
 'use client'
 
-import { Typography, Grid, Box } from '@mui/material'
 import { useMemo } from 'react'
+
+import { Typography, Grid, Box } from '@mui/material'
 
 import type { Client } from '@/types/client'
 import { useCatalogs } from '@/hooks/useCatalogs'
@@ -32,14 +33,15 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client }) => {
   const { catalogs } = useCatalogs()
 
   const catalogNames = useMemo(() => {
-    if (!catalogs) return {
-      categoryName: '-',
-      officeName: '-',
-      agentName: '-',
-      executiveName: '-',
-      groupName: '-',
-      branchName: '-'
-    }
+    if (!catalogs)
+      return {
+        categoryName: '-',
+        officeName: '-',
+        agentName: '-',
+        executiveName: '-',
+        groupName: '-',
+        branchName: '-'
+      }
 
     return {
       categoryName: catalogs.client_categories.find(c => c.id === client.client_category_id)?.name || '-',
@@ -49,7 +51,15 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client }) => {
       groupName: catalogs.client_groups.find(g => g.id === client.client_group_id)?.name || '-',
       branchName: catalogs.client_branches.find(b => b.id === client.client_branch_id)?.name || '-'
     }
-  }, [catalogs, client.client_category_id, client.office_id, client.agent_id, client.executive_id, client.client_group_id, client.client_branch_id])
+  }, [
+    catalogs,
+    client.client_category_id,
+    client.office_id,
+    client.agent_id,
+    client.executive_id,
+    client.client_group_id,
+    client.client_branch_id
+  ])
 
   const { categoryName, officeName, agentName, executiveName, groupName, branchName } = catalogNames
 

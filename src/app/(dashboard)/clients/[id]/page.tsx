@@ -97,7 +97,7 @@ interface EditableTextProps {
   placeholder?: string
 }
 
-const EditableText: React.FC<EditableTextProps> = ({ value, label, onSave, placeholder }) => {
+const EditableText: React.FC<EditableTextProps> = ({ value, onSave, placeholder }) => {
   const [editing, setEditing] = React.useState(false)
   const [local, setLocal] = React.useState(value ?? '')
   const [saving, setSaving] = React.useState(false)
@@ -117,10 +117,13 @@ const EditableText: React.FC<EditableTextProps> = ({ value, label, onSave, place
   const handleSave = async () => {
     if (saving) return
     const trimmed = (local ?? '').trim()
+
     if (trimmed === (value ?? '')) {
       setEditing(false)
+
       return
     }
+
     try {
       setSaving(true)
       await onSave(trimmed)
@@ -234,8 +237,7 @@ const ClientProfileCard = ({ client }: { client: Partial<Client> }) => (
 
 const ClientDetailsCard = ({
   client,
-  clientId,
-  onUpdated
+  clientId
 }: {
   client: Partial<Client> & { cityName?: string; zoneName?: string }
   clientId: string
@@ -244,7 +246,9 @@ const ClientDetailsCard = ({
   const { fetchApi } = useApi()
   const [snackbarOpen, setSnackbarOpen] = React.useState(false)
   const [snackbarMessage, setSnackbarMessage] = React.useState('')
+
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success')
+
   const [localDetails, setLocalDetails] = React.useState({
     billing_address: client.billing_address || '',
     birth_place: client.birth_place || ''
@@ -278,7 +282,9 @@ const ClientDetailsCard = ({
       setSnackbarOpen(true)
     } catch (err: any) {
       const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
+
       setSnackbarSeverity('error')
+
       setSnackbarMessage(apiMsg)
       setSnackbarOpen(true)
       throw err
