@@ -21,6 +21,7 @@ import { Avatar, Box, Button, Card, CardContent, Divider, Grid, IconButton, Typo
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
+import ClientBankAccounts from '@/components/clients/ClientBankAccounts'
 import LegalData from '@/components/clients/LegalData'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
@@ -224,7 +225,7 @@ const ClientMainContent = ({
           )}
           {value === 3 && (
             <Box>
-              <Typography>Aquí irá la Información Bancaria</Typography>
+              <ClientBankAccounts client={client} />
             </Box>
           )}
           {value === 4 && (
