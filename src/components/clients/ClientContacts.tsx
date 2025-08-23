@@ -31,7 +31,7 @@ interface ClientContactsProps {
   refreshClient: () => Promise<void>
 }
 
-const ClientContacts: React.FC<ClientContactsProps> = ({ client, refreshClient }) => {
+const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   const [contacts, setContacts] = useState(client.contacts || [])
 
   const handleAddContact = () => {

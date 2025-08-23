@@ -121,7 +121,7 @@ const ClientMainContent = ({
   refreshClient: () => Promise<void>
 }) => {
   const [value, setValue] = React.useState(0)
-  const [showArrows, setShowArrows] = React.useState({ left: false, right: false })
+  const [, setShowArrows] = React.useState({ left: false, right: false })
 
   const handleChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue)
