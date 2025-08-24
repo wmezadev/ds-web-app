@@ -63,19 +63,11 @@ export const useClient = (clientId: string): UseClientReturn => {
       setError(null)
 
       // Fetch client data, follow-up types, and follow-up records in parallel
-      const [clientResponse, followUpTypesResponse, followUpRecordsResponse] = await Promise.all([
-        fetchApi(`clients/${clientId}`),
-        fetchApi('follow-up-types'),
-        fetchApi(`clients/${clientId}/follow-up`)
+      const [clientData, followUpTypesData, followUpRecordsData] = await Promise.all([
+        fetchApi<Client>(`clients/${clientId}`),
+        fetchApi<FollowUpType[]>('follow-up-types'),
+        fetchApi<FollowUpRecord[]>(`clients/${clientId}/follow-up`)
       ])
-
-      const clientData = clientResponse.data || clientResponse.client || clientResponse
-
-      const followUpTypesData =
-        followUpTypesResponse.data || followUpTypesResponse.follow_up_types || followUpTypesResponse || []
-
-      const followUpRecordsData =
-        followUpRecordsResponse.data || followUpRecordsResponse.follow_ups || followUpRecordsResponse || []
 
       setData(clientData)
       setFollowUpTypes(followUpTypesData)
@@ -98,15 +90,13 @@ export const useClient = (clientId: string): UseClientReturn => {
     followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>
   ): Promise<FollowUpRecord> => {
     try {
-      const response = await fetchApi(`clients/${clientId}/follow-up`, {
+      const newFollowUp = await fetchApi<FollowUpRecord>(`clients/${clientId}/follow-up`, {
         method: 'POST',
         body: followUpData
       })
 
-      const newFollowUp = response.data || response.follow_up || response
-
-      // Add the new follow-up to the local state
-      setFollowUpRecords(prev => [newFollowUp, ...prev])
+      // Add the new follow-up to the local state and set previous to false
+      setFollowUpRecords(prev => [newFollowUp, ...prev.map(record => ({ ...record, status: false }))])
 
       return newFollowUp
     } catch (err: any) {
@@ -124,13 +114,10 @@ export const useClient = (clientId: string): UseClientReturn => {
       setFollowUpRecords(prev =>
         prev.map(record => {
           if (record.id === followUpId) {
-            return { ...record, status: status }
-          } else if (status) {
-            // If the current follow-up is being activated, deactivate all others
-            return { ...record, status: false }
+            return { ...record, status }
           }
 
-          return record
+          return { ...record }
         })
       )
     } catch (err: any) {
@@ -140,8 +127,7 @@ export const useClient = (clientId: string): UseClientReturn => {
 
   const refreshFollowUps = async (): Promise<void> => {
     try {
-      const response = await fetchApi(`clients/${clientId}/follow-up`)
-      const followUpRecordsData = response.data || response.follow_ups || response || []
+      const followUpRecordsData = await fetchApi<FollowUpRecord[]>(`clients/${clientId}/follow-up`)
 
       setFollowUpRecords(followUpRecordsData)
     } catch (err: any) {
@@ -173,10 +159,9 @@ export const useFollowUpTypes = (): UseFollowUpTypesReturn => {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetchApi('follow-up-types')
-        const data = response.data || response.follow_up_types || response || []
+        const followUpTypes = await fetchApi<FollowUpType[]>('follow-up-types')
 
-        setFollowUpTypes(data)
+        setFollowUpTypes(followUpTypes)
       } catch (err) {
         setError('Error al cargar los tipos de gestión')
       } finally {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Client } from '@/types/client'
+import { useApi } from './useApi'
 
 interface SearchResponse {
   clients: Client[]
@@ -11,6 +12,7 @@ interface SearchResponse {
 }
 
 export function useClientSearch(query: string, page: number = 1, perPage: number = 10, enabled: boolean) {
+  const { fetchApi } = useApi()
   const [results, setResults] = useState<Client[]>([])
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -18,47 +20,46 @@ export function useClientSearch(query: string, page: number = 1, perPage: number
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled || !query.trim()) {
-      setResults([])
-      setTotal(0)
-      setTotalPages(1)
-
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
     const controller = new AbortController()
-    const signal = controller.signal
 
-    const searchParams = new URLSearchParams({
-      query: query,
-      page: page.toString(),
-      per_page: perPage.toString()
-    })
+    const main = async () => {
+      if (!enabled || !query.trim()) {
+        setResults([])
+        setTotal(0)
+        setTotalPages(1)
 
-    fetch(`/api/proxy/clients/search?${searchParams.toString()}`, { signal })
-      .then(async res => {
-        if (!res.ok) {
-          throw new Error(`Error en la búsqueda: ${res.statusText}`)
-        }
+        return
+      }
 
-        const data: SearchResponse = await res.json()
+      const searchParams = new URLSearchParams({
+        query: query,
+        page: page.toString(),
+        per_page: perPage.toString()
+      })
+
+      try {
+        setLoading(true)
+        setError(null)
+
+        const signal = controller.signal
+        const data = await fetchApi<SearchResponse>(`clients/search?${searchParams.toString()}`, { signal })
 
         setResults(data.clients || [])
         setTotal(data.total || 0)
         setTotalPages(data.pages || 1)
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') {
-          setError(err.message || 'Error al buscar clientes')
+      } catch (err) {
+        if (typeof err === 'object' && err !== null && 'name' in err && (err as any).name !== 'AbortError') {
+          setError((err as any).message || 'Error al buscar clientes')
         }
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    main()
 
     return () => controller.abort()
-  }, [query, page, perPage, enabled])
+  }, [query, page, perPage, enabled, fetchApi])
 
   return { results, total, totalPages, loading, error }
 }

@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 
 import {
   AccountBalance,
@@ -14,7 +14,10 @@ import {
   Home,
   Person,
   Phone,
-  Place
+  Place,
+  DriveFileRenameOutline as EditIcon,
+  Check as CheckIcon,
+  Close as CloseIcon
 } from '@mui/icons-material'
 import {
   Avatar,
@@ -31,7 +34,6 @@ import {
   Snackbar
 } from '@mui/material'
 import Alert from '@mui/material/Alert'
-import { DriveFileRenameOutline as EditIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
 
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
@@ -483,7 +485,6 @@ const ClientMainContent = ({
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
-  const router = useRouter()
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
@@ -538,7 +539,7 @@ const ClientDetailPage = () => {
           <Button
             variant='text'
             startIcon={<i className='ri-line-chart-line' />}
-            onClick={() => router.push(`/clients/${clientId}/follow-up`)}
+            href={`/clients/${clientId}/follow-up`}
           >
             <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Seguimientos</Typography>
           </Button>

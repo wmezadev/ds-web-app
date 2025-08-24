@@ -32,6 +32,7 @@ import { useForm, Controller } from 'react-hook-form'
 
 import { useClient } from '@/hooks/useClient'
 import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
+import { useApi } from '@/hooks/useApi'
 
 interface FollowUpFormData {
   currentDate: string
@@ -43,7 +44,15 @@ interface FollowUpFormData {
   gestion: string | number
 }
 
+interface BasicUser {
+  id: number
+  username: string
+  full_name: string
+}
+
 const UserFollowUpPage = () => {
+  const { fetchApi } = useApi()
+
   const params = useParams()
   const userId = params.id as string
 
@@ -59,7 +68,7 @@ const UserFollowUpPage = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
-  const [users, setUsers] = useState<{ id: number; username: string; full_name: string }[]>([])
+  const [users, setUsers] = useState<BasicUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
 
   const [snackbar, setSnackbar] = useState({
@@ -77,26 +86,9 @@ const UserFollowUpPage = () => {
       try {
         setLoadingUsers(true)
 
-        const response = await fetch('/api/proxy/users')
+        const users = await fetchApi<BasicUser[]>('users')
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-
-        const usersArray = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.users)
-            ? data.users
-            : Array.isArray(data?.data)
-              ? data.data
-              : []
-
-        if (usersArray.length > 0) {
-        }
-
-        setUsers(usersArray)
+        setUsers(users)
       } catch (err: any) {
         console.error('Error loading users:', err)
         console.error('Error details:', {
@@ -110,7 +102,7 @@ const UserFollowUpPage = () => {
     }
 
     loadUsers()
-  }, [])
+  }, [fetchApi])
 
   const {
     control,
@@ -143,19 +135,7 @@ const UserFollowUpPage = () => {
         status: true
       }
 
-      const newFollowUp = await createFollowUp(followUpData)
-
-      if (newFollowUp && followUpRecords.length > 0) {
-        const previousFollowUp = followUpRecords[0]
-
-        if (previousFollowUp && previousFollowUp.id !== newFollowUp.id) {
-          try {
-            await updateFollowUpStatus(previousFollowUp.id, false)
-          } catch (err) {
-            console.error('Error deactivating previous follow-up:', err)
-          }
-        }
-      }
+      await createFollowUp(followUpData)
 
       setSnackbar({ open: true, message: 'Seguimiento creado con éxito', severity: 'success' })
 
@@ -255,13 +235,15 @@ const UserFollowUpPage = () => {
                       label='Próximo Seguimiento'
                       type='date'
                       fullWidth
-                      InputLabelProps={{ shrink: true }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: {
+                          min: new Date().toISOString().split('T')[0]
+                        }
+                      }}
                       error={!!errors.nextFollowUpDate}
                       helperText={errors.nextFollowUpDate?.message}
                       variant='outlined'
-                      inputProps={{
-                        min: new Date().toISOString().split('T')[0]
-                      }}
                     />
                   )}
                 />
@@ -412,8 +394,9 @@ const UserFollowUpPage = () => {
                   size='large'
                   sx={{ mt: 2 }}
                   disabled={isSubmitting || isLoading}
+                  startIcon={<i className='ri-save-line' />}
                 >
-                  {isSubmitting ? 'Guardando...' : 'Guardar Seguimiento'}
+                  {isSubmitting ? 'Guardando...' : 'Guardar'}
                 </Button>
               </Grid>
             </Grid>
@@ -513,7 +496,7 @@ const UserFollowUpPage = () => {
                               variant='outlined'
                               color='secondary'
                             />
-                            <Chip label={`Gestión: ${typeName}`} size='small' variant='filled' color='info' />
+                            <Chip label={typeName} size='small' variant='filled' color='info' />
                           </Box>
                         </Box>
                       </Box>
