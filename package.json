@@ -77,8 +77,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write --ignore-unknown",
-      "next lint --fix"
+      "prettier --write"
     ]
   }
 }
