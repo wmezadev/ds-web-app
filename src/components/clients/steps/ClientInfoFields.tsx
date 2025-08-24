@@ -87,13 +87,11 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
 
     const run = async () => {
       try {
-        // GET /api/proxy/clients/exists?client_type=V&document_number=123
         const url = `clients/exists?client_type=${encodeURIComponent(ct)}&document_number=${encodeURIComponent(dn)}`
-        const res = await fetchApi(url)
-        const exists = Boolean(res?.exists)
+        const { exists } = await fetchApi<{ exists: boolean }>(url)
 
         if (!cancelled) {
-          if (exists) {
+          if (Boolean(exists)) {
             setError('document_number', {
               type: 'manual',
               message: 'Ya existe un cliente con este tipo y número de documento.'

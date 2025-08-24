@@ -3,7 +3,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 import { Box, Typography, Button, Paper, CircularProgress, Tooltip } from '@mui/material'
 import { useSession } from 'next-auth/react'
@@ -20,7 +19,6 @@ const formatFullName = (client: Client) =>
 
 const ClientsPage = () => {
   const { status: sessionStatus } = useSession()
-  const router = useRouter()
   const apiEnabled = sessionStatus === 'authenticated'
 
   const [search, setSearch] = useState('')
@@ -117,18 +115,13 @@ const ClientsPage = () => {
         key: 'actions' as const,
         label: 'Acciones',
         render: (_: any, client: Client) => (
-          <Button
-            variant='outlined'
-            color='primary'
-            size='small'
-            onClick={() => router.push(ROUTES.CLIENTS.DETAIL(client.id))}
-          >
+          <Button variant='outlined' color='primary' size='small' href={ROUTES.CLIENTS.DETAIL(client.id)}>
             Ver Detalles
           </Button>
         )
       }
     ],
-    [router]
+    []
   )
 
   const handleSearch = useCallback(

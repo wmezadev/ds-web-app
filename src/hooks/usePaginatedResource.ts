@@ -72,7 +72,7 @@ export function usePaginatedResource<T>({
 
         const url = `${endpoint}?${searchParams.toString()}`
 
-        const raw: RawPaginatedResponse = await fetchApi(url)
+        const raw = await fetchApi<RawPaginatedResponse>(url)
 
         const items = Array.isArray(raw?.[dataKey]) ? (raw[dataKey] as T[]) : []
 
