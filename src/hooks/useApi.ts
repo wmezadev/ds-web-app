@@ -9,7 +9,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { ROUTES } from '@/constants/routes'
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
-  body?: Record<string, any> | any[]
+  body?: Record<string, unknown> | unknown[] | FormData
 }
 
 export const useApi = () => {
@@ -17,10 +17,11 @@ export const useApi = () => {
   const router = useRouter()
 
   const fetchApi = useCallback(
-    async (endpoint: string, options: ApiOptions = {}) => {
+    async <T = any>(endpoint: string, options: ApiOptions = {}): Promise<T> => {
       const { body, ...restOptions } = options
       const isExternalUrl = endpoint.startsWith('http')
-      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${endpoint.replace(/^\/+/, '')}`
+      const normalizedEndpoint = isExternalUrl ? endpoint : endpoint.replace(/^\/+/, '')
+      const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${normalizedEndpoint}`
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -44,21 +45,24 @@ export const useApi = () => {
         const response = await fetch(apiUrl, requestOptions)
 
         if (!response.ok) {
-          let errorData: any = 'An unknown error occurred.'
+          let errorData: string | Record<string, unknown> = 'An unknown error occurred.'
 
           try {
             const responseText = await response.text()
 
             try {
-              errorData = JSON.parse(responseText)
-            } catch (e) {
+              errorData = JSON.parse(responseText) as Record<string, unknown>
+            } catch {
               errorData = responseText
             }
-          } catch (e) {
+          } catch {
             errorData = 'Failed to read error response'
           }
 
-          const errorMessage = errorData?.detail || errorData?.message || JSON.stringify(errorData)
+          const errorMessage =
+            typeof errorData === 'object' && errorData !== null
+              ? (errorData.detail as string) || (errorData.message as string) || JSON.stringify(errorData)
+              : String(errorData)
 
           if (response.status === 401) {
             await signOut({ redirect: false })
@@ -69,13 +73,13 @@ export const useApi = () => {
           throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
         }
 
-        if (response.status === 204) {
-          return null
+        return await response.json()
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          throw error
         }
 
-        return await response.json()
-      } catch (error: any) {
-        throw error
+        throw new Error(`Unknown error occurred: ${String(error)}`)
       }
     },
     [session, router]
