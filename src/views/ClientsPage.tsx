@@ -3,7 +3,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 import { Box, Typography, Button, Paper, CircularProgress, Tooltip } from '@mui/material'
 import { useSession } from 'next-auth/react'
