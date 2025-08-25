@@ -25,6 +25,8 @@ import {
 import { useClient } from '@/hooks/useClient'
 import { useApi } from '@/hooks/useApi'
 import FollowUpModal from './components/FollowUpModal'
+import Link from '@/components/Link'
+import { ROUTES } from '@/constants/routes'
 
 interface BasicUser {
   id: number
@@ -132,9 +134,9 @@ const UserFollowUpPage = () => {
       >
         <Typography variant='h4' sx={{ fontWeight: 600 }}>
           Seguimiento de:{' '}
-          <Box component='span' sx={{ color: 'primary.main', fontWeight: 700 }}>
-            {clientName}
-          </Box>
+          <Link href={ROUTES.CLIENTS.DETAIL(client?.id || '')}>
+            <span className='text-primary'>{clientName}</span>
+          </Link>
         </Typography>
 
         <Button
