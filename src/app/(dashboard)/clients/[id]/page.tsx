@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 import {
   AccountBalance,
@@ -25,6 +25,11 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   Divider,
   Grid,
   Typography,
@@ -596,12 +601,13 @@ const ClientDetailsCard = ({
   onUpdated?: () => Promise<void> | void
 }) => {
   const { fetchApi } = useApi()
+  const router = useRouter()
   const [snackbarOpen, setSnackbarOpen] = React.useState(false)
   const [snackbarMessage, setSnackbarMessage] = React.useState('')
-
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success')
-
   const [clientDisplay, setClientDisplay] = React.useState<Partial<Client>>(client)
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [deleting, setDeleting] = React.useState(false)
 
   React.useEffect(() => {
     setClientDisplay(client)
@@ -716,6 +722,47 @@ const ClientDetailsCard = ({
     await updateClient({ city_id, zone_id })
   }
 
+  const handleOpenConfirm = () => setConfirmOpen(true)
+  const handleCloseConfirm = () => setConfirmOpen(false)
+  const handleConfirmDelete = async () => {
+    if (deleting) return
+    setDeleting(true)
+    try {
+      await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Cliente eliminado exitosamente')
+      setSnackbarOpen(true)
+      setConfirmOpen(false)
+      // Mostrar snackbar y luego navegar
+      setTimeout(() => router.replace('/clients'), 1200)
+    } catch (err: any) {
+      // Si DELETE falla, verificamos si el cliente ya no existe.
+      try {
+        await fetchApi(`clients/${clientId}`)
+        // Si el GET no lanza, el cliente aún existe -> error real
+        setSnackbarSeverity('error')
+        setSnackbarMessage('No fue posible eliminar el cliente')
+        setSnackbarOpen(true)
+      } catch (e2: any) {
+        const msg = String(e2?.message || '')
+        if (msg.includes('status: 404')) {
+          // Considerar como éxito si el recurso ya no existe
+          setSnackbarSeverity('success')
+          setSnackbarMessage('Cliente eliminado exitosamente')
+          setSnackbarOpen(true)
+          setConfirmOpen(false)
+          setTimeout(() => router.replace('/clients'), 1200)
+        } else {
+          setSnackbarSeverity('error')
+          setSnackbarMessage('No fue posible eliminar el cliente')
+          setSnackbarOpen(true)
+        }
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Card elevation={0} sx={{ borderRadius: 2 }}>
@@ -789,6 +836,36 @@ const ClientDetailsCard = ({
             onSave={saveBirthPlace}
             placeholder='Ingrese el lugar'
           />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
+            <Button
+              variant='outlined'
+              startIcon={<i className='ri-delete-bin-6-line' />}
+              color='error'
+              onClick={handleOpenConfirm}
+              sx={{ textTransform: 'none', py: 1.25, px: 2, fontSize: '0.9rem' }}
+            >
+              <Typography color='error' sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                Eliminar
+              </Typography>
+            </Button>
+          </Box>
+
+          <Dialog open={confirmOpen} onClose={handleCloseConfirm} aria-labelledby='confirm-delete-title'>
+            <DialogTitle id='confirm-delete-title'>Confirmar eliminación</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                ¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseConfirm} variant='text' disabled={deleting}>
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmDelete} color='error' variant='contained' autoFocus disabled={deleting}>
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           <Snackbar
             open={snackbarOpen}
@@ -941,6 +1018,7 @@ const ClientDetailPage = () => {
   const clientId = typeof params.id === 'string' ? params.id : ''
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
+  const { fetchApi } = useApi()
 
   if (isLoading || catalogsLoading) {
     return <Typography>Cargando...</Typography>
@@ -952,6 +1030,18 @@ const ClientDetailPage = () => {
 
   if (!client) {
     return <Typography>No se encontró el cliente.</Typography>
+  }
+
+  const handleDeleteClient = async () => {
+    if (!confirm('¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.')) return
+
+    try {
+      await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
+      alert('Cliente eliminado exitosamente')
+      window.location.href = '/clients'
+    } catch (err: any) {
+      alert(err?.message || 'Ocurrió un error al eliminar el cliente')
+    }
   }
 
   const cityName = catalogs?.cities.find(c => c.id === client.city_id)?.name || 'N/A'

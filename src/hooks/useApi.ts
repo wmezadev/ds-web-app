@@ -73,7 +73,21 @@ export const useApi = () => {
           throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
         }
 
-        return await response.json()
+        if (response.status === 204 || response.status === 205) {
+          return undefined as T
+        }
+
+        const contentType = response.headers.get('content-type') || ''
+
+        if (!contentType.toLowerCase().includes('application/json')) {
+          const text = await response.text()
+          if (!text) return undefined as T
+          return text as unknown as T
+        }
+
+        const text = await response.text()
+        if (!text) return undefined as T
+        return JSON.parse(text) as T
       } catch (error: unknown) {
         if (error instanceof Error) {
           throw error
