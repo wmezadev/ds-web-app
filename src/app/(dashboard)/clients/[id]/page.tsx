@@ -724,29 +724,33 @@ const ClientDetailsCard = ({
 
   const handleOpenConfirm = () => setConfirmOpen(true)
   const handleCloseConfirm = () => setConfirmOpen(false)
+
   const handleConfirmDelete = async () => {
     if (deleting) return
     setDeleting(true)
+
     try {
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
       setSnackbarSeverity('success')
       setSnackbarMessage('Cliente eliminado exitosamente')
       setSnackbarOpen(true)
       setConfirmOpen(false)
+
       // Mostrar snackbar y luego navegar
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
       // Si DELETE falla, verificamos si el cliente ya no existe.
       try {
         await fetchApi(`clients/${clientId}`)
+
         // Si el GET no lanza, el cliente aún existe -> error real
         setSnackbarSeverity('error')
         setSnackbarMessage('No fue posible eliminar el cliente')
         setSnackbarOpen(true)
       } catch (e2: any) {
         const msg = String(e2?.message || '')
+
         if (msg.includes('status: 404')) {
-          // Considerar como éxito si el recurso ya no existe
           setSnackbarSeverity('success')
           setSnackbarMessage('Cliente eliminado exitosamente')
           setSnackbarOpen(true)
@@ -999,7 +1003,7 @@ const ClientMainContent = ({
           )}
           {value === 3 && (
             <Box>
-              <ClientBankAccounts client={client} />
+              <ClientBankAccounts client={client} refreshClient={refreshClient} />
             </Box>
           )}
           {value === 4 && (
@@ -1018,7 +1022,6 @@ const ClientDetailPage = () => {
   const clientId = typeof params.id === 'string' ? params.id : ''
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
-  const { fetchApi } = useApi()
 
   if (isLoading || catalogsLoading) {
     return <Typography>Cargando...</Typography>
@@ -1030,18 +1033,6 @@ const ClientDetailPage = () => {
 
   if (!client) {
     return <Typography>No se encontró el cliente.</Typography>
-  }
-
-  const handleDeleteClient = async () => {
-    if (!confirm('¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.')) return
-
-    try {
-      await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
-      alert('Cliente eliminado exitosamente')
-      window.location.href = '/clients'
-    } catch (err: any) {
-      alert(err?.message || 'Ocurrió un error al eliminar el cliente')
-    }
   }
 
   const cityName = catalogs?.cities.find(c => c.id === client.city_id)?.name || 'N/A'

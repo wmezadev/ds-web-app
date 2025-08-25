@@ -81,12 +81,16 @@ export const useApi = () => {
 
         if (!contentType.toLowerCase().includes('application/json')) {
           const text = await response.text()
+
           if (!text) return undefined as T
+
           return text as unknown as T
         }
 
         const text = await response.text()
+
         if (!text) return undefined as T
+
         return JSON.parse(text) as T
       } catch (error: unknown) {
         if (error instanceof Error) {

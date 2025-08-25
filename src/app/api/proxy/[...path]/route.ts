@@ -79,7 +79,9 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
         status: response.status,
         statusText: response.statusText
       })
+
       noContentResponse.headers.set('Cache-Control', 'no-store, max-age=0')
+
       return noContentResponse
     }
 
@@ -108,6 +110,7 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
 
     response.headers.forEach((value, key) => {
       const lower = key.toLowerCase()
+
       if (!skipHeaders.has(lower)) {
         try {
           newResponse.headers.set(key, value)

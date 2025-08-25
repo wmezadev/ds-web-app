@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import {
   Box,
   Grid,
@@ -14,8 +15,10 @@ import {
   TextField,
   Snackbar
 } from '@mui/material'
+
 import Alert from '@mui/material/Alert'
 import { Add } from '@mui/icons-material'
+
 import type { Client } from '@/types/client'
 
 interface DetailItemProps {
@@ -44,6 +47,7 @@ interface ClientBankAccountsProps {
 const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refreshClient }) => {
   const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
   const [modalOpen, setModalOpen] = useState(false)
+
   const [newBankAccount, setNewBankAccount] = useState({
     bank_name: '',
     account_number: '',
@@ -51,6 +55,7 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
     account_type: '',
     notes: ''
   })
+
   const [saving, setSaving] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
@@ -63,7 +68,9 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
 
   const handleSaveAccount = async () => {
     if (saving) return
+
     setSaving(true)
+
     try {
       const updatedClient = {
         ...client,

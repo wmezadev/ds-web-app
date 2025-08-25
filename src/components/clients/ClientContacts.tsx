@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+
 import {
   Box,
   Grid,
@@ -15,7 +16,9 @@ import {
   Snackbar
 } from '@mui/material'
 import Alert from '@mui/material/Alert'
+
 import { Add } from '@mui/icons-material'
+
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi } from '@/components/clients/ClientForm'
@@ -47,6 +50,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   const { fetchApi } = useApi()
   const [contacts, setContacts] = useState(client.contacts || [])
   const [modalOpen, setModalOpen] = useState(false)
+
   const [newContact, setNewContact] = useState({
     full_name: '',
     position: '',
@@ -54,6 +58,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
     email: '',
     notes: ''
   })
+
   const [saving, setSaving] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
@@ -67,6 +72,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   const handleSaveContact = async () => {
     if (saving) return
     setSaving(true)
+
     try {
       const form = clientApiToForm(client as Client)
       const updatedForm = { ...form, contacts: [...(form.contacts || []), newContact] }
