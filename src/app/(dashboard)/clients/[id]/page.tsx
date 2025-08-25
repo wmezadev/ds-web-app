@@ -14,7 +14,10 @@ import {
   Home,
   Person,
   Phone,
-  Place
+  Place,
+  DriveFileRenameOutline as EditIcon,
+  Check as CheckIcon,
+  Close as CloseIcon
 } from '@mui/icons-material'
 import {
   Avatar,
@@ -32,7 +35,6 @@ import {
   Autocomplete
 } from '@mui/material'
 import Alert from '@mui/material/Alert'
-import { DriveFileRenameOutline as EditIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { es } from 'date-fns/locale'
@@ -47,12 +49,6 @@ import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
-
-interface DetailItemProps {
-  icon: React.ElementType
-  label: string
-  value: React.ReactNode
-}
 
 interface DetailItemEditablePairProps {
   icon: React.ElementType
@@ -76,6 +72,7 @@ const DetailItemEditablePair: React.FC<DetailItemEditablePairProps> = ({
   const [editing, setEditing] = React.useState(false)
   const [local1, setLocal1] = React.useState(value1 ?? '')
   const [local2, setLocal2] = React.useState(value2 ?? '')
+
   React.useEffect(() => {
     setLocal1(value1 ?? '')
     setLocal2(value2 ?? '')
@@ -186,6 +183,7 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
   const [editing, setEditing] = React.useState(false)
   const [localCity, setLocalCity] = React.useState<number | null>(cityId && Number(cityId) > 0 ? Number(cityId) : null)
   const [localZone, setLocalZone] = React.useState<number | null>(zoneId && Number(zoneId) > 0 ? Number(zoneId) : null)
+
   React.useEffect(() => {
     setLocalCity(cityId && Number(cityId) > 0 ? Number(cityId) : null)
     setLocalZone(zoneId && Number(zoneId) > 0 ? Number(zoneId) : null)
@@ -194,20 +192,25 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
   const normalizedCityId = cityId && Number(cityId) > 0 ? Number(cityId) : null
   const normalizedZoneId = zoneId && Number(zoneId) > 0 ? Number(zoneId) : null
   const cityOption = cities.find(c => Number(c.id) === Number(localCity)) || null
+
   const zoneOption = zones.find(z => Number(z.id) === Number(localZone)) || null
-  // For view mode, prefer local selection (reflects immediately after save) and fallback to props
+
   const displayCityId = localCity ?? normalizedCityId
   const displayZoneId = localZone ?? normalizedZoneId
 
   const getCityLabel = (id: number | null) => {
     if (!id) return ''
+
     const c = cities.find(x => Number(x.id) === Number(id))
+
     return (c as any)?.name || (c as any)?.description || ''
   }
 
   const getZoneLabel = (id: number | null) => {
     if (!id) return ''
+
     const z = zones.find(x => Number(x.id) === Number(id))
+
     return (z as any)?.description || (z as any)?.name || ''
   }
 
@@ -228,7 +231,7 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
                 value={cityOption}
                 onChange={(_, newVal) => {
                   setLocalCity(newVal ? Number((newVal as any).id) : null)
-                  // reset zone when city changes to preserve null unless user selects a zone
+
                   setLocalZone(null)
                 }}
                 sx={{ width: 180 }}
@@ -315,22 +318,6 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
   )
 }
 
-const DetailItem: React.FC<DetailItemProps> = ({ icon: Icon, label, value }) => {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-      <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
-      <Typography variant='body2' sx={{ color: 'text.primary' }}>
-        <Box component='span' sx={{ color: 'text.secondary' }}>
-          {label}:
-        </Box>
-        <Box component='span' fontWeight='bold' sx={{ ml: 1 }}>
-          {value}
-        </Box>
-      </Typography>
-    </Box>
-  )
-}
-
 interface DetailItemEditableProps {
   icon: React.ElementType
   label: string
@@ -350,9 +337,11 @@ const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
 }) => {
   const [editing, setEditing] = React.useState(false)
   const [local, setLocal] = React.useState(value ?? '')
+
   React.useEffect(() => {
     setLocal(value ?? '')
   }, [value])
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
       <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
@@ -369,12 +358,14 @@ const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
                   onChange={newDate => {
                     if (newDate) {
                       const iso = newDate.toISOString().split('T')[0]
+
                       setLocal(iso)
                     }
                   }}
                   slotProps={{
                     textField: {
                       size: 'small',
+
                       variant: 'standard',
                       hiddenLabel: true,
                       InputProps: {
@@ -596,8 +587,7 @@ const ClientDetailsCard = ({
   client,
   clientId,
   cities,
-  zones,
-  onUpdated
+  zones
 }: {
   client: Partial<Client> & { cityName?: string; zoneName?: string }
   clientId: string
@@ -612,6 +602,7 @@ const ClientDetailsCard = ({
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success')
 
   const [clientDisplay, setClientDisplay] = React.useState<Partial<Client>>(client)
+
   React.useEffect(() => {
     setClientDisplay(client)
   }, [client])
@@ -639,14 +630,18 @@ const ClientDetailsCard = ({
       try {
         if (!cities || cities.length === 0) {
           const c = await fetchApi('catalogs/cities')
+
           if (Array.isArray(c)) setCitiesOptions(c)
         }
+
         if (!zones || zones.length === 0) {
           const z = await fetchApi('catalogs/zones')
+
           if (Array.isArray(z)) setZonesOptions(z)
         }
       } catch {}
     }
+    
     loadFallback()
   }, [cities, zones, fetchApi])
 
@@ -657,11 +652,12 @@ const ClientDetailsCard = ({
       birth_date: client.birth_date || '',
       join_date: client.join_date || ''
     })
-  }, [client.billing_address, client.birth_place])
+  }, [client.billing_address, client.birth_place, client.birth_date, client.join_date])
 
   const updateClient = async (patch: Partial<ClientFormFields>) => {
     try {
       const formFromApi = clientApiToForm(client as Client)
+
       const mergedForm: ClientFormFields = { ...formFromApi, ...patch }
       const apiPayload = clientFormToApi(mergedForm)
 
