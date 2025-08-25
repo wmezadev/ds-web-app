@@ -9,14 +9,8 @@ import {
   Typography,
   Paper,
   CircularProgress,
-  TextField,
   Button,
   Stack,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   List,
   ListItem,
   Divider,
@@ -28,21 +22,11 @@ import {
   Alert
 } from '@mui/material'
 
-import { useForm, Controller } from 'react-hook-form'
-
 import { useClient } from '@/hooks/useClient'
-import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
 import { useApi } from '@/hooks/useApi'
-
-interface FollowUpFormData {
-  currentDate: string
-  nextFollowUpDate: string
-  subject: string
-  description: string
-  assignedBy: string | number
-  assignedTo: string | number
-  gestion: string | number
-}
+import FollowUpModal from './components/FollowUpModal'
+import Link from '@/components/Link'
+import { ROUTES } from '@/constants/routes'
 
 interface BasicUser {
   id: number
@@ -52,7 +36,6 @@ interface BasicUser {
 
 const UserFollowUpPage = () => {
   const { fetchApi } = useApi()
-
   const params = useParams()
   const userId = params.id as string
 
@@ -63,13 +46,13 @@ const UserFollowUpPage = () => {
     isLoading,
     error,
     createFollowUp,
-    updateFollowUpStatus
+    updateFollowUpStatus,
+    refreshFollowUps
   } = useClient(userId)
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<BasicUser[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -84,77 +67,17 @@ const UserFollowUpPage = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        setLoadingUsers(true)
-
         const users = await fetchApi<BasicUser[]>('users')
 
         setUsers(users)
       } catch (err: any) {
         console.error('Error loading users:', err)
-        console.error('Error details:', {
-          message: err.message,
-          stack: err.stack
-        })
         setUsers([])
-      } finally {
-        setLoadingUsers(false)
       }
     }
 
     loadUsers()
   }, [fetchApi])
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors }
-  } = useForm<FollowUpFormData>({
-    defaultValues: {
-      currentDate: new Date().toISOString().split('T')[0],
-      nextFollowUpDate: '',
-      subject: '',
-      description: '',
-      assignedBy: '',
-      assignedTo: '',
-      gestion: ''
-    }
-  })
-
-  const onSubmit = async (data: FollowUpFormData) => {
-    try {
-      setIsSubmitting(true)
-
-      const followUpData = {
-        subject: data.subject,
-        reminder_date: data.nextFollowUpDate,
-        description: data.description,
-        assigned_to: Number(data.assignedTo),
-        assigned_by: Number(data.assignedBy),
-        type_id: Number(data.gestion),
-        status: true
-      }
-
-      await createFollowUp(followUpData)
-
-      setSnackbar({ open: true, message: 'Seguimiento creado con éxito', severity: 'success' })
-
-      reset({
-        currentDate: new Date().toISOString().split('T')[0],
-        nextFollowUpDate: '',
-        subject: '',
-        description: '',
-        assignedBy: '',
-        assignedTo: '',
-        gestion: ''
-      })
-    } catch (err: any) {
-      setSnackbar({ open: true, message: 'Error al crear el seguimiento', severity: 'error' })
-      console.error('Error creating follow-up:', err)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -174,13 +97,20 @@ const UserFollowUpPage = () => {
     )
   }
 
-  const userName =
+  const clientName =
     client?.person_type === 'N'
       ? `${client.first_name || ''} ${client.last_name || ''}`.trim()
       : client?.first_name || ''
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <FollowUpModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={refreshFollowUps}
+        followUpTypes={followUpTypes}
+        createFollowUp={createFollowUp}
+      />
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -191,218 +121,39 @@ const UserFollowUpPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <Typography variant='h4' sx={{ mb: 3, fontWeight: 600 }}>
-        Seguimiento del Usuario{' '}
-        <Box component='span' sx={{ color: 'primary.main', fontWeight: 700 }}>
-          {userName}
-        </Box>
-      </Typography>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: { xs: 'flex-start', md: 'space-between' },
+          alignItems: { xs: 'flex-start', md: 'center' },
+          mb: 3,
+          gap: { xs: 2, md: 0 }
+        }}
+      >
+        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+          Seguimiento de:{' '}
+          <Link href={ROUTES.CLIENTS.DETAIL(client?.id || '')}>
+            <span className='text-primary'>{clientName}</span>
+          </Link>
+        </Typography>
+
+        <Button
+          variant='contained'
+          size='large'
+          onClick={() => setModalOpen(true)}
+          startIcon={<i className='ri-add-line' />}
+          sx={{
+            alignSelf: { xs: 'stretch', md: 'auto' },
+            mb: { xs: 0, md: 2 }
+          }}
+        >
+          Nuevo Seguimiento
+        </Button>
+      </Box>
 
       <Stack spacing={3}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant='h6' sx={{ mb: 3 }}>
-            Nuevo Seguimiento
-          </Typography>
-
-          <Box component='form' onSubmit={handleSubmit(onSubmit)}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name='currentDate'
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='Fecha Actual'
-                      type='date'
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      disabled
-                      variant='outlined'
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name='nextFollowUpDate'
-                  control={control}
-                  rules={{ required: 'La fecha de próximo seguimiento es requerida' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='Próximo Seguimiento'
-                      type='date'
-                      fullWidth
-                      slotProps={{
-                        inputLabel: { shrink: true },
-                        htmlInput: {
-                          min: new Date().toISOString().split('T')[0]
-                        }
-                      }}
-                      error={!!errors.nextFollowUpDate}
-                      helperText={errors.nextFollowUpDate?.message}
-                      variant='outlined'
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Controller
-                  name='subject'
-                  control={control}
-                  rules={{ required: 'El asunto es requerido' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label='Asunto'
-                      fullWidth
-                      variant='outlined'
-                      error={!!errors.subject}
-                      helperText={errors.subject?.message}
-                      placeholder='Describe el asunto del seguimiento...'
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant='subtitle1' sx={{ mb: 1 }}>
-                  Descripción
-                </Typography>
-                <Controller
-                  name='description'
-                  control={control}
-                  rules={{ required: 'La descripción es requerida' }}
-                  render={({ field, fieldState }) => (
-                    <>
-                      <RichTextEditorComponent name={field.name} control={control} />
-                      {fieldState.error && (
-                        <Typography color='error' variant='caption' sx={{ mt: 1, display: 'block' }}>
-                          {fieldState.error.message}
-                        </Typography>
-                      )}
-                    </>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Controller
-                  name='assignedBy'
-                  control={control}
-                  rules={{ required: 'El campo "Asignado por" es requerido' }}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.assignedBy}>
-                      <InputLabel>Asignado por</InputLabel>
-                      <Select {...field} label='Asignado por' value={field.value ?? ''} disabled={loadingUsers}>
-                        <MenuItem value=''>
-                          <em>Seleccionar usuario</em>
-                        </MenuItem>
-                        {users.map(user => (
-                          <MenuItem key={user.id} value={user.id}>
-                            {user.full_name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {loadingUsers && (
-                        <Typography variant='caption' color='textSecondary'>
-                          Cargando agentes...
-                        </Typography>
-                      )}
-                      {errors.assignedBy && (
-                        <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                          {errors.assignedBy.message}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Controller
-                  name='assignedTo'
-                  control={control}
-                  rules={{ required: 'El campo "Asignado a" es requerido' }}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.assignedTo}>
-                      <InputLabel>Asignado a</InputLabel>
-                      <Select {...field} label='Asignado a' value={field.value ?? ''} disabled={loadingUsers}>
-                        <MenuItem value=''>
-                          <em>Seleccionar usuario</em>
-                        </MenuItem>
-                        {users.map(user => (
-                          <MenuItem key={user.id} value={user.id}>
-                            {user.full_name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {loadingUsers && (
-                        <Typography variant='caption' color='textSecondary'>
-                          Cargando ejecutivos...
-                        </Typography>
-                      )}
-                      {errors.assignedTo && (
-                        <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                          {errors.assignedTo.message}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Controller
-                  name='gestion'
-                  control={control}
-                  rules={{ required: 'El tipo de gestión es requerido' }}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.gestion}>
-                      <InputLabel>Tipo de Gestión</InputLabel>
-                      <Select {...field} label='Tipo de Gestión' value={field.value ?? ''} disabled={isLoading}>
-                        <MenuItem value=''>
-                          <em>Seleccionar tipo de gestión</em>
-                        </MenuItem>
-                        {followUpTypes.map(type => (
-                          <MenuItem key={type.id} value={type.id}>
-                            {type.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {isLoading && (
-                        <Typography variant='caption' color='textSecondary'>
-                          Cargando tipos de gestión...
-                        </Typography>
-                      )}
-                      {errors.gestion && (
-                        <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                          {errors.gestion.message}
-                        </Typography>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} container justifyContent='flex-end'>
-                <Button
-                  type='submit'
-                  variant='contained'
-                  size='large'
-                  sx={{ mt: 2 }}
-                  disabled={isSubmitting || isLoading}
-                  startIcon={<i className='ri-save-line' />}
-                >
-                  {isSubmitting ? 'Guardando...' : 'Guardar'}
-                </Button>
-              </Grid>
-            </Grid>
-          </Box>
-        </Paper>
-
         <Paper sx={{ p: 3 }}>
           <Typography variant='h6' sx={{ mb: 2 }}>
             Historial de Seguimiento
@@ -502,9 +253,6 @@ const UserFollowUpPage = () => {
                       </Box>
 
                       <Box sx={{ mb: 2, width: '100%' }}>
-                        <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500, mb: 0.5 }}>
-                          Descripción:
-                        </Typography>
                         <Box
                           sx={{
                             '& p': { m: 0 },
