@@ -30,13 +30,16 @@ interface FollowUpRecord {
   type_name?: string
 }
 
+export type CreateFollowUpPromise = (
+  followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>
+) => Promise<FollowUpRecord>
 interface UseClientReturn {
   data: Client | null
   followUpTypes: FollowUpType[]
   followUpRecords: FollowUpRecord[]
   isLoading: boolean
   error: string | null
-  createFollowUp: (followUpData: Omit<FollowUpRecord, 'id' | 'created_at' | 'updated_at'>) => Promise<FollowUpRecord>
+  createFollowUp: CreateFollowUpPromise
   updateFollowUpStatus: (followUpId: number, status: boolean) => Promise<void>
   refreshFollowUps: () => Promise<void>
   refreshClient: () => Promise<void>
