@@ -41,7 +41,7 @@ export function useCatalogs(enabled = true) {
     setError(null)
 
     try {
-      const response: CatalogsResponse = await fetchApi('catalogs')
+      const response = await fetchApi<CatalogsResponse>('catalogs')
 
       setCatalogs(response)
     } catch (err: any) {

@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 
 import {
   AccountBalance,
@@ -641,7 +641,7 @@ const ClientDetailsCard = ({
         }
       } catch {}
     }
-    
+
     loadFallback()
   }, [cities, zones, fetchApi])
 
@@ -939,7 +939,6 @@ const ClientMainContent = ({
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
-  const router = useRouter()
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
@@ -994,7 +993,7 @@ const ClientDetailPage = () => {
           <Button
             variant='text'
             startIcon={<i className='ri-line-chart-line' />}
-            onClick={() => router.push(`/clients/${clientId}/follow-up`)}
+            href={`/clients/${clientId}/follow-up`}
           >
             <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Seguimientos</Typography>
           </Button>
