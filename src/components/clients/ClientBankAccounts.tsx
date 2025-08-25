@@ -1,7 +1,22 @@
+'use client'
+
 import React, { useState } from 'react'
 
-import { Box, Button, Grid, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Grid,
+  Stack,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar
+} from '@mui/material'
 
+import Alert from '@mui/material/Alert'
 import { Add } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
@@ -26,13 +41,65 @@ const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
 
 interface ClientBankAccountsProps {
   client: Partial<Client>
+  refreshClient: () => Promise<void>
 }
 
-const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
+const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refreshClient }) => {
   const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
+  const [modalOpen, setModalOpen] = useState(false)
+
+  const [newBankAccount, setNewBankAccount] = useState({
+    bank_name: '',
+    account_number: '',
+    currency: '',
+    account_type: '',
+    notes: ''
+  })
+
+  const [saving, setSaving] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
 
   const handleAddAccount = () => {
-    setBankAccounts(prev => [...prev, { bank_name: '', account_number: '', currency: '', account_type: '', notes: '' }])
+    setNewBankAccount({ bank_name: '', account_number: '', currency: '', account_type: '', notes: '' })
+    setModalOpen(true)
+  }
+
+  const handleSaveAccount = async () => {
+    if (saving) return
+
+    setSaving(true)
+
+    try {
+      const updatedClient = {
+        ...client,
+        bank_accounts: [...(client.bank_accounts || []), newBankAccount]
+      }
+
+      const res = await fetch(`/clients/${client.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedClient)
+      })
+
+      if (!res.ok) throw new Error('Error al guardar la cuenta bancaria')
+
+      setBankAccounts(prev => [...prev, newBankAccount])
+      setModalOpen(false)
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Cuenta bancaria agregada exitosamente')
+      setSnackbarOpen(true)
+
+      if (refreshClient) await refreshClient()
+    } catch (err) {
+      console.error(err)
+      setSnackbarSeverity('error')
+      setSnackbarMessage('No fue posible agregar la cuenta bancaria')
+      setSnackbarOpen(true)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -65,6 +132,69 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
           ))}
         </Stack>
       )}
+
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth='sm'>
+        <DialogTitle>Nueva Cuenta Bancaria</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <TextField
+              label='Banco'
+              value={newBankAccount.bank_name}
+              onChange={e => setNewBankAccount(prev => ({ ...prev, bank_name: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label='Número de Cuenta'
+              value={newBankAccount.account_number}
+              onChange={e => setNewBankAccount(prev => ({ ...prev, account_number: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label='Moneda'
+              value={newBankAccount.currency}
+              onChange={e => setNewBankAccount(prev => ({ ...prev, currency: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label='Tipo de Cuenta'
+              value={newBankAccount.account_type}
+              onChange={e => setNewBankAccount(prev => ({ ...prev, account_type: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label='Notas'
+              value={newBankAccount.notes}
+              onChange={e => setNewBankAccount(prev => ({ ...prev, notes: e.target.value }))}
+              fullWidth
+              multiline
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalOpen(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button variant='contained' onClick={handleSaveAccount} disabled={saving}>
+            {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant='filled'
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

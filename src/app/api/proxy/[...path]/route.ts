@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 import { getToken } from 'next-auth/jwt'
 
-// Constants
 import { API_BASE_URL } from '@/constants/server/serverRoutes'
 
 export async function GET(request: NextRequest) {
@@ -38,38 +37,31 @@ export async function PATCH(request: NextRequest) {
 
 async function handleRequest(request: NextRequest, pathSegments: string[], method: string) {
   try {
-    // Get the token from the session
     const token = await getToken({ req: request })
 
     if (!token?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized - No access token' }, { status: 401 })
     }
 
-    // Construct the target URL
     const path = pathSegments.join('/')
     const targetUrl = `${API_BASE_URL}/${path}`
 
-    // Read the request body as text to avoid stream-related errors.
     let body: string | undefined = undefined
 
     if (method !== 'GET' && method !== 'DELETE') {
       body = await request.text()
     }
 
-    // Get query parameters
     const url = new URL(request.url)
     const queryParams = url.searchParams.toString()
 
     const fullTargetUrl = queryParams ? `${targetUrl}?${queryParams}` : targetUrl
 
-    // Prepare headers: forward all except host, set Authorization
     const headers = new Headers(request.headers)
 
     headers.set('Authorization', `Bearer ${token.accessToken}`)
     headers.delete('host')
 
-    // NOTE: Set the 'Content-Type' header explicitly for POST requests.
-    // This is a good practice and can prevent some backend parsing errors.
     if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
       headers.set('Content-Type', 'application/json')
     }
@@ -77,27 +69,52 @@ async function handleRequest(request: NextRequest, pathSegments: string[], metho
     const fetchOptions: RequestInit = {
       method,
       headers,
-      body: body || undefined // Only include body if it exists
+      body: body || undefined
     }
 
     const response = await fetch(fullTargetUrl, fetchOptions)
 
-    // Get the response data
+    if (response.status === 204 || response.status === 205) {
+      const noContentResponse = new NextResponse(null, {
+        status: response.status,
+        statusText: response.statusText
+      })
+
+      noContentResponse.headers.set('Cache-Control', 'no-store, max-age=0')
+
+      return noContentResponse
+    }
+
     const responseData = await response.text()
 
-    // Create a new response with the same status and headers
-    const newResponse = new NextResponse(responseData, {
+    const newResponse = new NextResponse(responseData || null, {
       status: response.status,
       statusText: response.statusText
     })
 
-    // Disable caching for all proxied API responses
     newResponse.headers.set('Cache-Control', 'no-store, max-age=0')
 
-    // Copy relevant headers from the original response
+    const skipHeaders = new Set([
+      'content-encoding',
+      'cache-control',
+      'content-length',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+      'proxy-authenticate',
+      'proxy-authorization',
+      'te',
+      'trailer',
+      'upgrade'
+    ])
+
     response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'cache-control') {
-        newResponse.headers.set(key, value)
+      const lower = key.toLowerCase()
+
+      if (!skipHeaders.has(lower)) {
+        try {
+          newResponse.headers.set(key, value)
+        } catch {}
       }
     })
 
