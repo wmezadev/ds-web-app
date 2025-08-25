@@ -68,8 +68,8 @@ export type ClientFormFields = {
   billing_address?: string
   legal_representative?: string
   economic_activity_id?: string | number
-  city_id?: string | number
-  zone_id?: string | number
+  city_id?: string | number | null
+  zone_id?: string | number | null
   client_category_id: string | number
   office_id: string | number
   agent_id?: string | number | null
