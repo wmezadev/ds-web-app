@@ -66,6 +66,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [isEditing, setIsEditing] = useState(false)
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const handleAddContact = () => {
     setNewContact({ full_name: '', position: '', phone: '', email: '', notes: '' })
@@ -101,10 +102,8 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
       let updatedContacts = [...(form.contacts || [])]
 
       if (isEditing && selectedContactIndex !== null) {
-        // Editar contacto existente
         updatedContacts[selectedContactIndex] = newContact
       } else {
-        // Crear nuevo contacto
         updatedContacts.push(newContact)
       }
 
@@ -121,6 +120,37 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
     } catch (err) {
       setSnackbarSeverity('error')
       setSnackbarMessage('No fue posible guardar el contacto')
+      setSnackbarOpen(true)
+    } finally {
+      setSaving(false)
+      setIsEditing(false)
+      setSelectedContactIndex(null)
+    }
+  }
+
+  const handleDeleteContact = async () => {
+    if (saving) return
+    if (!isEditing || selectedContactIndex === null) return
+    setSaving(true)
+
+    try {
+      const form = clientApiToForm(client as Client)
+      const updatedContacts = [...(form.contacts || [])]
+      updatedContacts.splice(selectedContactIndex, 1)
+
+      const updatedForm = { ...form, contacts: updatedContacts }
+      const apiPayload = clientFormToApi(updatedForm)
+
+      await fetchApi(`clients/${client.id}`, { method: 'PUT', body: apiPayload })
+
+      setContacts(updatedContacts)
+      setModalOpen(false)
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Contacto eliminado exitosamente')
+      setSnackbarOpen(true)
+    } catch (err) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage('No fue posible eliminar el contacto')
       setSnackbarOpen(true)
     } finally {
       setSaving(false)
@@ -168,7 +198,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
       )}
 
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth='sm'>
-        <DialogTitle>Nuevo Contacto</DialogTitle>
+        <DialogTitle>{isEditing ? 'Editar Contacto' : 'Nuevo Contacto'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
@@ -205,11 +235,41 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
           </Stack>
         </DialogContent>
         <DialogActions>
+          {isEditing && (
+            <Button color='error' onClick={() => setConfirmDeleteOpen(true)} disabled={saving}>
+              Eliminar
+            </Button>
+          )}
           <Button onClick={() => setModalOpen(false)} disabled={saving}>
             Cancelar
           </Button>
           <Button variant='contained' onClick={handleSaveContact} disabled={saving}>
             {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} maxWidth='xs' fullWidth>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <Typography variant='body2'>
+            ¿Está seguro que desea eliminar este contacto? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button
+            color='error'
+            variant='contained'
+            onClick={() => {
+              setConfirmDeleteOpen(false)
+              handleDeleteContact()
+            }}
+            disabled={saving}
+          >
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
