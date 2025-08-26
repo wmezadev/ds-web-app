@@ -893,11 +893,11 @@ const ClientDetailsCard = ({
 }
 
 const tabs = [
+  { label: 'Registro', icon: <i className='ri-history-line' /> },
   { label: 'Datos Personales', icon: <Person /> },
   { label: 'Contactos', icon: <ContactPage /> },
   { label: 'Documentos', icon: <Description /> },
-  { label: 'Info. Bancaria', icon: <AccountBalance /> },
-  { label: 'Registro', icon: <i className='ri-history-line' /> }
+  { label: 'Info. Bancaria', icon: <AccountBalance /> }
 ]
 
 const ClientMainContent = ({
@@ -977,40 +977,20 @@ const ClientMainContent = ({
 
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
-          {value === 0 && (
-            <>
-              {client.person_type === 'J' ? (
-                <LegalData client={client} />
-              ) : (
-                <ClientPersonalData
-                  client={client}
-                  professionName={client.professionName}
-                  occupationName={client.occupationName}
-                />
-              )}
-            </>
-          )}
-
-          {value === 1 && (
-            <Box>
-              <ClientContacts client={client} refreshClient={refreshClient} />
-            </Box>
-          )}
-          {value === 2 && (
-            <Box>
-              <Typography>Aquí irá la sección de Documentos</Typography>
-            </Box>
-          )}
-          {value === 3 && (
-            <Box>
-              <ClientBankAccounts client={client} refreshClient={refreshClient} />
-            </Box>
-          )}
-          {value === 4 && (
-            <Box>
-              <ClientRegistration client={client} />
-            </Box>
-          )}
+          {value === 0 && <ClientRegistration client={client} />}
+          {value === 1 &&
+            (client.person_type === 'J' ? (
+              <LegalData client={client} />
+            ) : (
+              <ClientPersonalData
+                client={client}
+                professionName={client.professionName}
+                occupationName={client.occupationName}
+              />
+            ))}
+          {value === 2 && <ClientContacts client={client} refreshClient={refreshClient} />}
+          {value === 3 && <Typography>Aquí irá la sección de Documentos</Typography>}
+          {value === 4 && <ClientBankAccounts client={client} refreshClient={refreshClient} />}
         </CardContent>
       </Card>
     </>
