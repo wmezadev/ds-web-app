@@ -13,11 +13,12 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar
+  Snackbar,
+  IconButton
 } from '@mui/material'
 import Alert from '@mui/material/Alert'
 
-import { Add } from '@mui/icons-material'
+import { Add, Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
@@ -63,9 +64,31 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [isEditing, setIsEditing] = useState(false)
+  const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null)
 
   const handleAddContact = () => {
     setNewContact({ full_name: '', position: '', phone: '', email: '', notes: '' })
+    setModalOpen(true)
+  }
+
+  const handleEditContact = (index: number) => {
+    const c = contacts[index] as {
+      full_name: string
+      position: string
+      phone: string
+      email: string
+      notes?: string | null
+    }
+    setNewContact({
+      full_name: c.full_name || '',
+      position: c.position || '',
+      phone: c.phone || '',
+      email: c.email || '',
+      notes: c.notes ?? ''
+    })
+    setIsEditing(true)
+    setSelectedContactIndex(index)
     setModalOpen(true)
   }
 
@@ -75,22 +98,34 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
 
     try {
       const form = clientApiToForm(client as Client)
-      const updatedForm = { ...form, contacts: [...(form.contacts || []), newContact] }
+      let updatedContacts = [...(form.contacts || [])]
+
+      if (isEditing && selectedContactIndex !== null) {
+        // Editar contacto existente
+        updatedContacts[selectedContactIndex] = newContact
+      } else {
+        // Crear nuevo contacto
+        updatedContacts.push(newContact)
+      }
+
+      const updatedForm = { ...form, contacts: updatedContacts }
       const apiPayload = clientFormToApi(updatedForm)
 
       await fetchApi(`clients/${client.id}`, { method: 'PUT', body: apiPayload })
 
-      setContacts(prev => [...prev, newContact])
+      setContacts(updatedContacts)
       setModalOpen(false)
       setSnackbarSeverity('success')
-      setSnackbarMessage('Contacto agregado exitosamente')
+      setSnackbarMessage(isEditing ? 'Contacto actualizado exitosamente' : 'Contacto agregado exitosamente')
       setSnackbarOpen(true)
     } catch (err) {
       setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible agregar el contacto')
+      setSnackbarMessage('No fue posible guardar el contacto')
       setSnackbarOpen(true)
     } finally {
       setSaving(false)
+      setIsEditing(false)
+      setSelectedContactIndex(null)
     }
   }
 
@@ -112,7 +147,14 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
       ) : (
         <Stack spacing={2}>
           {contacts.map((contact, index) => (
-            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, position: 'relative' }}>
+              <IconButton
+                size='small'
+                onClick={() => handleEditContact(index)}
+                sx={{ position: 'absolute', top: 8, right: 8 }}
+              >
+                <Edit fontSize='small' />
+              </IconButton>
               <Grid container spacing={3}>
                 <DetailItem label='Nombre Completo' value={contact.full_name} />
                 <DetailItem label='Posición/Cargo' value={contact.position} />
