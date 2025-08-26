@@ -20,6 +20,8 @@ import Alert from '@mui/material/Alert'
 import { Add } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
+import { useApi } from '@/hooks/useApi'
+import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
 
 interface DetailItemProps {
   label: string
@@ -47,6 +49,7 @@ interface ClientBankAccountsProps {
 const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refreshClient }) => {
   const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
   const [modalOpen, setModalOpen] = useState(false)
+  const { fetchApi } = useApi()
 
   const [newBankAccount, setNewBankAccount] = useState({
     bank_name: '',
@@ -72,26 +75,23 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
     setSaving(true)
 
     try {
-      const updatedClient = {
-        ...client,
-        bank_accounts: [...(client.bank_accounts || []), newBankAccount]
-      }
+      const updatedBankAccounts = [...(client.bank_accounts || []), newBankAccount]
 
-      const res = await fetch(`/clients/${client.id}`, {
+      // Normalizar payload según backend
+      const formFromApi = clientApiToForm(client as Client)
+      const mergedForm: ClientFormFields = { ...formFromApi, bank_accounts: updatedBankAccounts as any }
+      const apiPayload = clientFormToApi(mergedForm)
+
+      await fetchApi(`clients/${client.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedClient)
+        body: apiPayload
       })
-
-      if (!res.ok) throw new Error('Error al guardar la cuenta bancaria')
 
       setBankAccounts(prev => [...prev, newBankAccount])
       setModalOpen(false)
       setSnackbarSeverity('success')
       setSnackbarMessage('Cuenta bancaria agregada exitosamente')
       setSnackbarOpen(true)
-
-      if (refreshClient) await refreshClient()
     } catch (err) {
       console.error(err)
       setSnackbarSeverity('error')
