@@ -51,12 +51,13 @@ interface ClientRegistrationProps {
   refreshClient?: () => Promise<void>
 }
 
-const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientId, refreshClient }) => {
+const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientId }) => {
   const { catalogs } = useCatalogs()
   const { fetchApi } = useApi()
 
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -318,10 +319,13 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
             variant='contained'
             onClick={async () => {
               if (saving) return
+
               try {
                 setSaving(true)
+
                 // Build full payload via clientApiToForm -> merge -> clientFormToApi for backend compatibility
                 const formFromApi = clientApiToForm(client as Client)
+
                 const merged: ClientFormFields = {
                   ...formFromApi,
                   client_category_id: form.client_category_id as any,
@@ -332,10 +336,11 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
                   client_branch_id: (form.client_branch_id as any) || null,
                   notes: form.notes
                 }
+
                 const payload = clientFormToApi(merged)
 
                 await fetchApi(`clients/${clientId}`, { method: 'PUT', body: payload })
-                // Optimistic local display update to avoid full-page refresh
+
                 setDisplay({
                   client_category_id: merged.client_category_id as any,
                   office_id: merged.office_id as any,
@@ -345,11 +350,12 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
                   client_branch_id: (merged.client_branch_id as any) ?? '',
                   notes: merged.notes || ''
                 })
+
                 setSnackbar({ open: true, message: 'Información de registro actualizada', severity: 'success' })
                 setOpen(false)
-                // We avoid calling refreshClient to prevent page-level loading flicker
               } catch (e: any) {
                 const msg = e?.message || 'No fue posible actualizar'
+
                 setSnackbar({ open: true, message: msg, severity: 'error' })
               } finally {
                 setSaving(false)

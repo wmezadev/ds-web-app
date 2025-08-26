@@ -47,7 +47,7 @@ interface ClientBankAccountsProps {
   refreshClient: () => Promise<void>
 }
 
-const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refreshClient }) => {
+const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
   const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
   const [modalOpen, setModalOpen] = useState(false)
   const { fetchApi } = useApi()
@@ -81,6 +81,7 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
       account_type: string
       notes?: string | null
     }
+
     setNewBankAccount({
       bank_name: acc.bank_name || '',
       account_number: acc.account_number || '',
@@ -99,9 +100,8 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
     setSaving(true)
 
     try {
-      // Obtener el formulario desde API para mantener consistencia
       const formFromApi = clientApiToForm(client as Client)
-      let updatedBankAccounts = [...(formFromApi.bank_accounts || [])]
+      const updatedBankAccounts = [...(formFromApi.bank_accounts || [])]
 
       if (isEditing && selectedAccountIndex !== null) {
         updatedBankAccounts[selectedAccountIndex] = newBankAccount
@@ -143,7 +143,9 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
 
     try {
       const formFromApi = clientApiToForm(client as Client)
+
       const updatedBankAccounts = [...(formFromApi.bank_accounts || [])]
+
       updatedBankAccounts.splice(selectedAccountIndex, 1)
 
       const mergedForm: ClientFormFields = { ...formFromApi, bank_accounts: updatedBankAccounts as any }

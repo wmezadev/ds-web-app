@@ -464,10 +464,6 @@ const ClientForm: React.FC<Props> = ({
 }
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
-  // Debug logging to see what the API is actually returning
-  console.log('API client data received:', JSON.stringify(client, null, 2))
-  console.log('API source value:', client.source, 'Type:', typeof client.source)
-
   const formFields: ClientFormFields = {
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',
@@ -522,16 +518,10 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
 }
 
 export const clientFormToApi = (formData: ClientFormFields): any => {
-  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
-    if (value === null || value === undefined || value === '') return null
-    const num = typeof value === 'string' ? parseInt(value, 10) : value
-
-    return isNaN(num) ? null : num
-  }
-
   const toNumberOrZero = (value: string | number | null | undefined): number => {
     if (value === null || value === undefined || value === '') return 0
     const num = typeof value === 'string' ? parseInt(value, 10) : value
+
     return isNaN(num) ? 0 : num
   }
 
@@ -583,8 +573,10 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     person_type: (formData.person_type?.trim() || 'N') as 'N' | 'J',
     source: ((): 'C' | 'P' => {
       const s = formData.source as any
+
       if (s === 'C' || s === 'cliente') return 'C'
       if (s === 'P' || s === 'prospecto') return 'P'
+
       return 'C'
     })(),
     billing_address: formData.billing_address?.trim() || '',

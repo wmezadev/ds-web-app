@@ -43,6 +43,7 @@ const getCivilStatusDisplay = (status: string | null): string => {
 const getGenderDisplay = (gender: string | null): string => {
   if (!gender) return '-'
   const map: Record<string, string> = { M: 'Masculino', F: 'Femenino' }
+
   return map[gender] || gender
 }
 
@@ -74,7 +75,9 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
   const { fetchApi } = useApi()
 
   const [open, setOpen] = React.useState(false)
+
   const [saving, setSaving] = React.useState(false)
+
   const [snackbar, setSnackbar] = React.useState<{
     open: boolean
     message: string
@@ -143,9 +146,11 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
 
   const handleSave = async () => {
     if (saving) return
+
     try {
       setSaving(true)
       const formFromApi = clientApiToForm(client as Client)
+
       const merged: ClientFormFields = {
         ...formFromApi,
         personal_data: {
@@ -163,11 +168,8 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
           rif: form.rif || undefined
         }
       }
+
       const payload = clientFormToApi(merged)
-      // DEBUG: log outgoing payload to help diagnose 422s
-      // Remove after verifying
-      // eslint-disable-next-line no-console
-      console.log('[PersonalData] PUT payload', payload)
 
       await fetchApi(`clients/${clientId}`, { method: 'PUT', body: payload })
 
@@ -175,9 +177,8 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
       setSnackbar({ open: true, message: 'Datos personales actualizados', severity: 'success' })
       setOpen(false)
     } catch (e: any) {
-      // eslint-disable-next-line no-console
-      console.error('[PersonalData] Update error', e)
       const msg = e?.message || 'No fue posible actualizar'
+
       setSnackbar({ open: true, message: msg, severity: 'error' })
     } finally {
       setSaving(false)

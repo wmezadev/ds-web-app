@@ -81,6 +81,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
       email: string
       notes?: string | null
     }
+
     setNewContact({
       full_name: c.full_name || '',
       position: c.position || '',
@@ -99,7 +100,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
 
     try {
       const form = clientApiToForm(client as Client)
-      let updatedContacts = [...(form.contacts || [])]
+      const updatedContacts = [...(form.contacts || [])]
 
       if (isEditing && selectedContactIndex !== null) {
         updatedContacts[selectedContactIndex] = newContact
@@ -135,7 +136,9 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
 
     try {
       const form = clientApiToForm(client as Client)
+
       const updatedContacts = [...(form.contacts || [])]
+
       updatedContacts.splice(selectedContactIndex, 1)
 
       const updatedForm = { ...form, contacts: updatedContacts }
