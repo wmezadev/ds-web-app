@@ -990,11 +990,7 @@ const ClientMainContent = ({
               {client.person_type === 'J' ? (
                 <LegalData client={client} />
               ) : (
-                <ClientPersonalData
-                  client={client}
-                  professionName={client.professionName}
-                  occupationName={client.occupationName}
-                />
+                <ClientPersonalData client={client} clientId={clientId} />
               )}
             </>
           )}
