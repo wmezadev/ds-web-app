@@ -464,10 +464,6 @@ const ClientForm: React.FC<Props> = ({
 }
 
 export const clientApiToForm = (client: Client): ClientFormFields => {
-  // Debug logging to see what the API is actually returning
-  console.log('API client data received:', JSON.stringify(client, null, 2))
-  console.log('API source value:', client.source, 'Type:', typeof client.source)
-
   const formFields: ClientFormFields = {
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',
@@ -522,11 +518,11 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
 }
 
 export const clientFormToApi = (formData: ClientFormFields): any => {
-  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
-    if (value === null || value === undefined || value === '') return null
+  const toNumberOrZero = (value: string | number | null | undefined): number => {
+    if (value === null || value === undefined || value === '') return 0
     const num = typeof value === 'string' ? parseInt(value, 10) : value
 
-    return isNaN(num) ? null : num
+    return isNaN(num) ? 0 : num
   }
 
   const formatDateForApi = (dateString: string | null | undefined): string | null => {
@@ -537,7 +533,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
 
       if (isNaN(date.getTime())) return null
 
-      return date.toISOString().split('T')[0] // YYYY-MM-DD format
+      return date.toISOString().split('T')[0]
     } catch {
       return null
     }
@@ -574,8 +570,15 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     email_1: validateEmail(formData.email_1) || 'user@example.com',
     email_2: validateEmail(formData.email_2) || 'user@example.com',
     join_date: formatDateForApi(formData.join_date) || '2025-08-11',
-    person_type: formData.person_type?.trim() || 'N',
-    source: formData.source || 'cliente',
+    person_type: (formData.person_type?.trim() || 'N') as 'N' | 'J',
+    source: ((): 'C' | 'P' => {
+      const s = formData.source as any
+
+      if (s === 'C' || s === 'cliente') return 'C'
+      if (s === 'P' || s === 'prospecto') return 'P'
+
+      return 'C'
+    })(),
     billing_address: formData.billing_address?.trim() || '',
     phone: formData.phone?.trim() || '',
     mobile_1: formData.mobile_1?.trim() || '',
@@ -583,17 +586,17 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     reference: formData.reference?.trim() || '',
     notes: formData.notes?.trim() || '',
 
-    // Numeric fields (null for unset foreign keys to avoid constraint violations)
-    city_id: toNumberOrNull(formData.city_id),
-    zone_id: toNumberOrNull(formData.zone_id),
-    client_category_id: toNumberOrNull(formData.client_category_id),
-    office_id: toNumberOrNull(formData.office_id),
-    agent_id: toNumberOrNull(formData.agent_id),
-    executive_id: toNumberOrNull(formData.executive_id),
-    client_group_id: toNumberOrNull(formData.client_group_id),
-    client_branch_id: toNumberOrNull(formData.client_branch_id),
+    status: true,
 
-    // Personal data (exact match to API spec)
+    city_id: toNumberOrZero(formData.city_id),
+    zone_id: toNumberOrZero(formData.zone_id),
+    client_category_id: toNumberOrZero(formData.client_category_id),
+    office_id: toNumberOrZero(formData.office_id),
+    agent_id: toNumberOrZero(formData.agent_id),
+    executive_id: toNumberOrZero(formData.executive_id),
+    client_group_id: toNumberOrZero(formData.client_group_id),
+    client_branch_id: toNumberOrZero(formData.client_branch_id),
+
     personal_data: {
       gender: formData.personal_data?.gender?.trim() || 'M',
       civil_status: formData.personal_data?.civil_status?.trim() || null,
@@ -602,19 +605,20 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       smoker: Boolean(formData.personal_data?.smoker),
       sports: formData.personal_data?.sports?.trim() || '',
       rif: formData.personal_data?.rif?.trim() || '',
-      profession_id: toNumberOrNull(formData.personal_data?.profession_id),
-      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id),
+      profession_id: toNumberOrZero(formData.personal_data?.profession_id),
+      occupation_id: toNumberOrZero(formData.personal_data?.occupation_id),
       monthly_income: formData.personal_data?.monthly_income || 0,
       pathology: formData.personal_data?.pathology?.trim() || ''
     },
 
-    // Legal data (exact match to API spec)
-    legal_data: {
-      legal_representative: formData.legal_representative?.trim() || '',
-      economic_activity_id: toNumberOrNull(formData.economic_activity_id)
-    },
+    legal_data:
+      (formData.person_type?.trim() || 'N') === 'J'
+        ? {
+            legal_representative: formData.legal_representative?.trim() || '',
+            economic_activity_id: toNumberOrZero(formData.economic_activity_id)
+          }
+        : null,
 
-    // Arrays (exact match to API spec)
     contacts: (formData.contacts || [])
       .filter(contact => contact.full_name?.trim() && contact.email?.trim() && contact.phone?.trim())
       .map(contact => ({

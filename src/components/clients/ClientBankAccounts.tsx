@@ -13,13 +13,16 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar
+  Snackbar,
+  IconButton
 } from '@mui/material'
 
 import Alert from '@mui/material/Alert'
-import { Add } from '@mui/icons-material'
+import { Add, Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
+import { useApi } from '@/hooks/useApi'
+import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
 
 interface DetailItemProps {
   label: string
@@ -44,9 +47,10 @@ interface ClientBankAccountsProps {
   refreshClient: () => Promise<void>
 }
 
-const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refreshClient }) => {
+const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
   const [bankAccounts, setBankAccounts] = useState(client.bank_accounts || [])
   const [modalOpen, setModalOpen] = useState(false)
+  const { fetchApi } = useApi()
 
   const [newBankAccount, setNewBankAccount] = useState({
     bank_name: '',
@@ -60,9 +64,33 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [isEditing, setIsEditing] = useState(false)
+  const [selectedAccountIndex, setSelectedAccountIndex] = useState<number | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const handleAddAccount = () => {
     setNewBankAccount({ bank_name: '', account_number: '', currency: '', account_type: '', notes: '' })
+    setModalOpen(true)
+  }
+
+  const handleEditAccount = (index: number) => {
+    const acc = bankAccounts[index] as {
+      bank_name: string
+      account_number: string
+      currency: string
+      account_type: string
+      notes?: string | null
+    }
+
+    setNewBankAccount({
+      bank_name: acc.bank_name || '',
+      account_number: acc.account_number || '',
+      currency: acc.currency || '',
+      account_type: acc.account_type || '',
+      notes: acc.notes ?? ''
+    })
+    setIsEditing(true)
+    setSelectedAccountIndex(index)
     setModalOpen(true)
   }
 
@@ -72,33 +100,77 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
     setSaving(true)
 
     try {
-      const updatedClient = {
-        ...client,
-        bank_accounts: [...(client.bank_accounts || []), newBankAccount]
+      const formFromApi = clientApiToForm(client as Client)
+      const updatedBankAccounts = [...(formFromApi.bank_accounts || [])]
+
+      if (isEditing && selectedAccountIndex !== null) {
+        updatedBankAccounts[selectedAccountIndex] = newBankAccount
+      } else {
+        updatedBankAccounts.push(newBankAccount)
       }
 
-      const res = await fetch(`/clients/${client.id}`, {
+      const mergedForm: ClientFormFields = { ...formFromApi, bank_accounts: updatedBankAccounts as any }
+      const apiPayload = clientFormToApi(mergedForm)
+
+      await fetchApi(`clients/${client.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedClient)
+        body: apiPayload
       })
 
-      if (!res.ok) throw new Error('Error al guardar la cuenta bancaria')
-
-      setBankAccounts(prev => [...prev, newBankAccount])
+      setBankAccounts(updatedBankAccounts)
       setModalOpen(false)
       setSnackbarSeverity('success')
-      setSnackbarMessage('Cuenta bancaria agregada exitosamente')
+      setSnackbarMessage(
+        isEditing ? 'Cuenta bancaria actualizada exitosamente' : 'Cuenta bancaria agregada exitosamente'
+      )
       setSnackbarOpen(true)
-
-      if (refreshClient) await refreshClient()
     } catch (err) {
       console.error(err)
       setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible agregar la cuenta bancaria')
+      setSnackbarMessage('No fue posible guardar la cuenta bancaria')
       setSnackbarOpen(true)
     } finally {
       setSaving(false)
+      setIsEditing(false)
+      setSelectedAccountIndex(null)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (saving) return
+    if (!isEditing || selectedAccountIndex === null) return
+    setSaving(true)
+
+    try {
+      const formFromApi = clientApiToForm(client as Client)
+
+      const updatedBankAccounts = [...(formFromApi.bank_accounts || [])]
+
+      updatedBankAccounts.splice(selectedAccountIndex, 1)
+
+      const mergedForm: ClientFormFields = { ...formFromApi, bank_accounts: updatedBankAccounts as any }
+      const apiPayload = clientFormToApi(mergedForm)
+
+      await fetchApi(`clients/${client.id}`, {
+        method: 'PUT',
+        body: apiPayload
+      })
+
+      setBankAccounts(updatedBankAccounts)
+      setModalOpen(false)
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Cuenta bancaria eliminada exitosamente')
+      setSnackbarOpen(true)
+    } catch (err) {
+      console.error(err)
+      setSnackbarSeverity('error')
+      setSnackbarMessage('No fue posible eliminar la cuenta bancaria')
+      setSnackbarOpen(true)
+    } finally {
+      setSaving(false)
+      setIsEditing(false)
+      setSelectedAccountIndex(null)
+      setConfirmDeleteOpen(false)
     }
   }
 
@@ -120,7 +192,14 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
       ) : (
         <Stack spacing={2}>
           {bankAccounts.map((account, index) => (
-            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+            <Box key={index} p={3} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, position: 'relative' }}>
+              <IconButton
+                size='small'
+                onClick={() => handleEditAccount(index)}
+                sx={{ position: 'absolute', top: 8, right: 8 }}
+              >
+                <Edit fontSize='small' />
+              </IconButton>
               <Grid container spacing={3}>
                 <DetailItem label='Banco' value={account.bank_name} />
                 <DetailItem label='Número de Cuenta' value={account.account_number} />
@@ -134,7 +213,7 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
       )}
 
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth='sm'>
-        <DialogTitle>Nueva Cuenta Bancaria</DialogTitle>
+        <DialogTitle>{isEditing ? 'Editar Cuenta Bancaria' : 'Nueva Cuenta Bancaria'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
@@ -171,11 +250,41 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client, refresh
           </Stack>
         </DialogContent>
         <DialogActions>
+          {isEditing && (
+            <Button color='error' onClick={() => setConfirmDeleteOpen(true)} disabled={saving}>
+              Eliminar
+            </Button>
+          )}
           <Button onClick={() => setModalOpen(false)} disabled={saving}>
             Cancelar
           </Button>
           <Button variant='contained' onClick={handleSaveAccount} disabled={saving}>
             {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} maxWidth='xs' fullWidth>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <Typography variant='body2'>
+            ¿Está seguro que desea eliminar esta cuenta bancaria? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button
+            color='error'
+            variant='contained'
+            onClick={() => {
+              setConfirmDeleteOpen(false)
+              handleDeleteAccount()
+            }}
+            disabled={saving}
+          >
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>

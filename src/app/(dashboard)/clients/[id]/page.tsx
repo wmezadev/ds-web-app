@@ -893,19 +893,21 @@ const ClientDetailsCard = ({
 }
 
 const tabs = [
+  { label: 'Datos de Registro', icon: <i className='ri-history-line' /> },
   { label: 'Datos Personales', icon: <Person /> },
   { label: 'Contactos', icon: <ContactPage /> },
   { label: 'Documentos', icon: <Description /> },
-  { label: 'Info. Bancaria', icon: <AccountBalance /> },
-  { label: 'Registro', icon: <i className='ri-history-line' /> }
+  { label: 'Info. Bancaria', icon: <AccountBalance /> }
 ]
 
 const ClientMainContent = ({
   client,
-  refreshClient
+  refreshClient,
+  clientId
 }: {
   client: Partial<Client> & { professionName?: string; occupationName?: string }
   refreshClient: () => Promise<void>
+  clientId: string
 }) => {
   const [value, setValue] = React.useState(0)
   const [, setShowArrows] = React.useState({ left: false, right: false })
@@ -978,37 +980,34 @@ const ClientMainContent = ({
       <Card elevation={0} sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: 3 }}>
           {value === 0 && (
+            <Box>
+              <ClientRegistration client={client} clientId={clientId} refreshClient={refreshClient} />
+            </Box>
+          )}
+
+          {value === 1 && (
             <>
               {client.person_type === 'J' ? (
                 <LegalData client={client} />
               ) : (
-                <ClientPersonalData
-                  client={client}
-                  professionName={client.professionName}
-                  occupationName={client.occupationName}
-                />
+                <ClientPersonalData client={client} clientId={clientId} />
               )}
             </>
           )}
 
-          {value === 1 && (
+          {value === 2 && (
             <Box>
               <ClientContacts client={client} refreshClient={refreshClient} />
             </Box>
           )}
-          {value === 2 && (
+          {value === 3 && (
             <Box>
               <Typography>Aquí irá la sección de Documentos</Typography>
             </Box>
           )}
-          {value === 3 && (
-            <Box>
-              <ClientBankAccounts client={client} refreshClient={refreshClient} />
-            </Box>
-          )}
           {value === 4 && (
             <Box>
-              <ClientRegistration client={client} />
+              <ClientBankAccounts client={client} refreshClient={refreshClient} />
             </Box>
           )}
         </CardContent>
@@ -1111,7 +1110,7 @@ const ClientDetailPage = () => {
           </Grid>
         </Grid>
         <Grid item xs={12} md={8}>
-          <ClientMainContent client={clientWithDetails} refreshClient={refreshClient} />
+          <ClientMainContent client={clientWithDetails} refreshClient={refreshClient} clientId={clientId} />
         </Grid>
       </Grid>
     </Box>
