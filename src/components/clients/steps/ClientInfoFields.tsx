@@ -111,6 +111,56 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
           <Controller
+            name='person_type'
+            control={control}
+            rules={{ required: 'El tipo de persona es requerido' }}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.person_type}>
+                <InputLabel>Tipo de Persona</InputLabel>
+                <Select {...field} label='Tipo de Persona' value={field.value ?? ''}>
+                  <MenuItem value='N'>Natural</MenuItem>
+                  <MenuItem value='J'>Jurídico</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={4} sm={2}>
+          <Controller
+            name='client_type'
+            control={control}
+            rules={{ required: mode === 'create' ? 'El tipo de documento es requerido' : false }}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.client_type}>
+                <InputLabel id='client-type-label'>Tipo Documento</InputLabel>
+                <Select {...field} labelId='client-type-label' label='Tipo Documento' value={field.value ?? ''}>
+                  <MenuItem value='V'>V</MenuItem>
+                  <MenuItem value='J'>J</MenuItem>
+                  <MenuItem value='E'>E</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+        <Grid item xs={8} sm={4}>
+          <Controller
+            name='document_number'
+            control={control}
+            rules={{ required: mode === 'create' ? 'El número de documento es requerido' : false }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label='Número de Documento (C.I., RIF, Pasaporte...)'
+                error={!!errors.document_number}
+                helperText={errors.document_number?.message}
+                fullWidth
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Controller
             name='first_name'
             control={control}
             rules={{ required: 'El nombre es requerido' }}
@@ -137,58 +187,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
                 fullWidth
                 error={!!errors.last_name}
                 helperText={errors.last_name?.message}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='person_type'
-            control={control}
-            rules={{ required: 'El tipo de persona es requerido' }}
-            render={({ field }) => (
-              <FormControl fullWidth error={!!errors.person_type}>
-                <InputLabel>Tipo de Persona</InputLabel>
-                <Select {...field} label='Tipo de Persona' value={field.value ?? ''}>
-                  <MenuItem value='N'>Natural</MenuItem>
-                  <MenuItem value='J'>Jurídico</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={4} sm={2}>
-          <Controller
-            name='client_type'
-            control={control}
-            defaultValue=''
-            rules={{ required: mode === 'create' ? 'El tipo de cliente es requerido' : false }}
-            render={({ field }) => (
-              <FormControl fullWidth error={!!errors.client_type}>
-                <InputLabel>Tipo Documento</InputLabel>
-                <Select {...field} label='Tipo' value={field.value ?? ''} defaultValue='V'>
-                  <MenuItem value='V'>V</MenuItem>
-                  <MenuItem value='J'>J</MenuItem>
-                  <MenuItem value='E'>E</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Grid>
-        <Grid item xs={8} sm={4}>
-          <Controller
-            name='document_number'
-            control={control}
-            rules={{ required: mode === 'create' ? 'El número de documento es requerido' : false }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label='Número de Documento (C.I., RIF, Pasaporte...)'
-                error={!!errors.document_number}
-                helperText={errors.document_number?.message}
-                fullWidth
               />
             )}
           />
