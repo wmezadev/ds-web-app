@@ -5,7 +5,6 @@ import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
 import { useCatalogs } from '@/hooks/useCatalogs'
-// Risk variables will be taken from useCatalogs()
 
 const RegistrationOptionsFields = () => {
   const {
@@ -201,8 +200,10 @@ const RegistrationOptionsFields = () => {
                     (selected as (string | number)[])
                       .map(v => {
                         const item = catalogs?.risk_variables.find(rv => rv.id === Number(v)) as any
+
                         return item?.name || item?.description || item?.code || v
                       })
+
                       .join(', ')
                   }
                 >

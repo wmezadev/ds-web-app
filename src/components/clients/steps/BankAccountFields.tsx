@@ -17,7 +17,7 @@ const BankAccountFields = () => {
     name: 'bank_accounts'
   })
 
-  const [savingIndex, setSavingIndex] = useState<number | null>(null)
+  const [] = useState<number | null>(null)
 
   const handleAddAccount = () => {
     append({
@@ -27,17 +27,6 @@ const BankAccountFields = () => {
       account_type: '',
       notes: ''
     })
-  }
-
-  const handleSaveContact = async (index: number) => {
-    setSavingIndex(index)
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-    } catch (error) {
-    } finally {
-      setSavingIndex(null)
-    }
   }
 
   return (
