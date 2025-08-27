@@ -42,6 +42,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
 
   const clientType = watch('client_type')
   const documentNumber = watch('document_number')
+  const personType = watch('person_type')
 
   const originalRef = useRef<{ ct: string; dn: string } | null>(null)
 
@@ -159,7 +160,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             )}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={personType === 'J' ? 12 : 6}>
           <Controller
             name='first_name'
             control={control}
@@ -167,7 +168,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             render={({ field }) => (
               <TextField
                 {...field}
-                label='Nombre'
+                label='Nombres/Razon Social'
                 fullWidth
                 error={!!errors.first_name}
                 helperText={errors.first_name?.message}
@@ -175,22 +176,24 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             )}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name='last_name'
-            control={control}
-            rules={{ required: 'El apellido es requerido' }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label='Apellido'
-                fullWidth
-                error={!!errors.last_name}
-                helperText={errors.last_name?.message}
-              />
-            )}
-          />
-        </Grid>
+        {personType !== 'J' && (
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name='last_name'
+              control={control}
+              rules={{ required: personType !== 'J' ? 'El apellido es requerido' : false }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label='Apellido'
+                  fullWidth
+                  error={!!errors.last_name}
+                  helperText={errors.last_name?.message}
+                />
+              )}
+            />
+          </Grid>
+        )}
 
         <Grid item xs={12} sm={6}>
           <Controller
@@ -242,7 +245,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             render={({ field }) => (
               <TextField
                 {...field}
-                label='Fecha de Nacimiento'
+                label='Fecha de Nac/Fundación'
                 type='date'
                 fullWidth
                 InputLabelProps={{ shrink: true }}
@@ -306,7 +309,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
             <Box display='flex' justifyContent='flex-start' alignItems='flex-end'>
               <Box>
                 <Typography variant='subtitle2' gutterBottom>
-                  ¿Miembro de Grupo?
+                  ¿Pertenece a algún Colectivo?
                 </Typography>
                 <Controller
                   name='is_member_of_group'
