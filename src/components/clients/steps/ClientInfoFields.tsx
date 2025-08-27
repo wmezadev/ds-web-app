@@ -40,11 +40,9 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
   const { catalogs, loading: citiesLoading } = useCatalogs()
   const { fetchApi } = useApi()
 
-  // Watch fields needed for existence check
   const clientType = watch('client_type')
   const documentNumber = watch('document_number')
 
-  // Holds original values for edit mode
   const originalRef = useRef<{ ct: string; dn: string } | null>(null)
 
   const debouncedQuery = useDebounce(
@@ -52,7 +50,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
     400
   )
 
-  // Initialize original values once in edit mode
   useEffect(() => {
     if (mode !== 'edit') return
 
@@ -63,18 +60,15 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
     }
   }, [mode, getValues])
 
-  // Check client existence when both fields are present
   useEffect(() => {
     const { clientType: ct, documentNumber: dn } = debouncedQuery || {}
 
-    // Require both values
     if (!ct || !dn) {
       clearErrors('document_number')
 
       return
     }
 
-    // In edit mode, skip check if unchanged
     const orig = originalRef.current
 
     if (mode === 'edit' && orig && orig.ct === ct && orig.dn === dn) {
@@ -101,7 +95,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           }
         }
       } catch (e: any) {
-        // If API fails, do not block; just clear manual error
         if (!cancelled) clearErrors('document_number')
       }
     }
@@ -120,7 +113,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='first_name'
             control={control}
-            rules={{ required: mode === 'create' ? 'El nombre es requerido' : false }}
+            rules={{ required: 'El nombre es requerido' }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -136,7 +129,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='last_name'
             control={control}
-            rules={{ required: mode === 'create' ? 'El apellido es requerido' : false }}
+            rules={{ required: 'El apellido es requerido' }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -149,7 +142,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Person Type */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='person_type'
@@ -167,7 +159,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Client Type and Document Number */}
         <Grid item xs={4} sm={2}>
           <Controller
             name='client_type'
@@ -203,7 +194,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* City */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='city_id'
@@ -231,7 +221,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Birth Place and Birth Date */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='birth_place'
@@ -266,7 +255,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Join Date */}
         <Grid item xs={12} sm={6}>
           <Controller
             name='join_date'
@@ -285,7 +273,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        {/* Source + Miembro */}
         <Grid container item xs={12} spacing={2}>
           <Grid item xs={12} sm={6}>
             <Box>
@@ -347,7 +334,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           </Grid>
         </Grid>
 
-        {/* Hidden ID */}
         <Controller name='id' control={control} render={({ field }) => <input type='hidden' {...field} />} />
       </Grid>
     </Box>

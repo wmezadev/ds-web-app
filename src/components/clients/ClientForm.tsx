@@ -197,32 +197,31 @@ const ClientForm: React.FC<Props> = ({
       // Create mode: no Documents step
       switch (step) {
         case 0:
-          return ['person_type', 'document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
           return ['birth_date', 'birth_place']
         case 3:
           return ['email_2', 'mobile_2']
-        case 4: // Bank Accounts (Documents step skipped)
+        case 4:
           return []
-        case 5: // Registration Options
+        case 5:
           return ['client_category_id', 'office_id']
         default:
           return []
       }
     } else {
-      // Edit mode: includes Documents step
       switch (step) {
         case 0:
-          return ['person_type', 'document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
           return ['birth_date', 'birth_place']
         case 3:
           return ['email_2', 'mobile_2']
-        case 4: // Documents
+        case 4:
           return ['doc']
         case 5: // Bank Accounts
           return []
