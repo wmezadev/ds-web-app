@@ -3,8 +3,7 @@
 import { useState } from 'react'
 
 import { Box, Typography, Button, Stack, Grid, TextField, IconButton } from '@mui/material'
-import { Add, Delete } from '@mui/icons-material'
-import Save from '@mui/icons-material/Save'
+import { Add, Close } from '@mui/icons-material'
 
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
@@ -22,11 +21,11 @@ const BankAccountFields = () => {
 
   const handleAddAccount = () => {
     append({
-      bank: '',
+      bank_name: '',
       account_number: '',
       currency: '',
       account_type: '',
-      observations: ''
+      notes: ''
     })
   }
 
@@ -34,8 +33,7 @@ const BankAccountFields = () => {
     setSavingIndex(index)
 
     try {
-      // Aquí puedes añadir la lógica real para guardar la cuenta bancaria, como llamadas a API
-      await new Promise(resolve => setTimeout(resolve, 1500)) // Simula un retardo
+      await new Promise(resolve => setTimeout(resolve, 1500))
     } catch (error) {
     } finally {
       setSavingIndex(null)
@@ -44,7 +42,6 @@ const BankAccountFields = () => {
 
   return (
     <Box>
-      {/* Header */}
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h6'>Cuentas Bancarias</Typography>
         <Button variant='outlined' startIcon={<Add />} onClick={handleAddAccount}>
@@ -59,17 +56,32 @@ const BankAccountFields = () => {
       ) : (
         <Stack spacing={3}>
           {fields.map((field, index) => (
-            <Box key={field.id} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
+            <Box
+              key={field.id}
+              pb={6}
+              px={4}
+              mt={2}
+              sx={{ border: '1px solid #e0e0e0', borderRadius: 2, position: 'relative', pt: 8, boxShadow: 0 }}
+            >
+              <IconButton
+                aria-label='Eliminar cuenta bancaria'
+                onClick={() => remove(index)}
+                size='small'
+                sx={{ position: 'absolute', top: 4, right: 8 }}
+                color='error'
+              >
+                <Close fontSize='small' />
+              </IconButton>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={3}>
                   <TextField
                     fullWidth
                     label='Banco'
                     placeholder='Nombre del banco'
-                    {...register(`bank_accounts.${index}.bank`)}
+                    {...register(`bank_accounts.${index}.bank_name`)}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={5}>
                   <TextField
                     fullWidth
                     label='Número de cuenta'
@@ -80,47 +92,28 @@ const BankAccountFields = () => {
                 <Grid item xs={6} md={2}>
                   <TextField
                     fullWidth
-                    label='Moneda'
-                    placeholder='USD / EUR / VES'
-                    {...register(`bank_accounts.${index}.currency`)}
-                  />
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <TextField
-                    fullWidth
                     label='Tipo de cuenta'
                     placeholder='Ahorro / Corriente'
                     {...register(`bank_accounts.${index}.account_type`)}
                   />
                 </Grid>
-                <Grid item xs={12} md={10}>
+                <Grid item xs={6} md={2}>
+                  <TextField
+                    fullWidth
+                    label='Moneda'
+                    placeholder='USD / EUR / VES'
+                    {...register(`bank_accounts.${index}.currency`)}
+                  />
+                </Grid>
+                <Grid item xs={12}>
                   <TextField
                     label='Observaciones'
                     placeholder='Notas adicionales...'
-                    {...register(`bank_accounts.${index}.observations`)}
+                    {...register(`bank_accounts.${index}.notes`)}
                     fullWidth
+                    multiline
+                    minRows={2}
                   />
-                </Grid>
-
-                <Grid item xs={12} md={2}>
-                  <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
-                    <Button
-                      variant='contained'
-                      onClick={() => handleSaveContact(index)}
-                      startIcon={<Save />}
-                      disabled={savingIndex === index}
-                      sx={{
-                        backgroundColor: '#4caf50',
-                        '&:hover': { backgroundColor: '#45a049' },
-                        minWidth: '120px'
-                      }}
-                    >
-                      {savingIndex === index ? 'Guardando...' : 'Guardar'}
-                    </Button>
-                    <IconButton onClick={() => remove(index)} color='error' size='large'>
-                      <Delete />
-                    </IconButton>
-                  </Box>
                 </Grid>
               </Grid>
             </Box>
