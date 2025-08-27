@@ -1,18 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 
 import {
-  AccountBalance,
   Business,
   Cake,
-  ContactPage,
-  Description,
   Email,
   Home,
-  Person,
   Phone,
   Place,
   DriveFileRenameOutline as EditIcon,
@@ -39,9 +35,8 @@ import {
   Tooltip,
   Snackbar,
   Autocomplete,
-  Tab,
   Stack,
-  ButtonGroup
+  Tab
 } from '@mui/material'
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -56,8 +51,10 @@ import ClientRegistration from '@/components/clients/ClientRegistration'
 import ClientBankAccounts from '@/components/clients/ClientBankAccounts'
 import LegalData from '@/components/clients/LegalData'
 import FollowUpSection from '@/components/clients/FollowUpSection'
+import ClientNavButtons from '@/components/clients/ClientNavButtons'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
+import { usePageNavContent } from '@/hooks/usePageNavContent'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
@@ -900,21 +897,11 @@ const ClientDetailsCard = ({
 }
 
 const tabs = [
-  <Stack key={0} direction='row' gap={1}>
-    {<i className='ri-chat-follow-up-line' />} Seguimientos
-  </Stack>,
-  <Stack key={1} direction='row' gap={1}>
-    {<Description />} Documentos
-  </Stack>,
-  <Stack key={2} direction='row' gap={1}>
-    {<ContactPage />} Contactos
-  </Stack>,
-  <Stack key={3} direction='row' gap={1}>
-    {<AccountBalance />} Info. Bancaria
-  </Stack>,
-  <Stack key={4} direction='row' gap={1}>
-    {<Person />} Datos Personales
-  </Stack>
+  { icon: <i className='ri-chat-follow-up-line' />, label: 'Seguimientos' },
+  { icon: <i className='ri-archive-stack-line' />, label: 'Documentos' },
+  { icon: <i className='ri-contacts-book-line' />, label: 'Contactos' },
+  { icon: <i className='ri-bank-line' />, label: 'Info. Bancaria' },
+  { icon: <i className='ri-booklet-line' />, label: 'Datos Personales' }
 ]
 
 const ClientMainContent = ({
@@ -927,45 +914,22 @@ const ClientMainContent = ({
   clientId: string
 }) => {
   const [curTab, setTab] = React.useState(0)
-  const [, setShowArrows] = React.useState({ left: false, right: false })
-
-  const scrollRef = React.useRef<HTMLDivElement>(null)
-
-  const checkArrows = React.useCallback(() => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-      const left = scrollLeft > 0
-      const right = scrollLeft < scrollWidth - clientWidth - 1
-
-      setShowArrows({ left, right })
-    }
-  }, [])
-
-  React.useEffect(() => {
-    const scrollElement = scrollRef.current
-
-    if (scrollElement) {
-      checkArrows()
-
-      const resizeObserver = new ResizeObserver(checkArrows)
-
-      resizeObserver.observe(scrollElement)
-      scrollElement.addEventListener('scroll', checkArrows)
-
-      return () => {
-        resizeObserver.unobserve(scrollElement)
-
-        scrollElement.removeEventListener('scroll', checkArrows)
-      }
-    }
-  }, [checkArrows])
 
   return (
     <>
       <TabContext value={curTab}>
         <TabList variant='scrollable' scrollButtons onChange={(_, val) => setTab(val)}>
           {tabs.map((tab, key) => (
-            <Tab key={key} value={key} label={tab} />
+            <Tab
+              key={key}
+              value={key}
+              label={
+                <Stack direction='row' gap={1}>
+                  {tab.icon}
+                  {tab.label}
+                </Stack>
+              }
+            />
           ))}
         </TabList>
         <TabPanel value={0}>
@@ -1013,8 +977,12 @@ const ClientMainContent = ({
 const ClientDetailPage = () => {
   const params = useParams()
   const clientId = typeof params.id === 'string' ? params.id : ''
+  const navContent = useMemo(() => (clientId ? <ClientNavButtons clientId={clientId} /> : null), [clientId])
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
+
+  // Set page-specific navigation content
+  usePageNavContent(navContent)
 
   if (isLoading || catalogsLoading) {
     return <Typography>Cargando...</Typography>
@@ -1048,37 +1016,6 @@ const ClientDetailPage = () => {
 
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
-      <Box
-        sx={{
-          display: { xs: 'none', sm: 'flex' },
-          flexDirection: { xs: 'column', md: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', md: 'center' },
-          pb: 2,
-          mb: 4
-        }}
-      >
-        <Typography variant='h5' fontWeight='bold' sx={{ mb: { xs: 2, md: 0 } }}>
-          {`Cliente ${client.first_name} ${client.last_name}`}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
-          <ButtonGroup variant='contained'>
-            <Button variant='text' startIcon={<i className='ri-shield-check-line' />}>
-              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Pólizas</Typography>
-            </Button>
-            <Button variant='text' startIcon={<i className='ri-receipt-line' />}>
-              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Recibos</Typography>
-            </Button>
-            <Button variant='text' startIcon={<i className='ri-shield-star-line' />}>
-              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Certificados</Typography>
-            </Button>
-            <Button variant='text' startIcon={<i className='ri-fire-line' />}>
-              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Siniestros</Typography>
-            </Button>
-          </ButtonGroup>
-        </Box>
-      </Box>
-
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
           <Grid container direction='column' spacing={4}>

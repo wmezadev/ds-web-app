@@ -116,7 +116,7 @@ const FollowUpSection: React.FC<{
               xs: '300px', // Mobile
               sm: '400px', // Tablet
               md: '500px', // Desktop
-              lg: '600px' // Large screens
+              lg: '728px' // Large screens
             },
             overflowY: 'auto',
             overflowX: 'hidden',
