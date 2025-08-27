@@ -178,7 +178,8 @@ const ClientForm: React.FC<Props> = ({
       },
       documents: initialValues.documents || [],
       contacts: initialValues.contacts || [],
-      bank_accounts: initialValues.bank_accounts || []
+      bank_accounts: initialValues.bank_accounts || [],
+      risk_variables: initialValues.risk_variables || []
     },
     mode: 'onChange'
   })
@@ -197,32 +198,31 @@ const ClientForm: React.FC<Props> = ({
       // Create mode: no Documents step
       switch (step) {
         case 0:
-          return ['person_type', 'document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
           return ['birth_date', 'birth_place']
         case 3:
           return ['email_2', 'mobile_2']
-        case 4: // Bank Accounts (Documents step skipped)
+        case 4:
           return []
-        case 5: // Registration Options
+        case 5:
           return ['client_category_id', 'office_id']
         default:
           return []
       }
     } else {
-      // Edit mode: includes Documents step
       switch (step) {
         case 0:
-          return ['person_type', 'document_number', 'client_type']
+          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
         case 1:
           return ['email_1', 'mobile_1']
         case 2:
           return ['birth_date', 'birth_place']
         case 3:
           return ['email_2', 'mobile_2']
-        case 4: // Documents
+        case 4:
           return ['doc']
         case 5: // Bank Accounts
           return []
@@ -493,6 +493,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     contacts: client.contacts,
     documents: client.documents,
     bank_accounts: client.bank_accounts,
+    risk_variables: (client as any).risk_variables ?? [],
     id: client.id,
     billing_address: client.billing_address ?? '',
     legal_representative: client.legal_data?.legal_representative ?? '',
@@ -637,7 +638,9 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       notes: normalizeStringField(account.notes)
     })),
 
-    risk_variables: []
+    risk_variables: Array.isArray(formData.risk_variables)
+      ? formData.risk_variables.map(v => (typeof v === 'string' ? parseInt(v, 10) : Number(v))).filter(n => !isNaN(n))
+      : []
   }
 
   return apiData

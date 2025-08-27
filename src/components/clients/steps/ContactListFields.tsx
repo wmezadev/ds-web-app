@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 import { Box, Grid, IconButton, Stack, TextField, Typography, Button, Alert } from '@mui/material'
-import { Add, Delete } from '@mui/icons-material'
+import { Add, Close } from '@mui/icons-material'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 
 import { useApi } from '@/hooks/useApi'
@@ -96,7 +96,21 @@ const ContactListFields = () => {
         </Typography>
       ) : (
         fields.map((field, index) => (
-          <Box key={field.id} mb={3} p={2} sx={{ border: '1px solid #ccc', borderRadius: 2 }}>
+          <Box
+            key={field.id}
+            mb={3}
+            p={2}
+            sx={{ border: '1px solid #ccc', borderRadius: 2, position: 'relative', pt: 10 }}
+          >
+            <IconButton
+              aria-label='Eliminar contacto'
+              onClick={() => handleDeleteContact(index)}
+              size='small'
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              color='error'
+            >
+              <Close fontSize='small' />
+            </IconButton>
             <Grid container spacing={2} alignItems='center'>
               <Grid item xs={12} md={4}>
                 <TextField
@@ -141,13 +155,6 @@ const ContactListFields = () => {
                   placeholder='Detalles relevantes, observaciones...'
                   {...register(`contacts.${index}.notes`)}
                 />
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Box display='flex' alignItems='center' justifyContent='flex-end' gap={1} height='100%'>
-                  <IconButton onClick={() => handleDeleteContact(index)} color='error' size='large'>
-                    <Delete />
-                  </IconButton>
-                </Box>
               </Grid>
             </Grid>
           </Box>
