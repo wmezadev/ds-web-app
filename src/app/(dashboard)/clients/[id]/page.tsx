@@ -20,6 +20,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material'
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -37,13 +38,18 @@ import {
   TextField,
   Tooltip,
   Snackbar,
-  Autocomplete
+  Autocomplete,
+  Tab,
+  Stack,
+  ButtonGroup
 } from '@mui/material'
-import Alert from '@mui/material/Alert'
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { es } from 'date-fns/locale'
 
+import { TabContext, TabPanel } from '@mui/lab'
+
+import TabList from '@core/components/mui/TabList'
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
@@ -893,11 +899,21 @@ const ClientDetailsCard = ({
 }
 
 const tabs = [
-  { label: 'Datos de Registro', icon: <i className='ri-history-line' /> },
-  { label: 'Datos Personales', icon: <Person /> },
-  { label: 'Contactos', icon: <ContactPage /> },
-  { label: 'Documentos', icon: <Description /> },
-  { label: 'Info. Bancaria', icon: <AccountBalance /> }
+  <Stack key={0} direction='row' gap={1}>
+    {<i className='ri-chat-follow-up-line' />} Seguimientos
+  </Stack>,
+  <Stack key={1} direction='row' gap={1}>
+    {<Description />} Documentos
+  </Stack>,
+  <Stack key={2} direction='row' gap={1}>
+    {<ContactPage />} Contactos
+  </Stack>,
+  <Stack key={3} direction='row' gap={1}>
+    {<AccountBalance />} Info. Bancaria
+  </Stack>,
+  <Stack key={4} direction='row' gap={1}>
+    {<Person />} Datos Personales
+  </Stack>
 ]
 
 const ClientMainContent = ({
@@ -909,12 +925,8 @@ const ClientMainContent = ({
   refreshClient: () => Promise<void>
   clientId: string
 }) => {
-  const [value, setValue] = React.useState(0)
+  const [curTab, setTab] = React.useState(0)
   const [, setShowArrows] = React.useState({ left: false, right: false })
-
-  const handleChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue)
-  }, [])
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
@@ -949,69 +961,48 @@ const ClientMainContent = ({
 
   return (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          mb: 4
-        }}
-      >
-        {tabs.map((tab, index) => (
-          <Button
-            key={index}
-            variant={index === value ? 'contained' : 'text'}
-            onClick={e => handleChange(e, index)}
-            sx={{
-              textTransform: 'none',
-              minWidth: 'auto',
-              whiteSpace: 'nowrap',
-              mr: 1.5,
-              py: 1.5,
-              px: 1.8,
-              fontSize: '0.9rem'
-            }}
-            startIcon={tab.icon}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </Box>
-
-      <Card elevation={0} sx={{ borderRadius: 2 }}>
-        <CardContent sx={{ p: 3 }}>
-          {value === 0 && (
-            <Box>
-              <ClientRegistration client={client} clientId={clientId} refreshClient={refreshClient} />
-            </Box>
-          )}
-
-          {value === 1 && (
-            <>
+      <TabContext value={curTab}>
+        <TabList variant='scrollable' scrollButtons onChange={(_, val) => setTab(val)}>
+          {tabs.map((tab, key) => (
+            <Tab key={key} value={key} label={tab} />
+          ))}
+        </TabList>
+        <TabPanel value={0}>
+          <Box>
+            <Typography>Aquí irá la sección de Seguimientos</Typography>
+          </Box>
+        </TabPanel>
+        <TabPanel value={1}>
+          <Box>
+            <Typography>Aquí irá la sección de Documentos</Typography>
+          </Box>
+        </TabPanel>
+        <TabPanel value={2}>
+          <Card elevation={0} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <ClientContacts client={client} refreshClient={refreshClient} />
+            </CardContent>
+          </Card>
+        </TabPanel>
+        <TabPanel value={3}>
+          <Card elevation={0} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <ClientBankAccounts client={client} refreshClient={refreshClient} />
+            </CardContent>
+          </Card>
+        </TabPanel>
+        <TabPanel value={4}>
+          <Card elevation={0} sx={{ borderRadius: 2 }}>
+            <CardContent>
               {client.person_type === 'J' ? (
                 <LegalData client={client} />
               ) : (
                 <ClientPersonalData client={client} clientId={clientId} />
               )}
-            </>
-          )}
-
-          {value === 2 && (
-            <Box>
-              <ClientContacts client={client} refreshClient={refreshClient} />
-            </Box>
-          )}
-          {value === 3 && (
-            <Box>
-              <Typography>Aquí irá la sección de Documentos</Typography>
-            </Box>
-          )}
-          {value === 4 && (
-            <Box>
-              <ClientBankAccounts client={client} refreshClient={refreshClient} />
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabPanel>
+      </TabContext>
     </>
   )
 }
@@ -1056,12 +1047,10 @@ const ClientDetailPage = () => {
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
       <Box
         sx={{
-          display: 'flex',
+          display: { xs: 'none', sm: 'flex' },
           flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', md: 'center' },
-          borderBottom: 1,
-          borderColor: 'divider',
           pb: 2,
           mb: 4
         }}
@@ -1070,25 +1059,20 @@ const ClientDetailPage = () => {
           {`Cliente ${client.first_name} ${client.last_name}`}
         </Typography>
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
-          <Button
-            variant='text'
-            startIcon={<i className='ri-line-chart-line' />}
-            href={`/clients/${clientId}/follow-up`}
-          >
-            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Seguimientos</Typography>
-          </Button>
-          <Button variant='text' startIcon={<i className='ri-shield-check-line' />}>
-            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Pólizas</Typography>
-          </Button>
-          <Button variant='text' startIcon={<i className='ri-receipt-line' />}>
-            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Recibos</Typography>
-          </Button>
-          <Button variant='text' startIcon={<i className='ri-shield-star-line' />}>
-            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Certificados</Typography>
-          </Button>
-          <Button variant='text' startIcon={<i className='ri-fire-line' />}>
-            <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Siniestros</Typography>
-          </Button>
+          <ButtonGroup variant='contained'>
+            <Button variant='text' startIcon={<i className='ri-shield-check-line' />}>
+              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Pólizas</Typography>
+            </Button>
+            <Button variant='text' startIcon={<i className='ri-receipt-line' />}>
+              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Recibos</Typography>
+            </Button>
+            <Button variant='text' startIcon={<i className='ri-shield-star-line' />}>
+              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Certificados</Typography>
+            </Button>
+            <Button variant='text' startIcon={<i className='ri-fire-line' />}>
+              <Typography sx={{ display: { xs: 'none', sm: 'inline' } }}>Siniestros</Typography>
+            </Button>
+          </ButtonGroup>
         </Box>
       </Box>
 
@@ -1106,6 +1090,15 @@ const ClientDetailPage = () => {
                 zones={catalogs?.zones || []}
                 onUpdated={refreshClient}
               />
+            </Grid>
+            <Grid item xs={12}>
+              <Card elevation={0} sx={{ borderRadius: 2 }}>
+                <CardContent>
+                  <Box>
+                    <ClientRegistration client={client} clientId={clientId} />
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </Grid>
