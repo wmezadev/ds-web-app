@@ -55,6 +55,7 @@ import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
 import ClientBankAccounts from '@/components/clients/ClientBankAccounts'
 import LegalData from '@/components/clients/LegalData'
+import FollowUpSection from '@/components/clients/FollowUpSection'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import type { Client } from '@/types/client'
@@ -968,14 +969,16 @@ const ClientMainContent = ({
           ))}
         </TabList>
         <TabPanel value={0}>
-          <Box>
-            <Typography>Aquí irá la sección de Seguimientos</Typography>
-          </Box>
+          <Card elevation={0} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <FollowUpSection clientId={clientId} />
+            </CardContent>
+          </Card>
         </TabPanel>
         <TabPanel value={1}>
-          <Box>
-            <Typography>Aquí irá la sección de Documentos</Typography>
-          </Box>
+          <Card elevation={0} sx={{ borderRadius: 2 }}>
+            <CardContent>Aquí irá la sección de Documentos</CardContent>
+          </Card>
         </TabPanel>
         <TabPanel value={2}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
