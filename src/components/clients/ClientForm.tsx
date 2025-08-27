@@ -178,7 +178,8 @@ const ClientForm: React.FC<Props> = ({
       },
       documents: initialValues.documents || [],
       contacts: initialValues.contacts || [],
-      bank_accounts: initialValues.bank_accounts || []
+      bank_accounts: initialValues.bank_accounts || [],
+      risk_variables: initialValues.risk_variables || []
     },
     mode: 'onChange'
   })
@@ -492,6 +493,7 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     contacts: client.contacts,
     documents: client.documents,
     bank_accounts: client.bank_accounts,
+    risk_variables: (client as any).risk_variables ?? [],
     id: client.id,
     billing_address: client.billing_address ?? '',
     legal_representative: client.legal_data?.legal_representative ?? '',
@@ -636,7 +638,9 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       notes: normalizeStringField(account.notes)
     })),
 
-    risk_variables: []
+    risk_variables: Array.isArray(formData.risk_variables)
+      ? formData.risk_variables.map(v => (typeof v === 'string' ? parseInt(v, 10) : Number(v))).filter(n => !isNaN(n))
+      : []
   }
 
   return apiData

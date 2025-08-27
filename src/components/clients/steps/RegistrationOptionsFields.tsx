@@ -5,6 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
 import { useCatalogs } from '@/hooks/useCatalogs'
+// Risk variables will be taken from useCatalogs()
 
 const RegistrationOptionsFields = () => {
   const {
@@ -175,6 +176,45 @@ const RegistrationOptionsFields = () => {
                 {loadingCatalogs && (
                   <Typography variant='caption' color='textSecondary'>
                     Cargando sucursales...
+                  </Typography>
+                )}
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        {/* Variables de Riesgo (multiselect) */}
+        <Grid item xs={12}>
+          <Controller
+            name='risk_variables'
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <InputLabel>Variables de riesgo</InputLabel>
+                <Select
+                  {...field}
+                  multiple
+                  label='Variables de riesgo'
+                  value={Array.isArray(field.value) ? field.value : []}
+                  disabled={loadingCatalogs}
+                  renderValue={selected =>
+                    (selected as (string | number)[])
+                      .map(v => {
+                        const item = catalogs?.risk_variables.find(rv => rv.id === Number(v)) as any
+                        return item?.name || item?.description || item?.code || v
+                      })
+                      .join(', ')
+                  }
+                >
+                  {catalogs?.risk_variables.map((rv: any) => (
+                    <MenuItem key={rv.id} value={rv.id}>
+                      {rv.name || rv.description || rv.code}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {loadingCatalogs && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando variables de riesgo...
                   </Typography>
                 )}
               </FormControl>
