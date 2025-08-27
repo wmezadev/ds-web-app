@@ -33,7 +33,7 @@ interface DetailItemProps {
 }
 
 const DetailItem: React.FC<DetailItemProps> = ({ label, value }) => (
-  <Grid item xs={12} sm={6} md={4}>
+  <Grid item xs={12} sm={6} md={6} xl={4}>
     <Box>
       <Typography variant='body2' color='text.secondary'>
         {label}
