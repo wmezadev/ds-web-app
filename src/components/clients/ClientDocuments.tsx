@@ -1,19 +1,39 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Box, Typography, Snackbar, IconButton, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material'
+import {
+  Box,
+  Typography,
+  Snackbar,
+  IconButton,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Avatar,
+  Stack
+} from '@mui/material'
+import { useSession } from 'next-auth/react'
 
 import Alert from '@mui/material/Alert'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
+import useProfileData from '@/hooks/useProfileData'
 
 interface Document {
   name: string
   url: string
   type: string
   date_uploaded: string
+  document_type?: string
+  description?: string
+  //   expiration_date?: string
+  created_at?: string
+  user?: string
+  user_name?: string
+  user_avatar?: string | null
 }
 
 interface ClientDocumentsProps {
@@ -22,24 +42,38 @@ interface ClientDocumentsProps {
 }
 
 const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
+  const { data: session } = useSession()
+  const { profileData } = useProfileData()
+  const currentUserName =
+    (session?.user as any)?.name || (profileData as any)?.name || (profileData as any)?.username || '—'
+  const currentUserAvatar =
+    (session?.user as any)?.image || (profileData as any)?.avatar || (profileData as any)?.image || null
   const [documents, setDocuments] = useState<Document[]>([
     {
       name: 'Contrato_Servicios.pdf',
       url: 'https://example.com/docs/Contrato_Servicios.pdf',
       type: 'PDF',
-      date_uploaded: '2025-07-15'
+      date_uploaded: '2025-07-15',
+      document_type: 'PDF',
+      description: 'Contrato Servicios',
+      //   expiration_date: '',
+      created_at: '2025-07-15',
+      user: '—',
+      user_name: '—',
+      user_avatar: null
     },
     {
       name: 'Cedula_Representante.jpg',
       url: 'https://example.com/docs/Cedula_Representante.jpg',
       type: 'Imagen',
-      date_uploaded: '2025-06-02'
-    },
-    {
-      name: 'RIF_Empresa.png',
-      url: 'https://example.com/docs/RIF_Empresa.png',
-      type: 'Imagen',
-      date_uploaded: '2025-05-20'
+      date_uploaded: '2025-06-02',
+      document_type: 'Imagen',
+      description: 'Cedula Representante',
+      //
+      created_at: '2025-06-02',
+      user: '—',
+      user_name: '—',
+      user_avatar: null
     }
   ])
 
@@ -59,12 +93,23 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
   const addFiles = (files: File[]) => {
     if (!files || files.length === 0) return
     const today = new Date().toISOString().split('T')[0]
-    const newDocs: Document[] = files.map(f => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
-      type: getFileType(f),
-      date_uploaded: today
-    }))
+    const newDocs: Document[] = files.map(f => {
+      const type = getFileType(f)
+      const baseName = f.name.replace(/\.[^/.]+$/, '')
+      return {
+        name: f.name,
+        url: URL.createObjectURL(f),
+        type,
+        date_uploaded: today,
+        document_type: type,
+        description: baseName,
+        // expiration_date: '',
+        created_at: today,
+        user: currentUserName,
+        user_name: currentUserName,
+        user_avatar: currentUserAvatar
+      }
+    })
     setDocuments(prev => [...newDocs, ...prev])
     setSnackbarSeverity('success')
     setSnackbarMessage(`${files.length} archivo(s) agregado(s)`)
@@ -171,33 +216,47 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
           No hay documentos registrados.
         </Typography>
       ) : (
-        <Table>
+        <Table size='small' sx={{ tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
-              <TableCell>Archivo</TableCell>
-              <TableCell>Tipo</TableCell>
-              <TableCell>Fecha de Subida</TableCell>
-              <TableCell align='right'>Acciones</TableCell>
+              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
+              <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 22% - 72px)' }}>
+                Descripcion
+              </TableCell>
+              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creacion</TableCell>
+              <TableCell sx={{ width: '22%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+              <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {documents.map((doc, index) => (
               <TableRow key={index}>
-                <TableCell>
-                  <Box display='flex' alignItems='center'>
-                    <DescriptionOutlinedIcon color='action' sx={{ mr: 1 }} />
-                    {doc.name}
-                  </Box>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {doc.document_type || doc.type}
                 </TableCell>
-                <TableCell>{doc.type}</TableCell>
-                <TableCell>{doc.date_uploaded}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {doc.description || doc.name}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>{doc.created_at || doc.date_uploaded || '—'}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
+                      {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
+                      {doc.user_name || doc.user || '—'}
+                    </Typography>
+                  </Stack>
+                </TableCell>
                 <TableCell align='right'>
-                  <IconButton size='small' onClick={() => handleViewDocument(doc.url)}>
-                    <VisibilityOutlinedIcon fontSize='small' />
-                  </IconButton>
-                  <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
-                    <DeleteOutlinedIcon fontSize='small' />
-                  </IconButton>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                    <IconButton size='small' onClick={() => handleViewDocument(doc.url)}>
+                      <VisibilityOutlinedIcon fontSize='small' />
+                    </IconButton>
+                    <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
+                      <DeleteOutlinedIcon fontSize='small' />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
