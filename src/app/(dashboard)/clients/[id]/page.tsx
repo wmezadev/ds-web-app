@@ -49,6 +49,7 @@ import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
 import ClientBankAccounts from '@/components/clients/ClientBankAccounts'
+import ClientDocuments from '@/components/clients/ClientDocuments'
 import LegalData from '@/components/clients/LegalData'
 import FollowUpSection from '@/components/clients/FollowUpSection'
 import ClientNavButtons from '@/components/clients/ClientNavButtons'
@@ -941,7 +942,9 @@ const ClientMainContent = ({
         </TabPanel>
         <TabPanel value={1}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
-            <CardContent>Aquí irá la sección de Documentos</CardContent>
+            <CardContent>
+              <ClientDocuments client={client} refreshClient={refreshClient} />
+            </CardContent>
           </Card>
         </TabPanel>
         <TabPanel value={2}>
