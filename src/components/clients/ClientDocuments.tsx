@@ -15,6 +15,7 @@ import {
   Stack
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
+import { useApi } from '@/hooks/useApi'
 
 import Alert from '@mui/material/Alert'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
@@ -41,41 +42,185 @@ interface ClientDocumentsProps {
   refreshClient?: () => Promise<void>
 }
 
-const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
+const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient }) => {
   const { data: session } = useSession()
   const { profileData } = useProfileData()
+  const { fetchApi } = useApi()
   const currentUserName =
     (session?.user as any)?.name || (profileData as any)?.name || (profileData as any)?.username || '—'
   const currentUserAvatar =
     (session?.user as any)?.image || (profileData as any)?.avatar || (profileData as any)?.image || null
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      name: 'Contrato_Servicios.pdf',
-      url: 'https://example.com/docs/Contrato_Servicios.pdf',
-      type: 'PDF',
-      date_uploaded: '2025-07-15',
-      document_type: 'PDF',
-      description: 'Contrato Servicios',
-      //   expiration_date: '',
-      created_at: '2025-07-15',
-      user: '—',
-      user_name: '—',
-      user_avatar: null
-    },
-    {
-      name: 'Cedula_Representante.jpg',
-      url: 'https://example.com/docs/Cedula_Representante.jpg',
-      type: 'Imagen',
-      date_uploaded: '2025-06-02',
-      document_type: 'Imagen',
-      description: 'Cedula Representante',
-      //
-      created_at: '2025-06-02',
-      user: '—',
-      user_name: '—',
-      user_avatar: null
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const normalizeDate = (val: any): string => {
+    if (!val) return ''
+    try {
+      const d = typeof val === 'string' || typeof val === 'number' ? new Date(val) : new Date(String(val))
+      if (isNaN(d.getTime())) return ''
+      return d.toISOString().split('T')[0]
+    } catch {
+      return ''
     }
-  ])
+  }
+
+  const getExt = (name: string): string => {
+    const parts = (name || '').split('.')
+    return parts.length > 1 ? parts.pop()!.toUpperCase() : 'FILE'
+  }
+
+  const baseName = (name: string): string => name?.replace(/\.[^/.]+$/, '') || ''
+
+  const mapApiToDocuments = (data: any): Document[] => {
+    if (!data) return []
+
+    const mapOne = (item: any): Document => {
+      const rawUrl: string = item?.url || item?.Location || item?.location || item?.signedUrl || ''
+      const url: string = /^https?:\/\//i.test(rawUrl) ? rawUrl : ''
+
+      const key: string = item?.key || item?.Key || item?.name || ''
+      const nameFromUrl = url ? url.split('?')[0].split('/').pop() || '' : ''
+      const name = item?.name || item?.original_name || key || nameFromUrl
+      const type = (
+        item?.type ||
+        item?.file_type ||
+        item?.contentType ||
+        item?.ContentType ||
+        item?.file_extension ||
+        getExt(name)
+      )
+        .toString()
+        .toUpperCase()
+      const created =
+        item?.created_at ||
+        item?.last_modified ||
+        item?.uploaded_at ||
+        item?.LastModified ||
+        item?.lastModified ||
+        item?.date ||
+        item?.updated_at
+      const createdAt = normalizeDate(created) || normalizeDate(item?.createdAt)
+
+      const userName =
+        item?.user_name ||
+        item?.created_by_full_name ||
+        item?.created_by_username ||
+        item?.user ||
+        item?.owner?.name ||
+        item?.metadata?.uploadedBy ||
+        undefined
+
+      return {
+        name,
+        url: url || '',
+        type,
+        date_uploaded: createdAt || '',
+        document_type: type,
+        description: item?.description || baseName(item?.original_name || name),
+        created_at: createdAt || '',
+        user: userName,
+        user_name: userName,
+        user_avatar: item?.user_avatar || item?.owner?.avatar || null
+      }
+    }
+
+    // If backend wraps in { files: [...] }
+    let arr: any[] = Array.isArray(data) ? data : Array.isArray(data?.files) ? data.files : []
+
+    // Additional common wrappers
+    if (!arr.length && Array.isArray(data?.data?.files)) arr = data.data.files
+    if (!arr.length && Array.isArray(data?.data?.items)) arr = data.data.items
+    if (!arr.length && Array.isArray(data?.data)) arr = data.data
+    if (!arr.length && Array.isArray(data?.items)) arr = data.items
+    if (!arr.length && Array.isArray(data?.results)) arr = data.results
+    if (!arr.length && Array.isArray(data?.keys)) arr = data.keys
+    if (!arr.length && Array.isArray(data?.data?.keys)) arr = data.data.keys
+    if (!arr.length && Array.isArray(data?.files?.keys)) arr = data.files.keys
+    if (!arr.length && Array.isArray(data?.Contents)) arr = data.Contents
+    if (!arr.length && Array.isArray(data?.contents)) arr = data.contents
+    if (!arr.length && Array.isArray(data?.files?.Contents)) arr = data.files.Contents
+
+    // Support array of strings (keys/urls)
+    if (Array.isArray(arr) && (arr as any[]).every(x => typeof x === 'string')) {
+      return (arr as string[]).map(s => {
+        const isUrl = /^https?:\/\//i.test(s)
+        const name = s.split('?')[0].split('/').pop() || ''
+        const ext = getExt(name)
+        return {
+          name,
+          url: isUrl ? s : '',
+          type: ext,
+          date_uploaded: '',
+          document_type: ext,
+          description: baseName(name),
+          created_at: '',
+          user: undefined,
+          user_name: undefined,
+          user_avatar: null
+        }
+      })
+    }
+
+    if (Array.isArray(arr) && arr.length) return arr.map(mapOne)
+
+    // If single object
+    if (typeof data === 'object') return [mapOne(data)]
+
+    return []
+  }
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setLoading(true)
+      const rawPrefix = `clients/${client?.id}`
+      const prefNoSlash = rawPrefix.replace(/\/+$/, '')
+      const prefWithSlash = `${prefNoSlash}/`
+
+      const tryFetch = async (basePath: string) => {
+        try {
+          const data1 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefNoSlash)}`)
+          console.log(`API documentos ${basePath} (no slash) ->`, data1)
+          let mapped = mapApiToDocuments(data1)
+          if (!mapped.length) {
+            const data2 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefWithSlash)}`)
+            console.log(`API documentos ${basePath} (with slash) ->`, data2)
+            mapped = mapApiToDocuments(data2)
+          }
+          return mapped
+        } catch (err) {
+          throw err
+        }
+      }
+
+      try {
+        // Primary: use path relative to API_BASE_URL (API_BASE_URL already ends with /api/v1)
+        let mapped = await tryFetch('aws/s3/files')
+        if (!mapped.length) {
+          // If empty, nothing else to try
+          setDocuments(mapped)
+        } else {
+          setDocuments(mapped)
+        }
+      } catch (error: any) {
+        // If 404 on path without trailing slash, try with trailing slash
+        if (error instanceof Error && error.message.includes('status: 404')) {
+          try {
+            // Fallback to legacy full path just in case server expects it
+            const mapped2 = await tryFetch('/api/v1/aws/s3/files/')
+            setDocuments(mapped2)
+          } catch (e2) {
+            console.error('Error al cargar documentos (retry):', e2)
+          }
+        } else {
+          console.error('Error al cargar documentos:', error)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (client?.id) loadDocuments()
+  }, [client?.id, fetchApi])
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
@@ -211,7 +356,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
         />
       </Box>
 
-      {documents.length === 0 ? (
+      {loading ? (
+        <Typography variant='body2' color='text.secondary'>
+          Cargando documentos…
+        </Typography>
+      ) : documents.length === 0 ? (
         <Typography variant='body2' color='text.secondary'>
           No hay documentos registrados.
         </Typography>
@@ -221,9 +370,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = () => {
             <TableRow>
               <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
               <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 22% - 72px)' }}>
-                Descripcion
+                Descripción
               </TableCell>
-              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creacion</TableCell>
+              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
               <TableCell sx={{ width: '22%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
               <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
             </TableRow>
