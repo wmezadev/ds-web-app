@@ -1,3 +1,4 @@
+// ClientDocuments.tsx
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
@@ -12,7 +13,9 @@ import {
   TableCell,
   TableBody,
   Avatar,
-  Stack
+  Stack,
+  Card,
+  CardContent
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/hooks/useApi'
@@ -30,7 +33,6 @@ interface Document {
   date_uploaded: string
   document_type?: string
   description?: string
-  //   expiration_date?: string
   created_at?: string
   user?: string
   user_name?: string
@@ -45,13 +47,19 @@ interface ClientDocumentsProps {
 const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient }) => {
   const { data: session } = useSession()
   const { profileData } = useProfileData()
-  const { fetchApi } = useApi()
+  const { fetchApi, uploadFile } = useApi()
   const currentUserName =
     (session?.user as any)?.name || (profileData as any)?.name || (profileData as any)?.username || '—'
   const currentUserAvatar =
     (session?.user as any)?.image || (profileData as any)?.avatar || (profileData as any)?.image || null
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning'>('success')
+
+  const [dragOver, setDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const normalizeDate = (val: any): string => {
     if (!val) return ''
@@ -124,10 +132,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       }
     }
 
-    // If backend wraps in { files: [...] }
     let arr: any[] = Array.isArray(data) ? data : Array.isArray(data?.files) ? data.files : []
 
-    // Additional common wrappers
     if (!arr.length && Array.isArray(data?.data?.files)) arr = data.data.files
     if (!arr.length && Array.isArray(data?.data?.items)) arr = data.data.items
     if (!arr.length && Array.isArray(data?.data)) arr = data.data
@@ -140,7 +146,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     if (!arr.length && Array.isArray(data?.contents)) arr = data.contents
     if (!arr.length && Array.isArray(data?.files?.Contents)) arr = data.files.Contents
 
-    // Support array of strings (keys/urls)
     if (Array.isArray(arr) && (arr as any[]).every(x => typeof x === 'string')) {
       return (arr as string[]).map(s => {
         const isUrl = /^https?:\/\//i.test(s)
@@ -162,8 +167,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     }
 
     if (Array.isArray(arr) && arr.length) return arr.map(mapOne)
-
-    // If single object
     if (typeof data === 'object') return [mapOne(data)]
 
     return []
@@ -179,11 +182,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       const tryFetch = async (basePath: string) => {
         try {
           const data1 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefNoSlash)}`)
-          console.log(`API documentos ${basePath} (no slash) ->`, data1)
           let mapped = mapApiToDocuments(data1)
           if (!mapped.length) {
             const data2 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefWithSlash)}`)
-            console.log(`API documentos ${basePath} (with slash) ->`, data2)
             mapped = mapApiToDocuments(data2)
           }
           return mapped
@@ -193,27 +194,10 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       }
 
       try {
-        // Primary: use path relative to API_BASE_URL (API_BASE_URL already ends with /api/v1)
         let mapped = await tryFetch('aws/s3/files')
-        if (!mapped.length) {
-          // If empty, nothing else to try
-          setDocuments(mapped)
-        } else {
-          setDocuments(mapped)
-        }
+        setDocuments(mapped)
       } catch (error: any) {
-        // If 404 on path without trailing slash, try with trailing slash
-        if (error instanceof Error && error.message.includes('status: 404')) {
-          try {
-            // Fallback to legacy full path just in case server expects it
-            const mapped2 = await tryFetch('/api/v1/aws/s3/files/')
-            setDocuments(mapped2)
-          } catch (e2) {
-            console.error('Error al cargar documentos (retry):', e2)
-          }
-        } else {
-          console.error('Error al cargar documentos:', error)
-        }
+        console.error('Error al cargar documentos:', error)
       } finally {
         setLoading(false)
       }
@@ -221,13 +205,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
 
     if (client?.id) loadDocuments()
   }, [client?.id, fetchApi])
-
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
-
-  const [dragOver, setDragOver] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const getFileType = (file: File) => {
     if (file.type) return file.type.split('/').pop()?.toUpperCase() || 'FILE'
@@ -248,7 +225,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
         date_uploaded: today,
         document_type: type,
         description: baseName,
-        // expiration_date: '',
         created_at: today,
         user: currentUserName,
         user_name: currentUserName,
@@ -261,24 +237,136 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     setSnackbarOpen(true)
   }
 
+  const uploadAndAddFiles = async (files: File[]) => {
+    if (!files || !files.length) {
+      return
+    }
+
+    setLoading(true)
+
+    let successCount = 0
+    let errorCount = 0
+    const errors: string[] = []
+
+    for (const file of files) {
+      try {
+        const tempDoc: Document = {
+          name: file.name,
+          url: URL.createObjectURL(file),
+          type: file.type || 'application/octet-stream',
+          date_uploaded: new Date().toISOString(),
+          document_type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+          description: file.name,
+          created_at: new Date().toISOString(),
+          user: currentUserName,
+          user_name: currentUserName,
+          user_avatar: currentUserAvatar
+        }
+
+        setDocuments(prev => [tempDoc, ...prev])
+
+        const s3Result = await uploadFile('/aws/s3/upload', file, {
+          fileFieldName: 'file',
+          extraFields: {
+            entity: 'clients',
+            entity_id: String(client?.id)
+          }
+        })
+
+        try {
+          const documentData = {
+            type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
+            description: file.name,
+            url: s3Result.url || s3Result.Location || s3Result.location || '',
+            size: file.size,
+            content_type: file.type || 'application/octet-stream',
+            uploaded_by: currentUserName,
+            uploaded_at: new Date().toISOString()
+          }
+
+          const currentClient = await fetchApi(`clients/${client?.id}`)
+
+          await fetchApi(`clients/${client?.id}`, {
+            method: 'PUT',
+            body: {
+              ...currentClient,
+              documents: [...(currentClient.documents || []), documentData]
+            }
+          })
+
+          successCount++
+        } catch (saveError: any) {
+          errorCount++
+          errors.push(`Error al guardar la referencia del documento: ${saveError.message || 'Error desconocido'}`)
+        }
+      } catch (error: any) {
+        errorCount++
+        errors.push(`${file.name}: ${error.message || 'Error desconocido'}`)
+      }
+    }
+
+    setLoading(false)
+
+    if (successCount > 0 && refreshClient) {
+      try {
+        await refreshClient()
+      } catch (error) {
+        errors.push('Error al actualizar la lista de documentos')
+      }
+    }
+
+    let message = ''
+    if (successCount > 0 && errorCount === 0) {
+      setSnackbarSeverity('success')
+      message = `Se subieron correctamente ${successCount} archivo(s)`
+    } else if (errorCount > 0 && successCount === 0) {
+      setSnackbarSeverity('error')
+      message = `Error al subir ${errorCount} archivo(s): ${errors.join('; ')}`
+    } else if (errorCount > 0) {
+      setSnackbarSeverity('warning')
+      message = `Se subieron ${successCount} archivo(s), pero fallaron ${errorCount}: ${errors.join('; ')}`
+    }
+
+    setSnackbarMessage(message)
+    setSnackbarOpen(true)
+  }
+
   const handleDrop: React.DragEventHandler<HTMLDivElement> = e => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
+
     const files = Array.from(e.dataTransfer.files || [])
-    addFiles(files)
+    if (files.length > 0) {
+      uploadAndAddFiles(files)
+    }
   }
 
   const handleDragOver: React.DragEventHandler<HTMLDivElement> = e => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(true)
+    return false
   }
 
   const handleDragLeave: React.DragEventHandler<HTMLDivElement> = e => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const files = Array.from(e.target.files || [])
+    if (files.length > 0) {
+      uploadAndAddFiles(files)
+    }
+    // Reset the input to allow selecting the same file again
+    if (e.target) {
+      e.target.value = ''
+    }
   }
 
   const handleViewDocument = (url: string) => {
@@ -312,123 +400,126 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
   }, [documents])
 
   return (
-    <Box>
-      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-        <Typography variant='h6' fontWeight='bold'>
-          Documentos
-        </Typography>
-      </Box>
+    <Card>
+      <CardContent>
+        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+          <Typography variant='h6' fontWeight='bold'>
+            Documentos
+          </Typography>
+        </Box>
 
-      <Box
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={() => fileInputRef.current?.click()}
-        sx={{
-          border: '2px dashed',
-          borderColor: dragOver ? 'primary.main' : 'divider',
-          bgcolor: dragOver ? 'primary.lightOpacity' : 'background.paper',
-          color: 'text.secondary',
-          borderRadius: 2,
-          p: 4,
-          textAlign: 'center',
-          cursor: 'pointer',
-          mb: 3
-        }}
-      >
-        <CloudUploadOutlinedIcon color={dragOver ? 'primary' : 'action'} sx={{ fontSize: 36, mb: 1 }} />
-        <Typography variant='body1' sx={{ mb: 0.5 }}>
-          Arrastra y suelta archivos aquí
-        </Typography>
-        <Typography variant='caption' color='text.disabled'>
-          o haz clic para seleccionar
-        </Typography>
-        <input
-          ref={fileInputRef}
-          type='file'
-          multiple
-          hidden
-          onChange={e => {
-            const files = Array.from(e.target.files || [])
-            addFiles(files)
-            if (fileInputRef.current) fileInputRef.current.value = ''
-          }}
-        />
-      </Box>
+        <div style={{ width: '100%' }}>
+          <Box
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            sx={{
+              border: '2px dashed',
+              borderColor: dragOver ? 'primary.main' : 'divider',
+              borderRadius: 1,
+              p: 4,
+              textAlign: 'center',
+              cursor: 'pointer',
+              mb: 3,
+              '&:hover': {
+                borderColor: 'primary.main',
+                backgroundColor: 'action.hover'
+              }
+            }}
+          >
+            <CloudUploadOutlinedIcon color={dragOver ? 'primary' : 'action'} sx={{ fontSize: 36, mb: 1 }} />
+            <Typography variant='body1' sx={{ mb: 0.5 }}>
+              Arrastra y suelta archivos aquí
+            </Typography>
+            <Typography variant='caption' color='text.disabled'>
+              o haz clic para seleccionar
+            </Typography>
+            <input
+              type='file'
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileInputChange}
+              onClick={e => e.stopPropagation()}
+              multiple
+            />
+          </Box>
+        </div>
 
-      {loading ? (
-        <Typography variant='body2' color='text.secondary'>
-          Cargando documentos…
-        </Typography>
-      ) : documents.length === 0 ? (
-        <Typography variant='body2' color='text.secondary'>
-          No hay documentos registrados.
-        </Typography>
-      ) : (
-        <Table size='small' sx={{ tableLayout: 'fixed' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 22% - 72px)' }}>
-                Descripción
-              </TableCell>
-              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
-              <TableCell sx={{ width: '22%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
-              <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {documents.map((doc, index) => (
-              <TableRow key={index}>
-                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {doc.document_type || doc.type}
+        {loading ? (
+          <Typography variant='body2' color='text.secondary'>
+            Cargando documentos…
+          </Typography>
+        ) : documents.length === 0 ? (
+          <Typography variant='body2' color='text.secondary'>
+            No hay documentos registrados.
+          </Typography>
+        ) : (
+          <Table size='small' sx={{ tableLayout: 'fixed' }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 22% - 72px)' }}>
+                  Descripción
                 </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {doc.description || doc.name}
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{doc.created_at || doc.date_uploaded || '—'}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  <Stack direction='row' spacing={1} alignItems='center'>
-                    <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
-                      {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
-                      {doc.user_name || doc.user || '—'}
-                    </Typography>
-                  </Stack>
-                </TableCell>
-                <TableCell align='right'>
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                    <IconButton size='small' onClick={() => handleViewDocument(doc.url)}>
-                      <VisibilityOutlinedIcon fontSize='small' />
-                    </IconButton>
-                    <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
-                      <DeleteOutlinedIcon fontSize='small' />
-                    </IconButton>
-                  </Box>
-                </TableCell>
+                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
+                <TableCell sx={{ width: '22%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+            </TableHead>
+            <TableBody>
+              {documents.map((doc, index) => (
+                <TableRow key={index}>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {doc.document_type || doc.type}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {doc.description || doc.name}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{doc.created_at || doc.date_uploaded || '—'}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Stack direction='row' spacing={1} alignItems='center'>
+                      <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
+                        {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
+                        {doc.user_name || doc.user || '—'}
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+                  <TableCell align='right'>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                      <IconButton size='small' onClick={() => handleViewDocument(doc.url)}>
+                        <VisibilityOutlinedIcon fontSize='small' />
+                      </IconButton>
+                      <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
+                        <DeleteOutlinedIcon fontSize='small' />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
           onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant='filled'
-          sx={{ width: '100%' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            variant='filled'
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </CardContent>
+    </Card>
   )
 }
 

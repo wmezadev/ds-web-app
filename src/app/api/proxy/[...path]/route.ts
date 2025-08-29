@@ -1,127 +1,84 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-
 import { getToken } from 'next-auth/jwt'
-
 import { API_BASE_URL } from '@/constants/server/serverRoutes'
 
-export async function GET(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
+export const GET = (request: NextRequest) => handleRequest(request, 'GET')
+export const POST = (request: NextRequest) => handleRequest(request, 'POST')
+export const PUT = (request: NextRequest) => handleRequest(request, 'PUT')
+export const DELETE = (request: NextRequest) => handleRequest(request, 'DELETE')
+export const PATCH = (request: NextRequest) => handleRequest(request, 'PATCH')
 
-  return handleRequest(request, path, 'GET')
-}
-
-export async function POST(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
-
-  return handleRequest(request, path, 'POST')
-}
-
-export async function PUT(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
-
-  return handleRequest(request, path, 'PUT')
-}
-
-export async function DELETE(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
-
-  return handleRequest(request, path, 'DELETE')
-}
-
-export async function PATCH(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '').split('/')
-
-  return handleRequest(request, path, 'PATCH')
-}
-
-async function handleRequest(request: NextRequest, pathSegments: string[], method: string) {
+async function handleRequest(request: NextRequest, method: string) {
   try {
     const token = await getToken({ req: request })
-
     if (!token?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized - No access token' }, { status: 401 })
     }
 
-    const path = pathSegments.join('/')
-    const targetUrl = `${API_BASE_URL}/${path}`
+    const path = request.nextUrl.pathname.replace('/api/proxy/', '')
+    const targetUrl = `${API_BASE_URL}/${path}${request.nextUrl.search}`
+    const contentType = request.headers.get('content-type') || ''
+    const isFormData = contentType.includes('multipart/form-data')
 
-    let body: string | undefined = undefined
-
-    if (method !== 'GET' && method !== 'DELETE') {
-      body = await request.text()
-    }
-
-    const url = new URL(request.url)
-    const queryParams = url.searchParams.toString()
-
-    const fullTargetUrl = queryParams ? `${targetUrl}?${queryParams}` : targetUrl
-
-    const headers = new Headers(request.headers)
-
-    headers.set('Authorization', `Bearer ${token.accessToken}`)
-    headers.delete('host')
-
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-      headers.set('Content-Type', 'application/json')
-    }
-
-    const fetchOptions: RequestInit = {
-      method,
-      headers,
-      body: body || undefined
-    }
-
-    const response = await fetch(fullTargetUrl, fetchOptions)
-
-    if (response.status === 204 || response.status === 205) {
-      const noContentResponse = new NextResponse(null, {
-        status: response.status,
-        statusText: response.statusText
-      })
-
-      noContentResponse.headers.set('Cache-Control', 'no-store, max-age=0')
-
-      return noContentResponse
-    }
-
-    const responseData = await response.text()
-
-    const newResponse = new NextResponse(responseData || null, {
-      status: response.status,
-      statusText: response.statusText
-    })
-
-    newResponse.headers.set('Cache-Control', 'no-store, max-age=0')
-
-    const skipHeaders = new Set([
-      'content-encoding',
-      'cache-control',
-      'content-length',
-      'transfer-encoding',
-      'connection',
-      'keep-alive',
-      'proxy-authenticate',
-      'proxy-authorization',
-      'te',
-      'trailer',
-      'upgrade'
-    ])
-
-    response.headers.forEach((value, key) => {
-      const lower = key.toLowerCase()
-
-      if (!skipHeaders.has(lower)) {
-        try {
-          newResponse.headers.set(key, value)
-        } catch {}
+    const headers = new Headers()
+    request.headers.forEach((value, key) => {
+      if (!['host', 'content-length'].includes(key.toLowerCase())) {
+        headers.set(key, value)
       }
     })
 
-    return newResponse
+    headers.set('Authorization', `Bearer ${token.accessToken}`)
+
+    const options: RequestInit = {
+      method,
+      headers,
+      // @ts-ignore
+      duplex: 'half'
+    }
+
+    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      if (isFormData) {
+        const formData = await request.formData()
+        const newFormData = new FormData()
+
+        for (const [key, value] of formData.entries()) {
+          if (value instanceof File) {
+            const fileBuffer = await value.arrayBuffer()
+            const file = new File([fileBuffer], value.name, { type: value.type })
+            newFormData.append(key, file, value.name)
+          } else {
+            newFormData.append(key, value as string)
+          }
+        }
+
+        headers.delete('content-type')
+        options.body = newFormData
+      } else {
+        options.body = await request.text()
+      }
+    }
+
+    const response = await fetch(targetUrl, options)
+
+    if (response.status === 204 || response.status === 205) {
+      return new NextResponse(null, {
+        status: response.status,
+        statusText: response.statusText
+      })
+    }
+
+    const responseHeaders = new Headers(response.headers)
+    responseHeaders.set('Cache-Control', 'no-store, max-age=0')
+    const responseBody = response.body
+
+    return new NextResponse(responseBody, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    })
   } catch (error) {
     console.error('Proxy error:', error)
-
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

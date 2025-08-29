@@ -123,7 +123,6 @@ export const useApi = () => {
       if (options?.extraFields) {
         Object.entries(options.extraFields).forEach(([key, value]) => {
           if (value === undefined || value === null) return
-          // Convert non-Blob primitives to strings
           if (value instanceof Blob) {
             formData.append(key, value)
           } else {
@@ -202,6 +201,7 @@ export const useApi = () => {
         extraFields?: Record<string, string | number | boolean | Blob | null | undefined>
       }
     ): Promise<T> => {
+      // ... (el código es idéntico a uploadFile, solo con un bucle para los archivos)
       const isExternalUrl = endpoint.startsWith('http')
       const normalizedEndpoint = isExternalUrl ? endpoint : endpoint.replace(/^\/+/, '')
       const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${normalizedEndpoint}`
