@@ -1,6 +1,8 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+
 import { getToken } from 'next-auth/jwt'
+
 import { API_BASE_URL } from '@/constants/server/serverRoutes'
 
 export const GET = (request: NextRequest) => handleRequest(request, 'GET')
@@ -12,6 +14,7 @@ export const PATCH = (request: NextRequest) => handleRequest(request, 'PATCH')
 async function handleRequest(request: NextRequest, method: string) {
   try {
     const token = await getToken({ req: request })
+
     if (!token?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized - No access token' }, { status: 401 })
     }
@@ -22,6 +25,7 @@ async function handleRequest(request: NextRequest, method: string) {
     const isFormData = contentType.includes('multipart/form-data')
 
     const headers = new Headers()
+
     request.headers.forEach((value, key) => {
       if (!['host', 'content-length'].includes(key.toLowerCase())) {
         headers.set(key, value)
@@ -33,6 +37,7 @@ async function handleRequest(request: NextRequest, method: string) {
     const options: RequestInit = {
       method,
       headers,
+
       // @ts-ignore
       duplex: 'half'
     }
@@ -46,6 +51,7 @@ async function handleRequest(request: NextRequest, method: string) {
           if (value instanceof File) {
             const fileBuffer = await value.arrayBuffer()
             const file = new File([fileBuffer], value.name, { type: value.type })
+
             newFormData.append(key, file, value.name)
           } else {
             newFormData.append(key, value as string)
@@ -69,6 +75,7 @@ async function handleRequest(request: NextRequest, method: string) {
     }
 
     const responseHeaders = new Headers(response.headers)
+
     responseHeaders.set('Cache-Control', 'no-store, max-age=0')
     const responseBody = response.body
 
@@ -79,6 +86,7 @@ async function handleRequest(request: NextRequest, method: string) {
     })
   } catch (error) {
     console.error('Proxy error:', error)
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

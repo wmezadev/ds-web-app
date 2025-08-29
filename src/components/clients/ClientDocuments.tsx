@@ -1,7 +1,8 @@
 // ClientDocuments.tsx
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+
 import {
   Box,
   Typography,
@@ -18,12 +19,13 @@ import {
   CardContent
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
-import { useApi } from '@/hooks/useApi'
 
 import Alert from '@mui/material/Alert'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
+
+import { useApi } from '@/hooks/useApi'
 import useProfileData from '@/hooks/useProfileData'
 
 interface Document {
@@ -40,7 +42,7 @@ interface Document {
 }
 
 interface ClientDocumentsProps {
-  client?: any
+  client?: { id?: string } // Specify shape for client
   refreshClient?: () => Promise<void>
 }
 
@@ -48,10 +50,19 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
   const { data: session } = useSession()
   const { profileData } = useProfileData()
   const { fetchApi, uploadFile } = useApi()
+
   const currentUserName =
-    (session?.user as any)?.name || (profileData as any)?.name || (profileData as any)?.username || '—'
+    (session?.user && 'name' in session.user ? session.user.name : undefined) ||
+    (profileData && 'name' in profileData ? profileData.name : undefined) ||
+    (profileData && 'username' in profileData ? profileData.username : undefined) ||
+    '—'
+
   const currentUserAvatar =
-    (session?.user as any)?.image || (profileData as any)?.avatar || (profileData as any)?.image || null
+    (session?.user && 'image' in session.user ? session.user.image : undefined) ||
+    (profileData && 'avatar' in profileData ? profileData.avatar : undefined) ||
+    (profileData && 'image' in profileData ? profileData.image : undefined) ||
+    null
+
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -61,11 +72,14 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const normalizeDate = (val: any): string => {
+  const normalizeDate = (val: unknown): string => {
     if (!val) return ''
+
     try {
       const d = typeof val === 'string' || typeof val === 'number' ? new Date(val) : new Date(String(val))
+
       if (isNaN(d.getTime())) return ''
+
       return d.toISOString().split('T')[0]
     } catch {
       return ''
@@ -74,12 +88,13 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
 
   const getExt = (name: string): string => {
     const parts = (name || '').split('.')
+
     return parts.length > 1 ? parts.pop()!.toUpperCase() : 'FILE'
   }
 
   const baseName = (name: string): string => name?.replace(/\.[^/.]+$/, '') || ''
 
-  const mapApiToDocuments = (data: any): Document[] => {
+  const mapApiToDocuments = useCallback((data: unknown): Document[] => {
     if (!data) return []
 
     const mapOne = (item: any): Document => {
@@ -89,6 +104,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       const key: string = item?.key || item?.Key || item?.name || ''
       const nameFromUrl = url ? url.split('?')[0].split('/').pop() || '' : ''
       const name = item?.name || item?.original_name || key || nameFromUrl
+
       const type = (
         item?.type ||
         item?.file_type ||
@@ -99,6 +115,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       )
         .toString()
         .toUpperCase()
+
       const created =
         item?.created_at ||
         item?.last_modified ||
@@ -107,6 +124,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
         item?.lastModified ||
         item?.date ||
         item?.updated_at
+
       const createdAt = normalizeDate(created) || normalizeDate(item?.createdAt)
 
       const userName =
@@ -132,9 +150,22 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       }
     }
 
-    let arr: any[] = Array.isArray(data) ? data : Array.isArray(data?.files) ? data.files : []
+    let arr: any[] = Array.isArray(data)
+      ? (data as any[])
+      : Array.isArray((data as any)?.files)
+        ? (data as any).files
+        : []
 
-    if (!arr.length && Array.isArray(data?.data?.files)) arr = data.data.files
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      Array.isArray((data as any).data?.files)
+    ) {
+      arr = (data as any).data.files
+    }
+
     if (!arr.length && Array.isArray(data?.data?.items)) arr = data.data.items
     if (!arr.length && Array.isArray(data?.data)) arr = data.data
     if (!arr.length && Array.isArray(data?.items)) arr = data.items
@@ -151,6 +182,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
         const isUrl = /^https?:\/\//i.test(s)
         const name = s.split('?')[0].split('/').pop() || ''
         const ext = getExt(name)
+
         return {
           name,
           url: isUrl ? s : '',
@@ -170,7 +202,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     if (typeof data === 'object') return [mapOne(data)]
 
     return []
-  }
+  }, [])
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -183,10 +215,13 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
         try {
           const data1 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefNoSlash)}`)
           let mapped = mapApiToDocuments(data1)
+
           if (!mapped.length) {
             const data2 = await fetchApi<unknown>(`${basePath}?prefix=${encodeURIComponent(prefWithSlash)}`)
+
             mapped = mapApiToDocuments(data2)
           }
+
           return mapped
         } catch (err) {
           throw err
@@ -194,7 +229,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       }
 
       try {
-        let mapped = await tryFetch('aws/s3/files')
+        const mapped = await tryFetch('aws/s3/files')
+
         setDocuments(mapped)
       } catch (error: any) {
         console.error('Error al cargar documentos:', error)
@@ -204,38 +240,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     }
 
     if (client?.id) loadDocuments()
-  }, [client?.id, fetchApi])
-
-  const getFileType = (file: File) => {
-    if (file.type) return file.type.split('/').pop()?.toUpperCase() || 'FILE'
-    const parts = file.name.split('.')
-    return parts.length > 1 ? parts.pop()!.toUpperCase() : 'FILE'
-  }
-
-  const addFiles = (files: File[]) => {
-    if (!files || files.length === 0) return
-    const today = new Date().toISOString().split('T')[0]
-    const newDocs: Document[] = files.map(f => {
-      const type = getFileType(f)
-      const baseName = f.name.replace(/\.[^/.]+$/, '')
-      return {
-        name: f.name,
-        url: URL.createObjectURL(f),
-        type,
-        date_uploaded: today,
-        document_type: type,
-        description: baseName,
-        created_at: today,
-        user: currentUserName,
-        user_name: currentUserName,
-        user_avatar: currentUserAvatar
-      }
-    })
-    setDocuments(prev => [...newDocs, ...prev])
-    setSnackbarSeverity('success')
-    setSnackbarMessage(`${files.length} archivo(s) agregado(s)`)
-    setSnackbarOpen(true)
-  }
+  }, [client?.id, fetchApi, mapApiToDocuments]) // Add all referenced functions/vars
 
   const uploadAndAddFiles = async (files: File[]) => {
     if (!files || !files.length) {
@@ -316,6 +321,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     }
 
     let message = ''
+
     if (successCount > 0 && errorCount === 0) {
       setSnackbarSeverity('success')
       message = `Se subieron correctamente ${successCount} archivo(s)`
@@ -337,6 +343,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     setDragOver(false)
 
     const files = Array.from(e.dataTransfer.files || [])
+
     if (files.length > 0) {
       uploadAndAddFiles(files)
     }
@@ -346,6 +353,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     e.preventDefault()
     e.stopPropagation()
     setDragOver(true)
+
     return false
   }
 
@@ -360,9 +368,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     e.stopPropagation()
 
     const files = Array.from(e.target.files || [])
+
     if (files.length > 0) {
       uploadAndAddFiles(files)
     }
+
     // Reset the input to allow selecting the same file again
     if (e.target) {
       e.target.value = ''
@@ -370,17 +380,22 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
   }
 
   const handleViewDocument = (url: string) => {
-    window.open(url, '_blank')
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const handleDeleteDocument = (index: number) => {
     const target = documents[index]
+
     if (target && target.url.startsWith('blob:')) {
       try {
         URL.revokeObjectURL(target.url)
-      } catch {}
+      } catch (err) {
+        // Optionally log error
+      }
     }
+
     const updated = documents.filter((_, i) => i !== index)
+
     setDocuments(updated)
     setSnackbarSeverity('success')
     setSnackbarMessage('Documento eliminado exitosamente')
@@ -393,11 +408,14 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
         if (d.url.startsWith('blob:')) {
           try {
             URL.revokeObjectURL(d.url)
-          } catch {}
+          } catch (err) {
+            // Log error for debugging
+            // console.error('Error revoking object URL:', err);
+          }
         }
       })
     }
-  }, [documents])
+  }, [documents]) // Depend on documents
 
   return (
     <Card>
@@ -469,7 +487,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
             </TableHead>
             <TableBody>
               {documents.map((doc, index) => (
-                <TableRow key={index}>
+                <TableRow key={doc.url || doc.name || index}>
                   <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {doc.document_type || doc.type}
                   </TableCell>
