@@ -42,7 +42,7 @@ interface Document {
 }
 
 interface ClientDocumentsProps {
-  client?: { id?: string } // Specify shape for client
+  client?: { id?: string }
   refreshClient?: () => Promise<void>
 }
 
@@ -221,8 +221,19 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     }
 
     if (!arr.length && Array.isArray((data as any)?.Contents)) arr = (data as any).Contents
-    if (!arr.length && Array.isArray(data?.contents)) arr = data.contents
-    if (!arr.length && Array.isArray(data?.files?.Contents)) arr = data.files.Contents
+    if (!arr.length && Array.isArray((data as any)?.['contents'])) arr = (data as any)['contents']
+
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'files' in data &&
+      typeof (data as any).files === 'object' &&
+      (data as any).files !== null &&
+      Array.isArray((data as any).files.Contents)
+    ) {
+      arr = (data as any).files.Contents
+    }
 
     if (Array.isArray(arr) && (arr as any[]).every(x => typeof x === 'string')) {
       return (arr as string[]).map(s => {
