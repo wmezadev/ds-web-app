@@ -15,17 +15,27 @@ import {
   Avatar,
   Stack,
   Card,
-  CardContent
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  TextField
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
-
 import Alert from '@mui/material/Alert'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
 
-import { useApi } from '@/hooks/useApi'
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { es } from 'date-fns/locale'
+
 import useProfileData from '@/hooks/useProfileData'
+import { useApi } from '@/hooks/useApi'
 
 interface Document {
   name: string
@@ -44,6 +54,11 @@ interface Document {
 interface ClientDocumentsProps {
   client?: { id?: string }
   refreshClient?: () => Promise<void>
+}
+
+interface UploadMetadata {
+  description: string
+  expiryDate: Date | null
 }
 
 const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
@@ -71,6 +86,19 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
 
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Modal state
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  // Upload Modal State
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
+
+  const [uploadMetadata, setUploadMetadata] = useState<UploadMetadata>({
+    description: '',
+    expiryDate: null
+  })
 
   const normalizeDate = (val: unknown): string => {
     if (!val) return ''
@@ -304,92 +332,98 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
   const uploadAndAddFiles = async (files: File[]) => {
     if (!files || !files.length) return
 
+    setFileToUpload(files[0])
+    setUploadMetadata({ description: '', expiryDate: null })
+    setUploadModalOpen(true)
+  }
+
+  const handleConfirmUpload = async () => {
+    if (!fileToUpload) return
+
     setLoading(true)
+    setUploadModalOpen(false)
 
-    let successCount = 0
-    let errorCount = 0
-    const errors: string[] = []
+    try {
+      const tempDoc: Document = {
+        name: fileToUpload.name,
+        url: `${URL.createObjectURL(fileToUpload)}?tempid=${Date.now()}`,
+        type: fileToUpload.type || 'application/octet-stream',
+        date_uploaded: new Date().toISOString(),
+        document_type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+        description: uploadMetadata.description,
+        created_at: new Date().toISOString(),
+        user: currentUserName,
+        user_name: currentUserName,
+        user_avatar: currentUserAvatar
+      }
 
-    for (const file of files) {
+      setDocuments(prev => [tempDoc, ...prev])
+
+      const uploadedFile = await uploadFile('aws/s3/upload', fileToUpload, {
+        entity: 'clients',
+        entity_id: String(client?.id),
+        description_type: 'Cedula de identidad',
+        description: uploadMetadata.description,
+        is_public: 'false'
+      })
+
+      const uploadedUrl = (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location
+
+      if (!uploadedUrl) {
+        throw new Error('La respuesta de la API no contiene una URL válida.')
+      }
+
       try {
-        const tempDoc: Document = {
-          name: file.name,
-          url: URL.createObjectURL(file),
-          type: file.type || 'application/octet-stream',
-          date_uploaded: new Date().toISOString(),
-          document_type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
-          description: file.name,
-          created_at: new Date().toISOString(),
-          user: currentUserName,
-          user_name: currentUserName,
-          user_avatar: currentUserAvatar
+        const documentData = {
+          type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+          description: uploadMetadata.description,
+          url: uploadedUrl,
+          size: fileToUpload.size,
+          content_type: fileToUpload.type || 'application/octet-stream',
+          uploaded_by: currentUserName,
+          uploaded_at: new Date().toISOString()
         }
 
-        setDocuments(prev => [tempDoc, ...prev])
+        const currentClient = await fetchApi(`clients/${client?.id}`)
 
-        const uploadedFile = await uploadFile('aws/s3/upload', file, {
-          entity: 'clients',
-          entity_id: String(client?.id),
-          description_type: 'Cedula de identidad',
-          description: 'cedula de la hija del cliente para prueba',
-          is_public: 'false'
+        await fetchApi(`clients/${client?.id}`, {
+          method: 'PUT',
+          body: {
+            ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
+            documents: [
+              ...(typeof currentClient === 'object' &&
+              currentClient !== null &&
+              Array.isArray((currentClient as { documents?: any[] }).documents)
+                ? (currentClient as { documents?: any[] }).documents!
+                : []),
+              documentData
+            ]
+          }
         })
 
-        const uploadedUrl =
-          (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location
-
-        if (!uploadedUrl) {
-          errorCount++
-          errors.push(`${file.name}: La respuesta de la API no contiene una URL válida.`)
-          continue
-        }
-
-        try {
-          const documentData = {
-            type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
-            description: file.name,
-            url: uploadedUrl,
-            size: file.size,
-            content_type: file.type || 'application/octet-stream',
-            uploaded_by: currentUserName,
-            uploaded_at: new Date().toISOString()
-          }
-
-          const currentClient = await fetchApi(`clients/${client?.id}`)
-
-          await fetchApi(`clients/${client?.id}`, {
-            method: 'PUT',
-            body: {
-              ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
-              documents: [
-                ...(typeof currentClient === 'object' &&
-                currentClient !== null &&
-                Array.isArray((currentClient as { documents?: any[] }).documents)
-                  ? (currentClient as { documents?: any[] }).documents!
-                  : []),
-                documentData
-              ]
-            }
-          })
-
-          successCount++
-        } catch (saveError: any) {
-          errorCount++
-          errors.push(`Error al guardar la referencia del documento: ${saveError.message || 'Error desconocido'}`)
-        }
-      } catch (error: any) {
-        errorCount++
-        errors.push(`${file.name}: ${error.message || 'Error desconocido'}`)
+        setSnackbarSeverity('success')
+        setSnackbarMessage('Documento subido correctamente')
+        setSnackbarOpen(true)
+      } catch (saveError: any) {
+        setSnackbarSeverity('error')
+        setSnackbarMessage(`Error al guardar la referencia del documento: ${saveError.message || 'Error desconocido'}`)
+        setSnackbarOpen(true)
       }
-    }
-
-    setLoading(false)
-
-    if (successCount > 0 && errorCount === 0) {
-      setSnackbarSeverity('success')
-      setSnackbarMessage(`Se subieron correctamente ${successCount} archivo(s)`)
+    } catch (error: any) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage(`Error al subir el documento: ${error.message || 'Error desconocido'}`)
       setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+      setFileToUpload(null)
+      setUploadMetadata({ description: '', expiryDate: null })
     }
+  }
+
+  const handleCancelUpload = () => {
+    setFileToUpload(null)
+    setUploadMetadata({ description: '', expiryDate: null })
+    setUploadModalOpen(false)
   }
 
   const handleDrop: React.DragEventHandler<HTMLDivElement> = e => {
@@ -496,25 +530,61 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     }
   }
 
-  const handleDeleteDocument = async (index: number) => {
-    const target = documents[index]
+  // const handleDeleteDocument = async (index: number) => {
+  //   const target = documents[index]
 
-    if (!target?.s3_key) {
-      setSnackbarSeverity('error')
-      setSnackbarMessage('Error: el documento no tiene un identificador único (s3_key).')
-      setSnackbarOpen(true)
+  //   if (!target?.s3_key) {
+  //     setSnackbarSeverity('error')
+  //     setSnackbarMessage('Error: el documento no tiene un identificador único (s3_key).')
+  //     setSnackbarOpen(true)
 
-      return
-    }
+  //     return
+  //   }
+
+  //   try {
+  //     await fetchApi('aws/s3/files', {
+  //       method: 'DELETE',
+  //       body: {
+  //         s3_key: target.s3_key
+  //       }
+  //     })
+  //     const updated = documents.filter((_, i) => i !== index)
+
+  //     setDocuments(updated)
+
+  //     setSnackbarSeverity('success')
+  //     setSnackbarMessage('Documento eliminado exitosamente')
+  //     setSnackbarOpen(true)
+  //   } catch (error: any) {
+  //     setSnackbarSeverity('error')
+  //     setSnackbarMessage(`Error al eliminar documento: ${error.message || 'Error desconocido'}`)
+  //     setSnackbarOpen(true)
+  //   }
+  // }
+
+  const handleConfirmDelete = async () => {
+    if (deleteIndex === null) return
+
+    setDeleteLoading(true)
 
     try {
+      const target = documents[deleteIndex]
+
+      if (!target?.s3_key) {
+        setSnackbarSeverity('error')
+        setSnackbarMessage('Error: el documento no tiene un identificador único (s3_key).')
+        setSnackbarOpen(true)
+
+        return
+      }
+
       await fetchApi('aws/s3/files', {
         method: 'DELETE',
         body: {
           s3_key: target.s3_key
         }
       })
-      const updated = documents.filter((_, i) => i !== index)
+      const updated = documents.filter((_, i) => i !== deleteIndex)
 
       setDocuments(updated)
 
@@ -525,7 +595,14 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       setSnackbarSeverity('error')
       setSnackbarMessage(`Error al eliminar documento: ${error.message || 'Error desconocido'}`)
       setSnackbarOpen(true)
+    } finally {
+      setDeleteLoading(false)
+      setDeleteIndex(null)
     }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteIndex(null)
   }
 
   useEffect(() => {
@@ -635,7 +712,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
                       <IconButton size='small' onClick={() => handleViewDocument(doc)}>
                         <VisibilityOutlinedIcon fontSize='small' />
                       </IconButton>
-                      <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
+                      <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
                         <DeleteOutlinedIcon fontSize='small' />
                       </IconButton>
                     </Box>
@@ -661,6 +738,62 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
             {snackbarMessage}
           </Alert>
         </Snackbar>
+
+        <Dialog open={deleteIndex !== null} onClose={handleCancelDelete}>
+          <DialogTitle>Eliminar documento</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              ¿Está seguro que desea eliminar este documento? Esta acción no se puede deshacer.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelDelete} disabled={deleteLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmDelete} color='error' variant='contained' disabled={deleteLoading}>
+              {deleteLoading ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Upload Metadata Modal */}
+        <Dialog open={uploadModalOpen} onClose={handleCancelUpload} fullWidth maxWidth='sm'>
+          <DialogTitle>Detalles del documento</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Ingrese la descripción y fecha de vencimiento del documento.</DialogContentText>
+            <TextField
+              autoFocus
+              margin='dense'
+              id='description'
+              label='Descripción'
+              type='text'
+              fullWidth
+              variant='standard'
+              value={uploadMetadata.description}
+              onChange={e => setUploadMetadata({ ...uploadMetadata, description: e.target.value })}
+            />
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <DatePicker
+                label='Fecha de Vencimiento'
+                value={uploadMetadata.expiryDate}
+                onChange={date => setUploadMetadata({ ...uploadMetadata, expiryDate: date })}
+                slotProps={{
+                  textField: {
+                    margin: 'dense',
+                    fullWidth: true,
+                    variant: 'standard'
+                  }
+                }}
+              />
+            </LocalizationProvider>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelUpload}>Cancelar</Button>
+            <Button onClick={handleConfirmUpload} variant='contained'>
+              Subir
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   )
