@@ -46,7 +46,7 @@ interface ClientDocumentsProps {
   refreshClient?: () => Promise<void>
 }
 
-const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient }) => {
+const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
   const { data: session } = useSession()
   const { profileData } = useProfileData()
   const { fetchApi, uploadFile } = useApi()
@@ -290,9 +290,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
   }, [client?.id, fetchApi, mapApiToDocuments]) // Add all referenced functions/vars
 
   const uploadAndAddFiles = async (files: File[]) => {
-    if (!files || !files.length) {
-      return
-    }
+    if (!files || !files.length) return
 
     setLoading(true)
 
@@ -325,11 +323,20 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
           is_public: 'false'
         })
 
+        const uploadedUrl =
+          (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location
+
+        if (!uploadedUrl) {
+          errorCount++
+          errors.push(`${file.name}: La respuesta de la API no contiene una URL válida.`)
+          continue
+        }
+
         try {
           const documentData = {
             type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
             description: file.name,
-            url: (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location || '',
+            url: uploadedUrl,
             size: file.size,
             content_type: file.type || 'application/octet-stream',
             uploaded_by: currentUserName,
@@ -366,29 +373,14 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
 
     setLoading(false)
 
-    if (successCount > 0 && refreshClient) {
-      try {
-        await refreshClient()
-      } catch (error) {
-        errors.push('Error al actualizar la lista de documentos')
-      }
-    }
-
-    let message = ''
-
+    // Only show snackbar if all files uploaded successfully
     if (successCount > 0 && errorCount === 0) {
       setSnackbarSeverity('success')
-      message = `Se subieron correctamente ${successCount} archivo(s)`
-    } else if (errorCount > 0 && successCount === 0) {
-      setSnackbarSeverity('error')
-      message = `Error al subir ${errorCount} archivo(s): ${errors.join('; ')}`
-    } else if (errorCount > 0) {
-      setSnackbarSeverity('warning')
-      message = `Se subieron ${successCount} archivo(s), pero fallaron ${errorCount}: ${errors.join('; ')}`
+      setSnackbarMessage(`Se subieron correctamente ${successCount} archivo(s)`)
+      setSnackbarOpen(true)
     }
 
-    setSnackbarMessage(message)
-    setSnackbarOpen(true)
+    // Optionally, handle error/warning messages if needed
   }
 
   const handleDrop: React.DragEventHandler<HTMLDivElement> = e => {
@@ -401,6 +393,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
     if (files.length > 0) {
       uploadAndAddFiles(files)
     }
+
+    // Do NOT reload the page here
   }
 
   const handleDragOver: React.DragEventHandler<HTMLDivElement> = e => {
@@ -427,7 +421,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       uploadAndAddFiles(files)
     }
 
-    // Reset the input to allow selecting the same file again
     if (e.target) {
       e.target.value = ''
     }
@@ -548,7 +541,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
                   <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {doc.description || doc.name}
                   </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{doc.created_at || doc.date_uploaded || '—'}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {normalizeDate(doc.created_at || doc.date_uploaded) || '—'}
+                  </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     <Stack direction='row' spacing={1} alignItems='center'>
                       <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>

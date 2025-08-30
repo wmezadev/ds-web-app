@@ -168,7 +168,7 @@ export const useApi = (): {
 
       if (!json) return undefined as T
 
-      return JSON.parse(json) as T
+      return json as T
     },
     [session, router]
   )
