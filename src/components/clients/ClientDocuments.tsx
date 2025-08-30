@@ -496,23 +496,36 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     }
   }
 
-  const handleDeleteDocument = (index: number) => {
+  const handleDeleteDocument = async (index: number) => {
     const target = documents[index]
 
-    if (target && target.url.startsWith('blob:')) {
-      try {
-        URL.revokeObjectURL(target.url)
-      } catch (err) {
-        // Optionally log error
-      }
+    if (!target?.s3_key) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage('Error: el documento no tiene un identificador único (s3_key).')
+      setSnackbarOpen(true)
+
+      return
     }
 
-    const updated = documents.filter((_, i) => i !== index)
+    try {
+      await fetchApi('aws/s3/files', {
+        method: 'DELETE',
+        body: {
+          s3_key: target.s3_key
+        }
+      })
+      const updated = documents.filter((_, i) => i !== index)
 
-    setDocuments(updated)
-    setSnackbarSeverity('success')
-    setSnackbarMessage('Documento eliminado exitosamente')
-    setSnackbarOpen(true)
+      setDocuments(updated)
+
+      setSnackbarSeverity('success')
+      setSnackbarMessage('Documento eliminado exitosamente')
+      setSnackbarOpen(true)
+    } catch (error: any) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage(`Error al eliminar documento: ${error.message || 'Error desconocido'}`)
+      setSnackbarOpen(true)
+    }
   }
 
   useEffect(() => {
