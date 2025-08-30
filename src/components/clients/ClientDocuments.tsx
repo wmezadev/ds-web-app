@@ -166,14 +166,61 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
       arr = (data as any).data.files
     }
 
-    if (!arr.length && Array.isArray(data?.data?.items)) arr = data.data.items
-    if (!arr.length && Array.isArray(data?.data)) arr = data.data
-    if (!arr.length && Array.isArray(data?.items)) arr = data.items
-    if (!arr.length && Array.isArray(data?.results)) arr = data.results
-    if (!arr.length && Array.isArray(data?.keys)) arr = data.keys
-    if (!arr.length && Array.isArray(data?.data?.keys)) arr = data.data.keys
-    if (!arr.length && Array.isArray(data?.files?.keys)) arr = data.files.keys
-    if (!arr.length && Array.isArray(data?.Contents)) arr = data.Contents
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      Array.isArray((data as any).data?.items)
+    ) {
+      arr = (data as any).data.items
+    }
+
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      Array.isArray((data as any).data)
+    ) {
+      arr = (data as any).data
+    }
+
+    if (!arr.length && Array.isArray((data as any)?.items)) arr = (data as any).items
+    if (!arr.length && Array.isArray((data as any)?.results)) arr = (data as any).results
+
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'keys' in data &&
+      Array.isArray((data as any).keys)
+    ) {
+      arr = (data as any).keys
+    }
+
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'data' in data &&
+      Array.isArray((data as any).data?.keys)
+    ) {
+      arr = (data as any).data.keys
+    }
+
+    if (
+      !arr.length &&
+      typeof data === 'object' &&
+      data !== null &&
+      'files' in data &&
+      data.files &&
+      Array.isArray((data as any).files.keys)
+    ) {
+      arr = (data as any).files.keys
+    }
+
+    if (!arr.length && Array.isArray((data as any)?.Contents)) arr = (data as any).Contents
     if (!arr.length && Array.isArray(data?.contents)) arr = data.contents
     if (!arr.length && Array.isArray(data?.files?.Contents)) arr = data.files.Contents
 
@@ -270,19 +317,19 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
 
         setDocuments(prev => [tempDoc, ...prev])
 
-        const s3Result = await uploadFile('/aws/s3/upload', file, {
-          fileFieldName: 'file',
-          extraFields: {
-            entity: 'clients',
-            entity_id: String(client?.id)
-          }
+        const uploadedFile = await uploadFile('aws/s3/upload', file, {
+          entity: 'clients',
+          entity_id: String(client?.id),
+          description_type: 'Cedula de identidad',
+          description: 'cedula de la hija del cliente para prueba',
+          is_public: 'false'
         })
 
         try {
           const documentData = {
             type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
             description: file.name,
-            url: s3Result.url || s3Result.Location || s3Result.location || '',
+            url: (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location || '',
             size: file.size,
             content_type: file.type || 'application/octet-stream',
             uploaded_by: currentUserName,
@@ -294,8 +341,15 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, refreshClient
           await fetchApi(`clients/${client?.id}`, {
             method: 'PUT',
             body: {
-              ...currentClient,
-              documents: [...(currentClient.documents || []), documentData]
+              ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
+              documents: [
+                ...(typeof currentClient === 'object' &&
+                currentClient !== null &&
+                Array.isArray((currentClient as { documents?: any[] }).documents)
+                  ? (currentClient as { documents?: any[] }).documents!
+                  : []),
+                documentData
+              ]
             }
           })
 
