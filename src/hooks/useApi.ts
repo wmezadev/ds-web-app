@@ -27,9 +27,13 @@ export const useApi = (): {
       const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${normalizedEndpoint}`
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         Accept: 'application/json',
         ...(restOptions.headers as Record<string, string>)
+      }
+
+      // Solo poner Content-Type si hay body y no es FormData
+      if (body && !(body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json'
       }
 
       if (session?.accessToken) {
@@ -42,7 +46,9 @@ export const useApi = (): {
         ...restOptions
       }
 
-      if (body) requestOptions.body = JSON.stringify(body)
+      if (body) {
+        requestOptions.body = body instanceof FormData ? body : JSON.stringify(body)
+      }
 
       try {
         const response = await fetch(apiUrl, requestOptions)

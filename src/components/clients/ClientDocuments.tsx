@@ -1,4 +1,3 @@
-// ClientDocuments.tsx
 'use client'
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
@@ -31,6 +30,7 @@ import useProfileData from '@/hooks/useProfileData'
 interface Document {
   name: string
   url: string
+  s3_key?: string
   type: string
   date_uploaded: string
   document_type?: string
@@ -101,7 +101,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       const rawUrl: string = item?.url || item?.Location || item?.location || item?.signedUrl || ''
       const url: string = /^https?:\/\//i.test(rawUrl) ? rawUrl : ''
 
-      const key: string = item?.key || item?.Key || item?.name || ''
+      const key: string = item?.key || item?.Key || item?.s3_key || item?.s3Key || item?.name || ''
       const nameFromUrl = url ? url.split('?')[0].split('/').pop() || '' : ''
       const name = item?.name || item?.original_name || key || nameFromUrl
 
@@ -139,6 +139,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       return {
         name,
         url: url || '',
+        s3_key: key || undefined,
         type,
         date_uploaded: createdAt || '',
         document_type: type,
@@ -298,7 +299,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     }
 
     if (client?.id) loadDocuments()
-  }, [client?.id, fetchApi, mapApiToDocuments]) // Add all referenced functions/vars
+  }, [client?.id, fetchApi, mapApiToDocuments])
 
   const uploadAndAddFiles = async (files: File[]) => {
     if (!files || !files.length) return
@@ -384,14 +385,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
 
     setLoading(false)
 
-    // Only show snackbar if all files uploaded successfully
     if (successCount > 0 && errorCount === 0) {
       setSnackbarSeverity('success')
       setSnackbarMessage(`Se subieron correctamente ${successCount} archivo(s)`)
       setSnackbarOpen(true)
     }
-
-    // Optionally, handle error/warning messages if needed
   }
 
   const handleDrop: React.DragEventHandler<HTMLDivElement> = e => {
@@ -404,8 +402,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     if (files.length > 0) {
       uploadAndAddFiles(files)
     }
-
-    // Do NOT reload the page here
   }
 
   const handleDragOver: React.DragEventHandler<HTMLDivElement> = e => {
@@ -437,8 +433,67 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     }
   }
 
-  const handleViewDocument = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer')
+  const handleViewDocument = async (doc: Document) => {
+    if (doc.url?.startsWith('blob:')) {
+      window.open(doc.url, '_blank', 'noopener,noreferrer')
+
+      return
+    }
+
+    if (!doc.s3_key && doc.url) {
+      window.open(doc.url, '_blank', 'noopener,noreferrer')
+
+      return
+    }
+
+    if (!doc.s3_key) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage('No se puede mostrar: el documento no tiene s3_key.')
+      setSnackbarOpen(true)
+
+      return
+    }
+
+    let s3Key = doc.s3_key.trim()
+
+    if (/^https?:\/\//i.test(s3Key)) {
+      try {
+        const u = new URL(s3Key)
+
+        s3Key = u.pathname.replace(/^\/+/, '')
+      } catch {
+        // ignorar
+      }
+    }
+
+    try {
+      const resp = await fetchApi<any>('aws/s3/presigned-url', {
+        method: 'POST',
+        body: {
+          s3_key: s3Key
+        }
+      })
+
+      const finalUrl =
+        resp?.url ||
+        resp?.presigned_url ||
+        resp?.presignedUrl ||
+        resp?.signed_url ||
+        resp?.signedUrl ||
+        resp?.Location ||
+        resp?.location ||
+        ''
+
+      if (!finalUrl) {
+        throw new Error('La respuesta no contiene una URL válida.')
+      }
+
+      window.open(finalUrl, '_blank', 'noopener,noreferrer')
+    } catch (err: any) {
+      setSnackbarSeverity('error')
+      setSnackbarMessage(`Error al obtener URL firmada: ${err.message || 'Error desconocido'}`)
+      setSnackbarOpen(true)
+    }
   }
 
   const handleDeleteDocument = (index: number) => {
@@ -466,14 +521,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         if (d.url.startsWith('blob:')) {
           try {
             URL.revokeObjectURL(d.url)
-          } catch (err) {
-            // Log error for debugging
-            // console.error('Error revoking object URL:', err);
-          }
+          } catch (err) {}
         }
       })
     }
-  }, [documents]) // Depend on documents
+  }, [documents])
 
   return (
     <Card>
@@ -567,7 +619,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
                   </TableCell>
                   <TableCell align='right'>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                      <IconButton size='small' onClick={() => handleViewDocument(doc.url)}>
+                      <IconButton size='small' onClick={() => handleViewDocument(doc)}>
                         <VisibilityOutlinedIcon fontSize='small' />
                       </IconButton>
                       <IconButton size='small' color='error' onClick={() => handleDeleteDocument(index)}>
