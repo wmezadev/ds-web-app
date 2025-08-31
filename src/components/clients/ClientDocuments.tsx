@@ -133,16 +133,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       const nameFromUrl = url ? url.split('?')[0].split('/').pop() || '' : ''
       const name = item?.name || item?.original_name || key || nameFromUrl
 
-      const type = (
-        item?.type ||
-        item?.file_type ||
-        item?.contentType ||
-        item?.ContentType ||
-        item?.file_extension ||
-        getExt(name)
-      )
-        .toString()
-        .toUpperCase()
+      const displayType = getExt(name).toString().toUpperCase()
 
       const created =
         item?.created_at ||
@@ -168,9 +159,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         name,
         url: url || '',
         s3_key: key || undefined,
-        type,
+        type: displayType,
         date_uploaded: createdAt || '',
-        document_type: type,
+        document_type: displayType,
         description: item?.description || baseName(item?.original_name || name),
         created_at: createdAt || '',
         user: userName,
@@ -679,11 +670,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 22% - 72px)' }}>
+                <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 25% - 72px)' }}>
                   Descripción
                 </TableCell>
                 <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
-                <TableCell sx={{ width: '22%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+                <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
                 <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
               </TableRow>
             </TableHead>
