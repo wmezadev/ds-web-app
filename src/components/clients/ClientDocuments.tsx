@@ -578,11 +578,13 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         return
       }
 
-      await fetchApi('aws/s3/files', {
-        method: 'DELETE',
-        body: {
-          s3_key: target.s3_key
-        }
+      const queryParams = new URLSearchParams({
+        s3_key: target.s3_key,
+        is_public: 'false'
+      }).toString()
+
+      await fetchApi(`aws/s3/file?${queryParams}`, {
+        method: 'DELETE'
       })
       const updated = documents.filter((_, i) => i !== deleteIndex)
 
