@@ -389,9 +389,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         user_avatar: currentUserAvatar
       }
 
-      setDocuments(prev => [tempDoc, ...prev])
-
-      const uploadedFile = await uploadFile('aws/s3/upload', fileToUpload, {
+      const uploadedFile = await uploadFile<any>('aws/s3/upload', fileToUpload, {
         entity: 'clients',
         entity_id: String(client?.id),
         description_type: 'Cedula de identidad',
@@ -400,41 +398,13 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         is_public: 'false'
       })
 
-      const uploadedUrl = (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location
-
-      if (!uploadedUrl) {
-        throw new Error('La respuesta de la API no contiene una URL válida.')
+      if (!uploadedFile?.key) {
+        throw new Error('La respuesta de la API no contiene una key válida.')
       }
 
+      setDocuments(prev => [{ ...tempDoc, s3_key: uploadedFile?.key }, ...prev])
+
       try {
-        // const documentData = {
-        //   type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
-        //   description: uploadMetadata.description,
-        //   expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : null,
-        //   url: uploadedUrl,
-        //   size: fileToUpload.size,
-        //   content_type: fileToUpload.type || 'application/octet-stream',
-        //   uploaded_by: currentUserName,
-        //   uploaded_at: new Date().toISOString()
-        // }
-
-        // const currentClient = await fetchApi(`clients/${client?.id}`)
-
-        // await fetchApi(`clients/${client?.id}`, {
-        //   method: 'PUT',
-        //   body: {
-        //     ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
-        //     documents: [
-        //       ...(typeof currentClient === 'object' &&
-        //       currentClient !== null &&
-        //       Array.isArray((currentClient as { documents?: any[] }).documents)
-        //         ? (currentClient as { documents?: any[] }).documents!
-        //         : []),
-        //       documentData
-        //     ]
-        //   }
-        // })
-
         setSnackbarSeverity('success')
         setSnackbarMessage('Documento subido correctamente')
         setSnackbarOpen(true)
@@ -502,12 +472,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   }
 
   const handleViewDocument = async (doc: Document) => {
-    if (doc.url?.startsWith('blob:')) {
-      window.open(doc.url, '_blank', 'noopener,noreferrer')
-
-      return
-    }
-
     if (!doc.s3_key && doc.url) {
       window.open(doc.url, '_blank', 'noopener,noreferrer')
 
@@ -542,21 +506,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         }
       })
 
-      const finalUrl =
-        resp?.url ||
-        resp?.presigned_url ||
-        resp?.presignedUrl ||
-        resp?.signed_url ||
-        resp?.signedUrl ||
-        resp?.Location ||
-        resp?.location ||
-        ''
-
-      if (!finalUrl) {
+      if (!resp?.url) {
         throw new Error('La respuesta no contiene una URL válida.')
       }
 
-      window.open(finalUrl, '_blank', 'noopener,noreferrer')
+      window.open(resp?.url, '_blank', 'noopener,noreferrer')
     } catch (err: any) {
       setSnackbarSeverity('error')
       setSnackbarMessage(`Error al obtener URL firmada: ${err.message || 'Error desconocido'}`)
@@ -608,18 +562,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   const handleCancelDelete = () => {
     setDeleteIndex(null)
   }
-
-  useEffect(() => {
-    return () => {
-      documents.forEach(d => {
-        if (d.url.startsWith('blob:')) {
-          try {
-            URL.revokeObjectURL(d.url)
-          } catch (err) {}
-        }
-      })
-    }
-  }, [documents])
 
   return (
     <Card>
