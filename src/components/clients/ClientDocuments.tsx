@@ -388,7 +388,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       }
 
       const uploadedFile = await uploadFile<any>('aws/s3/upload', fileToUpload, {
-      const uploadedFile = await uploadFile<any>('aws/s3/upload', fileToUpload, {
         entity: 'clients',
         entity_id: String(client?.id),
         description: uploadMetadata.description,
@@ -398,11 +397,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
 
       if (!uploadedFile?.key) {
         throw new Error('La respuesta de la API no contiene una key válida.')
-      if (!uploadedFile?.key) {
-        throw new Error('La respuesta de la API no contiene una key válida.')
       }
-
-      console.log('uploadedFile', uploadedFile)
 
       setDocuments(prev => [{ ...tempDoc, ...uploadedFile, s3_key: uploadedFile?.key }, ...prev])
 
@@ -507,11 +502,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       })
 
       if (!resp?.url) {
-      if (!resp?.url) {
         throw new Error('La respuesta no contiene una URL válida.')
       }
 
-      window.open(resp?.url, '_blank', 'noopener,noreferrer')
       window.open(resp?.url, '_blank', 'noopener,noreferrer')
     } catch (err: any) {
       setSnackbarSeverity('error')
