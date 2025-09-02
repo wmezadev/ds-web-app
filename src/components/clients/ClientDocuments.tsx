@@ -57,6 +57,7 @@ interface Document {
 interface ClientDocumentsProps {
   client?: { id?: string }
   refreshClient?: () => Promise<void>
+  onExpiredDocuments?: (docs: Document[]) => void
 }
 
 interface UploadMetadata {
@@ -64,7 +65,7 @@ interface UploadMetadata {
   expiryDate: Date | null
 }
 
-const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
+const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocuments }) => {
   const { data: session } = useSession()
   const { profileData } = useProfileData()
   const { fetchApi, uploadFile } = useApi()
@@ -86,6 +87,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning'>('success')
+
+  const hasShownExpiredToastRef = useRef(false)
 
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -325,6 +328,37 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
     if (client?.id) loadDocuments()
   }, [client?.id, fetchApi, mapApiToDocuments])
 
+  useEffect(() => {
+    if (loading) return
+    if (!documents.length) return
+    if (hasShownExpiredToastRef.current) return
+
+    const today = new Date()
+
+    today.setHours(0, 0, 0, 0)
+
+    const parseDate = (val?: string) => {
+      if (!val) return null
+      const d = new Date(val)
+
+      if (isNaN(d.getTime())) return null
+      d.setHours(0, 0, 0, 0)
+
+      return d
+    }
+
+    const expired = documents.filter(doc => {
+      const d = parseDate(doc.expiring_date || (doc as any).expiry_date)
+
+      return d !== null && d < today
+    })
+
+    if (expired.length) {
+      hasShownExpiredToastRef.current = true
+      if (onExpiredDocuments) onExpiredDocuments(expired)
+    }
+  }, [documents, loading, onExpiredDocuments])
+
   const uploadAndAddFiles = async (files: File[]) => {
     if (!files || !files.length) return
 
@@ -373,33 +407,33 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       }
 
       try {
-        const documentData = {
-          type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
-          description: uploadMetadata.description,
-          expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : null,
-          url: uploadedUrl,
-          size: fileToUpload.size,
-          content_type: fileToUpload.type || 'application/octet-stream',
-          uploaded_by: currentUserName,
-          uploaded_at: new Date().toISOString()
-        }
+        // const documentData = {
+        //   type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+        //   description: uploadMetadata.description,
+        //   expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : null,
+        //   url: uploadedUrl,
+        //   size: fileToUpload.size,
+        //   content_type: fileToUpload.type || 'application/octet-stream',
+        //   uploaded_by: currentUserName,
+        //   uploaded_at: new Date().toISOString()
+        // }
 
-        const currentClient = await fetchApi(`clients/${client?.id}`)
+        // const currentClient = await fetchApi(`clients/${client?.id}`)
 
-        await fetchApi(`clients/${client?.id}`, {
-          method: 'PUT',
-          body: {
-            ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
-            documents: [
-              ...(typeof currentClient === 'object' &&
-              currentClient !== null &&
-              Array.isArray((currentClient as { documents?: any[] }).documents)
-                ? (currentClient as { documents?: any[] }).documents!
-                : []),
-              documentData
-            ]
-          }
-        })
+        // await fetchApi(`clients/${client?.id}`, {
+        //   method: 'PUT',
+        //   body: {
+        //     ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
+        //     documents: [
+        //       ...(typeof currentClient === 'object' &&
+        //       currentClient !== null &&
+        //       Array.isArray((currentClient as { documents?: any[] }).documents)
+        //         ? (currentClient as { documents?: any[] }).documents!
+        //         : []),
+        //       documentData
+        //     ]
+        //   }
+        // })
 
         setSnackbarSeverity('success')
         setSnackbarMessage('Documento subido correctamente')
@@ -529,38 +563,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
       setSnackbarOpen(true)
     }
   }
-
-  // const handleDeleteDocument = async (index: number) => {
-  //   const target = documents[index]
-
-  //   if (!target?.s3_key) {
-  //     setSnackbarSeverity('error')
-  //     setSnackbarMessage('Error: el documento no tiene un identificador único (s3_key).')
-  //     setSnackbarOpen(true)
-
-  //     return
-  //   }
-
-  //   try {
-  //     await fetchApi('aws/s3/files', {
-  //       method: 'DELETE',
-  //       body: {
-  //         s3_key: target.s3_key
-  //       }
-  //     })
-  //     const updated = documents.filter((_, i) => i !== index)
-
-  //     setDocuments(updated)
-
-  //     setSnackbarSeverity('success')
-  //     setSnackbarMessage('Documento eliminado exitosamente')
-  //     setSnackbarOpen(true)
-  //   } catch (error: any) {
-  //     setSnackbarSeverity('error')
-  //     setSnackbarMessage(`Error al eliminar documento: ${error.message || 'Error desconocido'}`)
-  //     setSnackbarOpen(true)
-  //   }
-  // }
 
   const handleConfirmDelete = async () => {
     if (deleteIndex === null) return
@@ -755,7 +757,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
             onClose={() => setSnackbarOpen(false)}
             severity={snackbarSeverity}
             variant='filled'
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', border: 'none', boxShadow: 'none', borderBottom: 'none' }}
           >
             {snackbarMessage}
           </Alert>
@@ -778,7 +780,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
           </DialogActions>
         </Dialog>
 
-        {/* Upload Metadata Modal */}
         <Dialog open={uploadModalOpen} onClose={handleCancelUpload} fullWidth maxWidth='sm'>
           <DialogTitle>Detalles del documento</DialogTitle>
           <DialogContent>
