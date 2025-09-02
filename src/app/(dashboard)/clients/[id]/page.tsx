@@ -176,7 +176,7 @@ interface DetailItemEditableCityZoneProps {
   cityId: number | null | undefined
   zoneId: number | null | undefined
   cities: { id: number; name: string }[]
-  zones: { id: number; description: string }[]
+  zones: { id: number; name: string }[]
   onSave: (cityId: number | null, zoneId: number | null) => Promise<void> | void
 }
 
@@ -261,7 +261,7 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
               />
               <Autocomplete
                 options={zones}
-                getOptionLabel={o => o?.description || (o as any)?.name || ''}
+                getOptionLabel={o => o?.name || (o as any)?.name || ''}
                 isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
                 value={zoneOption}
                 onChange={(_, newVal) => setLocalZone(newVal ? Number((newVal as any).id) : null)}
@@ -601,7 +601,7 @@ const ClientDetailsCard = ({
   client: Partial<Client> & { cityName?: string; zoneName?: string }
   clientId: string
   cities: { id: number; name: string }[]
-  zones: { id: number; description: string }[]
+  zones: { id: number; name: string }[]
   onUpdated?: () => Promise<void> | void
 }) => {
   const { fetchApi } = useApi()
@@ -998,7 +998,7 @@ const ClientDetailPage = () => {
 
   const cityName = catalogs?.cities.find(c => c.id === client.city_id)?.name || 'N/A'
 
-  const zoneName = catalogs?.zones.find(z => z.id === client.zone_id)?.description || 'N/A'
+  const zoneName = catalogs?.zones.find(z => z.id === client.zone_id)?.name || 'N/A'
 
   const professionName =
     catalogs?.client_professions.find(p => p.id === client.personal_data?.profession_id)?.name || 'N/A'

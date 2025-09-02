@@ -224,6 +224,33 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
 
         <Grid item xs={12} sm={6}>
           <Controller
+            name='zone_id'
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.zone_id}>
+                <InputLabel>Zona de Residencia</InputLabel>
+                <Select {...field} label='Zona de Residencia' value={field.value ?? ''} disabled={citiesLoading}>
+                  <MenuItem value=''>
+                    <em>Seleccionar Zona</em>
+                  </MenuItem>
+                  {catalogs?.zones.map(zone => (
+                    <MenuItem key={zone.id} value={zone.id}>
+                      {zone.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {citiesLoading && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Cargando zonas...
+                  </Typography>
+                )}
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <Controller
             name='birth_place'
             control={control}
             rules={{ required: mode === 'create' ? 'El lugar de nacimiento es requerido' : false }}
@@ -274,7 +301,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           />
         </Grid>
 
-        <Grid container item xs={12} spacing={2}>
+        <Grid container item xs={12} sm={6} spacing={2}>
           <Grid item xs={12} sm={6}>
             <Box>
               <Typography variant='subtitle2' gutterBottom>
@@ -304,7 +331,6 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
               />
             </Box>
           </Grid>
-
           <Grid item xs={12} sm={6}>
             <Box display='flex' justifyContent='flex-start' alignItems='flex-end'>
               <Box>
@@ -320,11 +346,12 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
                       value={field.value ?? ''}
                       onChange={(_, value) => field.onChange(value)}
                       size='small'
+                      defaultValue={'no'}
                     >
                       <ToggleButton value='yes' color='primary'>
                         Sí
                       </ToggleButton>
-                      <ToggleButton value='no' color='secondary'>
+                      <ToggleButton value='no' color='secondary' defaultChecked>
                         No
                       </ToggleButton>
                     </ToggleButtonGroup>
