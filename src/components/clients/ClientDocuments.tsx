@@ -24,6 +24,7 @@ import {
   Button,
   TextField
 } from '@mui/material'
+import Tooltip from '@mui/material/Tooltip'
 import { useSession } from 'next-auth/react'
 import Alert from '@mui/material/Alert'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
@@ -38,6 +39,7 @@ import useProfileData from '@/hooks/useProfileData'
 import { useApi } from '@/hooks/useApi'
 
 interface Document {
+  expiring_date: string | undefined
   name: string
   url: string
   s3_key?: string
@@ -46,6 +48,7 @@ interface Document {
   document_type?: string
   description?: string
   created_at?: string
+  expiry_date?: string
   user?: string
   user_name?: string
   user_avatar?: string | null
@@ -164,6 +167,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         document_type: displayType,
         description: item?.description || baseName(item?.original_name || name),
         created_at: createdAt || '',
+        expiring_date: item?.expiring_date || item?.expiry_date || '',
         user: userName,
         user_name: userName,
         user_avatar: item?.user_avatar || item?.owner?.avatar || null
@@ -269,6 +273,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
           document_type: ext,
           description: baseName(name),
           created_at: '',
+          expiring_date: '',
           user: undefined,
           user_name: undefined,
           user_avatar: null
@@ -343,6 +348,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         document_type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
         description: uploadMetadata.description,
         created_at: new Date().toISOString(),
+        expiry_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
+        expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
         user: currentUserName,
         user_name: currentUserName,
         user_avatar: currentUserAvatar
@@ -355,6 +362,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         entity_id: String(client?.id),
         description_type: 'Cedula de identidad',
         description: uploadMetadata.description,
+        expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString().split('T')[0] : '',
         is_public: 'false'
       })
 
@@ -368,6 +376,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
         const documentData = {
           type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
           description: uploadMetadata.description,
+          expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : null,
           url: uploadedUrl,
           size: fileToUpload.size,
           content_type: fileToUpload.type || 'application/octet-stream',
@@ -666,40 +675,36 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
             No hay documentos registrados.
           </Typography>
         ) : (
-          <Table size='small' sx={{ tableLayout: 'fixed' }}>
+          <Table
+            size='small'
+            sx={{
+              tableLayout: 'fixed',
+              '& .MuiTableCell-root': {
+                py: 0.5,
+                px: 0.75
+              }
+            }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Formato</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', width: 'calc(100% - 15% - 15% - 25% - 72px)' }}>
+                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
+                <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Tipo</TableCell>
+                <TableCell
+                  sx={{
+                    whiteSpace: 'nowrap',
+                    width: 'calc(100% - 10% - 15% - 15% - 25% - 72px)'
+                  }}
+                >
                   Descripción
                 </TableCell>
                 <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
+                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Vencimiento</TableCell>
                 <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
-                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {documents.map((doc, index) => (
                 <TableRow key={doc.url || doc.name || index}>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {doc.document_type || doc.type}
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {doc.description || doc.name}
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                    {normalizeDate(doc.created_at || doc.date_uploaded) || '—'}
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <Stack direction='row' spacing={1} alignItems='center'>
-                      <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
-                        {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
-                        {doc.user_name || doc.user || '—'}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
                   <TableCell align='right'>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
                       <IconButton size='small' onClick={() => handleViewDocument(doc)}>
@@ -709,6 +714,30 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client }) => {
                         <DeleteOutlinedIcon fontSize='small' />
                       </IconButton>
                     </Box>
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {doc.document_type || doc.type}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Tooltip title={doc.description || doc.name} arrow>
+                      <Typography noWrap sx={{ maxWidth: '100%' }}>
+                        {doc.description || doc.name}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {normalizeDate(doc.created_at || doc.date_uploaded) || '—'}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{normalizeDate(doc.expiring_date) || '—'}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Stack direction='row' spacing={1} alignItems='center'>
+                      <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
+                        {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
+                        {doc.user_name || doc.user || '—'}
+                      </Typography>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

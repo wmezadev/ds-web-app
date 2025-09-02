@@ -933,35 +933,35 @@ const ClientMainContent = ({
             />
           ))}
         </TabList>
-        <TabPanel value={0}>
+        <TabPanel keepMounted value={0}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <FollowUpSection clientId={clientId} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={1}>
+        <TabPanel keepMounted value={1}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
-              <ClientDocuments client={client} refreshClient={refreshClient} />
+              <ClientDocuments client={{ id: String(client.id ?? '') }} refreshClient={refreshClient} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={2}>
+        <TabPanel keepMounted value={2}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <ClientContacts client={client} refreshClient={refreshClient} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={3}>
+        <TabPanel keepMounted value={3}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <ClientBankAccounts client={client} refreshClient={refreshClient} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={4}>
+        <TabPanel keepMounted value={4}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               {client.person_type === 'J' ? (
@@ -979,7 +979,7 @@ const ClientMainContent = ({
 
 const ClientDetailPage = () => {
   const params = useParams()
-  const clientId = typeof params.id === 'string' ? params.id : ''
+  const clientId = params && typeof params.id === 'string' ? params.id : ''
   const navContent = useMemo(() => (clientId ? <ClientNavButtons clientId={clientId} /> : null), [clientId])
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
