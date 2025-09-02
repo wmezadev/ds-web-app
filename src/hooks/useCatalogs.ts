@@ -24,7 +24,7 @@ export interface CatalogsResponse {
   executives: BaseModel[]
   offices: BaseModel[]
   risk_variables: BaseModel[]
-  zones: CatalogRiskVariable[]
+  zones: BaseModel[]
 }
 
 export function useCatalogs(enabled = true) {

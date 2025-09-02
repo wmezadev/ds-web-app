@@ -67,11 +67,11 @@ export type ClientFormFields = {
   doc: string
   billing_address?: string
   legal_representative?: string
-  economic_activity_id?: string | number
+  economic_activity_id?: string | number | null
   city_id?: string | number | null
   zone_id?: string | number | null
-  client_category_id: string | number
-  office_id: string | number
+  client_category_id: string | number | null
+  office_id: string | number | null
   agent_id?: string | number | null
   executive_id?: string | number | null
   client_group_id?: string | number | null
@@ -84,8 +84,8 @@ export type ClientFormFields = {
     weight?: number
     smoker?: boolean
     sports?: string
-    profession_id?: string | number
-    occupation_id?: string | number
+    profession_id?: string | number | null
+    occupation_id?: string | number | null
     monthly_income?: number
     pathology?: string
     rif?: string
@@ -153,15 +153,15 @@ const ClientForm: React.FC<Props> = ({
       doc: initialValues.doc || '',
       billing_address: initialValues.billing_address || '',
       legal_representative: initialValues.legal_representative || '',
-      city_id: initialValues.city_id || '',
-      zone_id: initialValues.zone_id || '',
-      economic_activity_id: initialValues.economic_activity_id || '',
-      client_category_id: initialValues.client_category_id || '', // Se inicializa con una cadena vacía
-      office_id: initialValues.office_id || '', // Se inicializa con una cadena vacía
-      agent_id: initialValues.agent_id || '', // Se inicializa con una cadena vacía
-      executive_id: initialValues.executive_id || '',
-      client_group_id: initialValues.client_group_id || '',
-      client_branch_id: initialValues.client_branch_id || '',
+      city_id: initialValues.city_id || null,
+      zone_id: initialValues.zone_id || null,
+      economic_activity_id: initialValues.economic_activity_id || null,
+      client_category_id: initialValues.client_category_id || null,
+      office_id: initialValues.office_id || null,
+      agent_id: initialValues.agent_id || null,
+      executive_id: initialValues.executive_id || null,
+      client_group_id: initialValues.client_group_id || null,
+      client_branch_id: initialValues.client_branch_id || null,
       notes: initialValues.notes || '',
       personal_data: initialValues.personal_data || {
         gender: '',
@@ -170,8 +170,8 @@ const ClientForm: React.FC<Props> = ({
         weight: undefined,
         smoker: false,
         sports: '',
-        profession_id: '',
-        occupation_id: '',
+        profession_id: null,
+        occupation_id: null,
         monthly_income: undefined,
         pathology: '',
         rif: ''
@@ -483,12 +483,12 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     reference: client.reference ?? '',
     doc: client.doc ?? '',
     is_member_of_group: client.is_member_of_group === true ? 'yes' : '',
-    client_category_id: client.client_category_id ?? '',
-    office_id: client.office_id ?? '',
-    agent_id: client.agent_id ?? '',
-    executive_id: client.executive_id ?? '',
-    client_group_id: client.client_group_id ?? '',
-    client_branch_id: client.client_branch_id ?? '',
+    client_category_id: client.client_category_id ?? null,
+    office_id: client.office_id ?? null,
+    agent_id: client.agent_id ?? null,
+    executive_id: client.executive_id ?? null,
+    client_group_id: client.client_group_id ?? null,
+    client_branch_id: client.client_branch_id ?? null,
     notes: client.notes ?? '',
     contacts: client.contacts,
     documents: client.documents,
@@ -497,9 +497,9 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
     id: client.id,
     billing_address: client.billing_address ?? '',
     legal_representative: client.legal_data?.legal_representative ?? '',
-    economic_activity_id: client.legal_data?.economic_activity_id ?? '',
-    city_id: client.city_id ?? '',
-    zone_id: client.zone_id ?? '',
+    economic_activity_id: client.legal_data?.economic_activity_id ?? null,
+    city_id: client.city_id ?? null,
+    zone_id: client.zone_id ?? null,
     personal_data: {
       gender: client.personal_data?.gender ?? '',
       civil_status: client.personal_data?.civil_status ?? '',
@@ -507,8 +507,8 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
       weight: client.personal_data?.weight ?? undefined,
       smoker: client.personal_data?.smoker ?? false,
       sports: client.personal_data?.sports ?? '',
-      profession_id: client.personal_data?.profession_id ?? '',
-      occupation_id: client.personal_data?.occupation_id ?? '',
+      profession_id: client.personal_data?.profession_id ?? null,
+      occupation_id: client.personal_data?.occupation_id ?? null,
       monthly_income: client.personal_data?.monthly_income ?? undefined,
       pathology: client.personal_data?.pathology ?? '',
       rif: client.personal_data?.rif ?? ''
@@ -519,11 +519,11 @@ export const clientApiToForm = (client: Client): ClientFormFields => {
 }
 
 export const clientFormToApi = (formData: ClientFormFields): any => {
-  const toNumberOrZero = (value: string | number | null | undefined): number => {
-    if (value === null || value === undefined || value === '') return 0
+  const toNumberOrNull = (value: string | number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === '') return null
     const num = typeof value === 'string' ? parseInt(value, 10) : value
 
-    return isNaN(num) ? 0 : num
+    return isNaN(num) ? null : num
   }
 
   const formatDateForApi = (dateString: string | null | undefined): string | null => {
@@ -589,14 +589,14 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
 
     status: true,
 
-    city_id: toNumberOrZero(formData.city_id),
-    zone_id: toNumberOrZero(formData.zone_id),
-    client_category_id: toNumberOrZero(formData.client_category_id),
-    office_id: toNumberOrZero(formData.office_id),
-    agent_id: toNumberOrZero(formData.agent_id),
-    executive_id: toNumberOrZero(formData.executive_id),
-    client_group_id: toNumberOrZero(formData.client_group_id),
-    client_branch_id: toNumberOrZero(formData.client_branch_id),
+    city_id: toNumberOrNull(formData.city_id),
+    zone_id: toNumberOrNull(formData.zone_id),
+    client_category_id: toNumberOrNull(formData.client_category_id),
+    office_id: toNumberOrNull(formData.office_id),
+    agent_id: toNumberOrNull(formData.agent_id),
+    executive_id: toNumberOrNull(formData.executive_id),
+    client_group_id: toNumberOrNull(formData.client_group_id),
+    client_branch_id: toNumberOrNull(formData.client_branch_id),
 
     personal_data: {
       gender: formData.personal_data?.gender?.trim() || 'M',
@@ -606,8 +606,8 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       smoker: Boolean(formData.personal_data?.smoker),
       sports: formData.personal_data?.sports?.trim() || '',
       rif: formData.personal_data?.rif?.trim() || '',
-      profession_id: toNumberOrZero(formData.personal_data?.profession_id),
-      occupation_id: toNumberOrZero(formData.personal_data?.occupation_id),
+      profession_id: toNumberOrNull(formData.personal_data?.profession_id),
+      occupation_id: toNumberOrNull(formData.personal_data?.occupation_id),
       monthly_income: formData.personal_data?.monthly_income || 0,
       pathology: formData.personal_data?.pathology?.trim() || ''
     },
@@ -616,7 +616,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
       (formData.person_type?.trim() || 'N') === 'J'
         ? {
             legal_representative: formData.legal_representative?.trim() || '',
-            economic_activity_id: toNumberOrZero(formData.economic_activity_id)
+            economic_activity_id: toNumberOrNull(formData.economic_activity_id)
           }
         : null,
 
