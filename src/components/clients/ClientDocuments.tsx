@@ -371,7 +371,22 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
     setUploadModalOpen(false)
 
     try {
-      const uploadedFile = await uploadFile('aws/s3/upload', fileToUpload, {
+      const tempDoc: Document = {
+        name: fileToUpload.name,
+        url: `${URL.createObjectURL(fileToUpload)}?tempid=${Date.now()}`,
+        type: fileToUpload.type || 'application/octet-stream',
+        date_uploaded: new Date().toISOString(),
+        document_type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+        description: uploadMetadata.description,
+        created_at: new Date().toISOString(),
+        expiry_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
+        expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
+        user: currentUserName,
+        user_name: currentUserName,
+        user_avatar: currentUserAvatar
+      }
+
+      const uploadedFile = await uploadFile<any>('aws/s3/upload', fileToUpload, {
         entity: 'clients',
         entity_id: String(client?.id),
         description_type: 'Cedula de identidad',
@@ -380,36 +395,24 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         is_public: 'false'
       })
 
-      const uploadedUrl =
-        (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location || ''
-
-      if (!uploadedUrl) {
-        throw new Error('La respuesta de la API no contiene una URL válida.')
+      if (!uploadedFile?.key) {
+        throw new Error('La respuesta de la API no contiene una key válida.')
       }
 
-      const newDoc: Document = {
-        name: uploadMetadata.description || fileToUpload.name,
-        url: uploadedUrl,
-        s3_key: (uploadedFile as any).key || (uploadedFile as any).s3_key,
-        type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
-        date_uploaded: new Date().toISOString(),
-        document_type: fileToUpload.type || 'application/octet-stream',
-        description: uploadMetadata.description,
-        created_at: new Date().toISOString(),
-        expiring_date: uploadMetadata.expiryDate?.toISOString().split('T')[0] || '',
-        user: currentUserName,
-        user_name: currentUserName,
-        user_avatar: currentUserAvatar
+      setDocuments(prev => [{ ...tempDoc, s3_key: uploadedFile?.key }, ...prev])
+
+      try {
+        setSnackbarSeverity('success')
+        setSnackbarMessage('Documento subido correctamente')
+        setSnackbarOpen(true)
+      } catch (saveError: any) {
+        setSnackbarSeverity('error')
+        setSnackbarMessage(`Error al guardar la referencia del documento: ${saveError.message || 'Error desconocido'}`)
+        setSnackbarOpen(true)
       }
-
-      setDocuments(prev => [newDoc, ...prev])
-
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Documento subido correctamente')
-      setSnackbarOpen(true)
-    } catch (saveError: any) {
+    } catch (error: any) {
       setSnackbarSeverity('error')
-      setSnackbarMessage(`Error al guardar el documento: ${saveError.message || 'Error desconocido'}`)
+      setSnackbarMessage(`Error al subir el documento: ${error.message || 'Error desconocido'}`)
       setSnackbarOpen(true)
     } finally {
       setLoading(false)
@@ -466,12 +469,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   }
 
   const handleViewDocument = async (doc: Document) => {
-    if (doc.url?.startsWith('blob:')) {
-      window.open(doc.url, '_blank', 'noopener,noreferrer')
-
-      return
-    }
-
     if (!doc.s3_key && doc.url) {
       window.open(doc.url, '_blank', 'noopener,noreferrer')
 
@@ -504,21 +501,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         }
       })
 
-      const finalUrl =
-        resp?.url ||
-        resp?.presigned_url ||
-        resp?.presignedUrl ||
-        resp?.signed_url ||
-        resp?.signedUrl ||
-        resp?.Location ||
-        resp?.location ||
-        ''
-
-      if (!finalUrl) {
+      if (!resp?.url) {
         throw new Error('La respuesta no contiene una URL válida.')
       }
 
-      window.open(finalUrl, '_blank', 'noopener,noreferrer')
+      window.open(resp?.url, '_blank', 'noopener,noreferrer')
     } catch (err: any) {
       setSnackbarSeverity('error')
       setSnackbarMessage(`Error al obtener URL firmada: ${err.message || 'Error desconocido'}`)
