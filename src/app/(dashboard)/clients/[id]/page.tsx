@@ -44,17 +44,22 @@ import { es } from 'date-fns/locale'
 
 import { TabContext, TabPanel } from '@mui/lab'
 
+import { ToastContainer, toast } from 'react-toastify'
+
 import TabList from '@core/components/mui/TabList'
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
 import ClientContacts from '@/components/clients/ClientContacts'
 import ClientRegistration from '@/components/clients/ClientRegistration'
 import ClientBankAccounts from '@/components/clients/ClientBankAccounts'
+import ClientDocuments from '@/components/clients/ClientDocuments'
 import LegalData from '@/components/clients/LegalData'
 import FollowUpSection from '@/components/clients/FollowUpSection'
 import ClientNavButtons from '@/components/clients/ClientNavButtons'
 import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import { usePageNavContent } from '@/hooks/usePageNavContent'
+
+import 'react-toastify/dist/ReactToastify.css'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
@@ -740,14 +745,10 @@ const ClientDetailsCard = ({
       setSnackbarOpen(true)
       setConfirmOpen(false)
 
-      // Mostrar snackbar y luego navegar
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
-      // Si DELETE falla, verificamos si el cliente ya no existe.
       try {
         await fetchApi(`clients/${clientId}`)
-
-        // Si el GET no lanza, el cliente aún existe -> error real
         setSnackbarSeverity('error')
         setSnackbarMessage('No fue posible eliminar el cliente')
         setSnackbarOpen(true)
@@ -915,6 +916,35 @@ const ClientMainContent = ({
 }) => {
   const [curTab, setTab] = React.useState(0)
 
+  const shownExpiredRef = React.useRef<Set<string>>(new Set())
+
+  const handleExpiredDocs = React.useCallback((docs: any[]) => {
+    if (!Array.isArray(docs) || docs.length === 0) return
+    docs.forEach(d => {
+      const id = (d.url || d.name || '') + (d.expiring_date || d.expiry_date || '')
+
+      if (!id || shownExpiredRef.current.has(id)) return
+      shownExpiredRef.current.add(id)
+
+      const title = d.description || d.name || 'Documento'
+
+      toast(`Documento vencido: ${title}`, {
+        icon: <i className='ri-error-warning-line' style={{ color: '#d32f2f' }} />,
+        onClick: () => setTab(1),
+        autoClose: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        style: {
+          background: '#F5F5F7',
+          color: '#3c3c3c',
+          fontWeight: 600,
+          border: '1px solid #e0e0e0',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }
+      })
+    })
+  }, [])
+
   return (
     <>
       <TabContext value={curTab}>
@@ -932,33 +962,39 @@ const ClientMainContent = ({
             />
           ))}
         </TabList>
-        <TabPanel value={0}>
+        <TabPanel keepMounted value={0}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <FollowUpSection clientId={clientId} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={1}>
+        <TabPanel keepMounted value={1}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
-            <CardContent>Aquí irá la sección de Documentos</CardContent>
+            <CardContent>
+              <ClientDocuments
+                client={{ id: String(client.id ?? '') }}
+                refreshClient={refreshClient}
+                onExpiredDocuments={handleExpiredDocs}
+              />
+            </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={2}>
+        <TabPanel keepMounted value={2}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <ClientContacts client={client} refreshClient={refreshClient} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={3}>
+        <TabPanel keepMounted value={3}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               <ClientBankAccounts client={client} refreshClient={refreshClient} />
             </CardContent>
           </Card>
         </TabPanel>
-        <TabPanel value={4}>
+        <TabPanel keepMounted value={4}>
           <Card elevation={0} sx={{ borderRadius: 2 }}>
             <CardContent>
               {client.person_type === 'J' ? (
@@ -976,12 +1012,11 @@ const ClientMainContent = ({
 
 const ClientDetailPage = () => {
   const params = useParams()
-  const clientId = typeof params.id === 'string' ? params.id : ''
+  const clientId = params && typeof params.id === 'string' ? params.id : ''
   const navContent = useMemo(() => (clientId ? <ClientNavButtons clientId={clientId} /> : null), [clientId])
   const { data: client, isLoading, error, refreshClient } = useClient(clientId)
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
-  // Set page-specific navigation content
   usePageNavContent(navContent)
 
   if (isLoading || catalogsLoading) {
@@ -1016,6 +1051,8 @@ const ClientDetailPage = () => {
 
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
+      {/* Contenedor global de toasts (tema neutro para permitir estilos custom) */}
+      <ToastContainer position='top-right' newestOnTop closeOnClick draggable pauseOnHover theme='light' />
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
           <Grid container direction='column' spacing={4}>

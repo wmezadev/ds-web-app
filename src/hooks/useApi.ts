@@ -12,21 +12,28 @@ interface ApiOptions extends Omit<RequestInit, 'body'> {
   body?: Record<string, unknown> | unknown[] | FormData
 }
 
-export const useApi = () => {
+export const useApi = (): {
+  fetchApi: <T = unknown>(endpoint: string, options?: ApiOptions) => Promise<T>
+  uploadFile: <T = unknown>(endpoint: string, file: File, params: Record<string, string>) => Promise<T>
+} => {
   const { data: session } = useSession()
   const router = useRouter()
 
   const fetchApi = useCallback(
-    async <T = any>(endpoint: string, options: ApiOptions = {}): Promise<T> => {
+    async <T = unknown>(endpoint: string, options: ApiOptions = {}): Promise<T> => {
       const { body, ...restOptions } = options
       const isExternalUrl = endpoint.startsWith('http')
       const normalizedEndpoint = isExternalUrl ? endpoint : endpoint.replace(/^\/+/, '')
       const apiUrl = isExternalUrl ? endpoint : `/api/proxy/${normalizedEndpoint}`
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         Accept: 'application/json',
         ...(restOptions.headers as Record<string, string>)
+      }
+
+      // Solo poner Content-Type si hay body y no es FormData
+      if (body && !(body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json'
       }
 
       if (session?.accessToken) {
@@ -39,7 +46,9 @@ export const useApi = () => {
         ...restOptions
       }
 
-      if (body) requestOptions.body = JSON.stringify(body)
+      if (body) {
+        requestOptions.body = body instanceof FormData ? body : JSON.stringify(body)
+      }
 
       try {
         const response = await fetch(apiUrl, requestOptions)
@@ -55,7 +64,7 @@ export const useApi = () => {
             } catch {
               errorData = responseText
             }
-          } catch {
+          } catch (err) {
             errorData = 'Failed to read error response'
           }
 
@@ -80,18 +89,18 @@ export const useApi = () => {
         const contentType = response.headers.get('content-type') || ''
 
         if (!contentType.toLowerCase().includes('application/json')) {
-          const text = await response.text()
+          const json = await response.json()
 
-          if (!text) return undefined as T
+          if (!json) return undefined as T
 
-          return text as unknown as T
+          return json as unknown as T
         }
 
-        const text = await response.text()
+        const json = await response.json()
 
-        if (!text) return undefined as T
+        if (!json) return undefined as T
 
-        return JSON.parse(text) as T
+        return json as T
       } catch (error: unknown) {
         if (error instanceof Error) {
           throw error
@@ -103,5 +112,72 @@ export const useApi = () => {
     [session, router]
   )
 
-  return { fetchApi }
+  const uploadFile = useCallback(
+    async <T = unknown>(endpoint: string, file: File, params: Record<string, string> = {}): Promise<T> => {
+      const isExternalUrl = endpoint.startsWith('http')
+      const normalizedEndpoint = isExternalUrl ? endpoint : endpoint.replace(/^\/+/, '')
+      const query = new URLSearchParams(params).toString()
+      const apiUrl = `${isExternalUrl ? endpoint : `/api/proxy/${normalizedEndpoint}`}?${query}`
+
+      const formData = new FormData()
+
+      formData.append('file', file)
+
+      const headers: Record<string, string> = {
+        Accept: 'application/json'
+      }
+
+      if (session?.accessToken) {
+        headers['Authorization'] = `Bearer ${session.accessToken}`
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+        headers
+      })
+
+      if (!response.ok) {
+        let errorData: string | Record<string, unknown> = 'An unknown error occurred.'
+
+        try {
+          const responseText = await response.text()
+
+          try {
+            errorData = JSON.parse(responseText) as Record<string, unknown>
+          } catch {
+            errorData = responseText
+          }
+        } catch (err) {
+          errorData = 'Failed to read error response'
+        }
+
+        const errorMessage =
+          typeof errorData === 'object' && errorData !== null
+            ? (errorData as any).detail || (errorData as any).message || JSON.stringify(errorData)
+            : String(errorData)
+
+        if (response.status === 401) {
+          await signOut({ redirect: false })
+          router.push(ROUTES.LOGIN)
+          throw new Error('Authentication failed. Please sign in again.')
+        }
+
+        throw new Error(`HTTP error! status: ${response.status}, error: ${errorMessage}`)
+      }
+
+      if (response.status === 204 || response.status === 205) {
+        return undefined as T
+      }
+
+      const json = await response.json()
+
+      if (!json) return undefined as T
+
+      return json as T
+    },
+    [session, router]
+  )
+
+  return { fetchApi, uploadFile }
 }
