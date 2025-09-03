@@ -93,9 +93,11 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Modal state
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
+  // Upload Modal State
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [fileToUpload, setFileToUpload] = useState<File | null>(null)
 
@@ -372,6 +374,23 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
     setUploadModalOpen(false)
 
     try {
+      const tempDoc: Document = {
+        name: fileToUpload.name,
+        url: `${URL.createObjectURL(fileToUpload)}?tempid=${Date.now()}`,
+        type: fileToUpload.type || 'application/octet-stream',
+        date_uploaded: new Date().toISOString(),
+        document_type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+        description: uploadMetadata.description,
+        created_at: new Date().toISOString(),
+        expiry_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
+        expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : '',
+        user: currentUserName,
+        user_name: currentUserName,
+        user_avatar: currentUserAvatar
+      }
+
+      setDocuments(prev => [tempDoc, ...prev])
+
       const uploadedFile = await uploadFile('aws/s3/upload', fileToUpload, {
         entity: 'clients',
         entity_id: String(client?.id),
@@ -381,36 +400,52 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         is_public: 'false'
       })
 
-      const uploadedUrl =
-        (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location || ''
+      const uploadedUrl = (uploadedFile as any).url || (uploadedFile as any).Location || (uploadedFile as any).location
 
       if (!uploadedUrl) {
         throw new Error('La respuesta de la API no contiene una URL válida.')
       }
 
-      const newDoc: Document = {
-        name: fileToUpload.name,
-        url: uploadedUrl,
-        s3_key: (uploadedFile as any).key || (uploadedFile as any).s3_key,
-        type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
-        date_uploaded: new Date().toISOString(),
-        document_type: fileToUpload.type || 'application/octet-stream',
-        description: uploadMetadata.description,
-        created_at: new Date().toISOString(),
-        expiring_date: uploadMetadata.expiryDate?.toISOString().split('T')[0] || '',
-        user: currentUserName,
-        user_name: currentUserName,
-        user_avatar: currentUserAvatar
+      try {
+        // const documentData = {
+        //   type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
+        //   description: uploadMetadata.description,
+        //   expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString() : null,
+        //   url: uploadedUrl,
+        //   size: fileToUpload.size,
+        //   content_type: fileToUpload.type || 'application/octet-stream',
+        //   uploaded_by: currentUserName,
+        //   uploaded_at: new Date().toISOString()
+        // }
+
+        // const currentClient = await fetchApi(`clients/${client?.id}`)
+
+        // await fetchApi(`clients/${client?.id}`, {
+        //   method: 'PUT',
+        //   body: {
+        //     ...(typeof currentClient === 'object' && currentClient !== null ? currentClient : {}),
+        //     documents: [
+        //       ...(typeof currentClient === 'object' &&
+        //       currentClient !== null &&
+        //       Array.isArray((currentClient as { documents?: any[] }).documents)
+        //         ? (currentClient as { documents?: any[] }).documents!
+        //         : []),
+        //       documentData
+        //     ]
+        //   }
+        // })
+
+        setSnackbarSeverity('success')
+        setSnackbarMessage('Documento subido correctamente')
+        setSnackbarOpen(true)
+      } catch (saveError: any) {
+        setSnackbarSeverity('error')
+        setSnackbarMessage(`Error al guardar la referencia del documento: ${saveError.message || 'Error desconocido'}`)
+        setSnackbarOpen(true)
       }
-
-      setDocuments(prev => [newDoc, ...prev])
-
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Documento subido correctamente')
-      setSnackbarOpen(true)
-    } catch (saveError: any) {
+    } catch (error: any) {
       setSnackbarSeverity('error')
-      setSnackbarMessage(`Error al guardar el documento: ${saveError.message || 'Error desconocido'}`)
+      setSnackbarMessage(`Error al subir el documento: ${error.message || 'Error desconocido'}`)
       setSnackbarOpen(true)
     } finally {
       setLoading(false)
@@ -494,7 +529,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         const u = new URL(s3Key)
 
         s3Key = u.pathname.replace(/^\/+/, '')
-      } catch {}
+      } catch {
+        // ignorar
+      }
     }
 
     try {
