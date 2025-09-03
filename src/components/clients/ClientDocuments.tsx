@@ -652,7 +652,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
           >
             <TableHead>
               <TableRow>
-                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
                 <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Tipo</TableCell>
                 <TableCell
                   sx={{
@@ -665,21 +664,12 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
                 <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
                 <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Vencimiento</TableCell>
                 <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {documents.map((doc, index) => (
                 <TableRow key={doc.url || doc.name || index}>
-                  <TableCell align='right'>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                      <IconButton size='small' onClick={() => handleViewDocument(doc)}>
-                        <VisibilityOutlinedIcon fontSize='small' />
-                      </IconButton>
-                      <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
-                        <DeleteOutlinedIcon fontSize='small' />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {doc.document_type || doc.type}
                   </TableCell>
@@ -703,6 +693,16 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
                         {doc.user_name || doc.user || '—'}
                       </Typography>
                     </Stack>
+                  </TableCell>
+                  <TableCell align='right'>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                      <IconButton size='small' onClick={() => handleViewDocument(doc)}>
+                        <VisibilityOutlinedIcon fontSize='small' />
+                      </IconButton>
+                      <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
+                        <DeleteOutlinedIcon fontSize='small' />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
