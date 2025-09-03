@@ -22,7 +22,8 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
-  TextField
+  TextField,
+  Paper
 } from '@mui/material'
 import Tooltip from '@mui/material/Tooltip'
 import { useSession } from 'next-auth/react'
@@ -585,203 +586,201 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   }, [documents])
 
   return (
-    <Card>
-      <CardContent>
-        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-          <Typography variant='h6' fontWeight='bold'>
-            Documentos
-          </Typography>
-        </Box>
+    <Box sx={{ p: 2 }}>
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+        <Typography variant='h6' fontWeight='bold'>
+          Documentos
+        </Typography>
+      </Box>
 
-        <div style={{ width: '100%' }}>
-          <Box
-            onClick={() => fileInputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            sx={{
-              border: '2px dashed',
-              borderColor: dragOver ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              p: 4,
-              textAlign: 'center',
-              cursor: 'pointer',
-              mb: 3,
-              '&:hover': {
-                borderColor: 'primary.main',
-                backgroundColor: 'action.hover'
-              }
-            }}
-          >
-            <CloudUploadOutlinedIcon color={dragOver ? 'primary' : 'action'} sx={{ fontSize: 36, mb: 1 }} />
-            <Typography variant='body1' sx={{ mb: 0.5 }}>
-              Arrastra y suelta archivos aquí
-            </Typography>
-            <Typography variant='caption' color='text.disabled'>
-              o haz clic para seleccionar
-            </Typography>
-            <input
-              type='file'
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleFileInputChange}
-              onClick={e => e.stopPropagation()}
-              multiple
-            />
-          </Box>
-        </div>
-
-        {loading ? (
-          <Typography variant='body2' color='text.secondary'>
-            Cargando documentos…
-          </Typography>
-        ) : documents.length === 0 ? (
-          <Typography variant='body2' color='text.secondary'>
-            No hay documentos registrados.
-          </Typography>
-        ) : (
-          <Table
-            size='small'
-            sx={{
-              tableLayout: 'fixed',
-              '& .MuiTableCell-root': {
-                py: 0.5,
-                px: 0.75
-              }
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Tipo</TableCell>
-                <TableCell
-                  sx={{
-                    whiteSpace: 'nowrap',
-                    width: 'calc(100% - 10% - 15% - 15% - 25% - 72px)'
-                  }}
-                >
-                  Descripción
-                </TableCell>
-                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
-                <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Vencimiento</TableCell>
-                <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
-                <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {documents.map((doc, index) => (
-                <TableRow key={doc.url || doc.name || index}>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {doc.document_type || doc.type}
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <Tooltip title={doc.description || doc.name} arrow>
-                      <Typography noWrap sx={{ maxWidth: '100%' }}>
-                        {doc.description || doc.name}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                    {normalizeDate(doc.created_at || doc.date_uploaded) || '—'}
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{normalizeDate(doc.expiring_date) || '—'}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <Stack direction='row' spacing={1} alignItems='center'>
-                      <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
-                        {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
-                        {doc.user_name || doc.user || '—'}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell align='right'>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-                      <IconButton size='small' onClick={() => handleViewDocument(doc)}>
-                        <VisibilityOutlinedIcon fontSize='small' />
-                      </IconButton>
-                      <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
-                        <DeleteOutlinedIcon fontSize='small' />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      <div style={{ width: '100%' }}>
+        <Box
+          onClick={() => fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          sx={{
+            border: '2px dashed',
+            borderColor: dragOver ? 'primary.main' : 'divider',
+            borderRadius: 1,
+            p: 4,
+            textAlign: 'center',
+            cursor: 'pointer',
+            mb: 3,
+            '&:hover': {
+              borderColor: 'primary.main',
+              backgroundColor: 'action.hover'
+            }
+          }}
         >
-          <Alert
-            onClose={() => setSnackbarOpen(false)}
-            severity={snackbarSeverity}
-            variant='filled'
-            sx={{ width: '100%', border: 'none', boxShadow: 'none', borderBottom: 'none' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
+          <CloudUploadOutlinedIcon color={dragOver ? 'primary' : 'action'} sx={{ fontSize: 36, mb: 1 }} />
+          <Typography variant='body1' sx={{ mb: 0.5 }}>
+            Arrastra y suelta archivos aquí
+          </Typography>
+          <Typography variant='caption' color='text.disabled'>
+            o haz clic para seleccionar
+          </Typography>
+          <input
+            type='file'
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+            onClick={e => e.stopPropagation()}
+            multiple
+          />
+        </Box>
+      </div>
 
-        <Dialog open={deleteIndex !== null} onClose={handleCancelDelete}>
-          <DialogTitle>Eliminar documento</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              ¿Está seguro que desea eliminar este documento? Esta acción no se puede deshacer.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelDelete} disabled={deleteLoading}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmDelete} color='error' variant='contained' disabled={deleteLoading}>
-              {deleteLoading ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Dialog open={uploadModalOpen} onClose={handleCancelUpload} fullWidth maxWidth='sm'>
-          <DialogTitle>Detalles del documento</DialogTitle>
-          <DialogContent>
-            <DialogContentText>Ingrese la descripción y fecha de vencimiento del documento.</DialogContentText>
-            <TextField
-              autoFocus
-              margin='dense'
-              id='description'
-              label='Descripción'
-              type='text'
-              fullWidth
-              variant='standard'
-              value={uploadMetadata.description}
-              onChange={e => setUploadMetadata({ ...uploadMetadata, description: e.target.value })}
-            />
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              <DatePicker
-                label='Fecha de Vencimiento'
-                value={uploadMetadata.expiryDate}
-                onChange={date => setUploadMetadata({ ...uploadMetadata, expiryDate: date })}
-                slotProps={{
-                  textField: {
-                    margin: 'dense',
-                    fullWidth: true,
-                    variant: 'standard'
-                  }
+      {loading ? (
+        <Typography variant='body2' color='text.secondary'>
+          Cargando documentos…
+        </Typography>
+      ) : documents.length === 0 ? (
+        <Typography variant='body2' color='text.secondary'>
+          No hay documentos registrados.
+        </Typography>
+      ) : (
+        <Table
+          size='small'
+          sx={{
+            tableLayout: 'fixed',
+            '& .MuiTableCell-root': {
+              py: 0.5,
+              px: 0.75
+            }
+          }}
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Tipo</TableCell>
+              <TableCell
+                sx={{
+                  whiteSpace: 'nowrap',
+                  width: 'calc(100% - 10% - 15% - 15% - 25% - 72px)'
                 }}
-              />
-            </LocalizationProvider>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelUpload}>Cancelar</Button>
-            <Button onClick={handleConfirmUpload} variant='contained'>
-              Subir
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </CardContent>
-    </Card>
+              >
+                Descripción
+              </TableCell>
+              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
+              <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Vencimiento</TableCell>
+              <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+              <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {documents.map((doc, index) => (
+              <TableRow key={doc.url || doc.name || index}>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {doc.document_type || doc.type}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Tooltip title={doc.description || doc.name} arrow>
+                    <Typography noWrap sx={{ maxWidth: '100%' }}>
+                      {doc.description || doc.name}
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  {normalizeDate(doc.created_at || doc.date_uploaded) || '—'}
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>{normalizeDate(doc.expiring_date) || '—'}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
+                      {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
+                      {doc.user_name || doc.user || '—'}
+                    </Typography>
+                  </Stack>
+                </TableCell>
+                <TableCell align='right'>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+                    <IconButton size='small' onClick={() => handleViewDocument(doc)}>
+                      <VisibilityOutlinedIcon fontSize='small' />
+                    </IconButton>
+                    <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
+                      <DeleteOutlinedIcon fontSize='small' />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant='filled'
+          sx={{ width: '100%', border: 'none', boxShadow: 'none', borderBottom: 'none' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog open={deleteIndex !== null} onClose={handleCancelDelete}>
+        <DialogTitle>Eliminar documento</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Está seguro que desea eliminar este documento? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} disabled={deleteLoading}>
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmDelete} color='error' variant='contained' disabled={deleteLoading}>
+            {deleteLoading ? 'Eliminando...' : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={uploadModalOpen} onClose={handleCancelUpload} fullWidth maxWidth='sm'>
+        <DialogTitle>Detalles del documento</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Ingrese la descripción y fecha de vencimiento del documento.</DialogContentText>
+          <TextField
+            autoFocus
+            margin='dense'
+            id='description'
+            label='Descripción'
+            type='text'
+            fullWidth
+            variant='standard'
+            value={uploadMetadata.description}
+            onChange={e => setUploadMetadata({ ...uploadMetadata, description: e.target.value })}
+          />
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+            <DatePicker
+              label='Fecha de Vencimiento'
+              value={uploadMetadata.expiryDate}
+              onChange={date => setUploadMetadata({ ...uploadMetadata, expiryDate: date })}
+              slotProps={{
+                textField: {
+                  margin: 'dense',
+                  fullWidth: true,
+                  variant: 'standard'
+                }
+              }}
+            />
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelUpload}>Cancelar</Button>
+          <Button onClick={handleConfirmUpload} variant='contained'>
+            Subir
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
