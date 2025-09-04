@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { Box, Typography, Paper, Button, Stack } from '@mui/material'
+import { useState, useRef } from 'react'
+
+// import { useRouter } from 'next/navigation'
+
+import { Box, Typography, Paper, Stack } from '@mui/material'
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
 
 export default function BulkClientCreatePage() {
   const [dragOver, setDragOver] = useState(false)
-  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrop: React.DragEventHandler<HTMLDivElement> = e => {

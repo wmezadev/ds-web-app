@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+
 import { Box, Typography, Paper, Button, Stack } from '@mui/material'
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
 
 export default function BulkClientCreatePage() {
   const [isDragging, setIsDragging] = useState(false)
-  const router = useRouter()
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -21,7 +20,6 @@ export default function BulkClientCreatePage() {
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(false)
-    // Handle file drop here
   }, [])
 
   return (
