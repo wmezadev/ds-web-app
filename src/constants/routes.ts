@@ -34,6 +34,7 @@ export const ROUTES = {
   CLIENTS: {
     INDEX: '/clients',
     CREATE: '/clients/create',
+    CREATE_BULK: '/clients/create-bulk',
     DETAIL: (id: string | number) => `/clients/${id}`
   },
   QUOTATIONS: {
