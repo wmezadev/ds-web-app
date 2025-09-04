@@ -20,7 +20,8 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
-  TextField
+  TextField,
+  Autocomplete
 } from '@mui/material'
 import Tooltip from '@mui/material/Tooltip'
 import { useSession } from 'next-auth/react'
@@ -387,7 +388,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       }
 
       const newDoc: Document = {
-        name: fileToUpload.name,
+        name: uploadMetadata.description || fileToUpload.name,
         url: uploadedUrl,
         s3_key: (uploadedFile as any).key || (uploadedFile as any).s3_key,
         type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
@@ -582,6 +583,33 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
     }
   }, [documents])
 
+  const descriptionOptions = [
+    'Cédula de Identidad',
+    'Registro Único de Información Fiscal (RIF)',
+    'Pasaporte',
+    'Visa',
+    'Acta de Matrimonio',
+    'Acta de Divorcio',
+    'Constancia de Union Estable',
+    'Certificado Medico',
+    'Licencia de Conducir',
+    'Recibo de Servicio',
+    'Tarjeta de Crédito',
+    'Cuenta Bancaria',
+    'Partida de Nacimiento',
+    'Solicitud del contrato de seguro',
+    'Referencia bancaria',
+    'Declaración del Impuesto Sobre la Renta (ISLR)',
+    'Comprobante de propiedad',
+    'Contragarantía en contratos de fianza',
+    'Registro de Asociación Gremial',
+    'Contrato según actividad del Sujeto Obligado',
+    'Acta constitutiva y estatutos sociales',
+    'Constancia de verificación de datos RCSNU',
+    'Constancia de actualización de datos del cliente',
+    'Constancia de verificación de datos por medios públicos'
+  ]
+
   return (
     <Box sx={{ p: 2 }}>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
@@ -649,27 +677,23 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Tipo</TableCell>
               <TableCell
                 sx={{
                   whiteSpace: 'nowrap',
-                  width: 'calc(100% - 10% - 15% - 15% - 25% - 72px)'
+                  width: 'calc(100% - 15% - 15% - 20% - 72px)'
                 }}
               >
                 Descripción
               </TableCell>
               <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Creación</TableCell>
               <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>Vencimiento</TableCell>
-              <TableCell sx={{ width: '25%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
+              <TableCell sx={{ width: '10%', whiteSpace: 'nowrap' }}>Usuario</TableCell>
               <TableCell align='right' sx={{ width: 72, whiteSpace: 'nowrap' }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {documents.map((doc, index) => (
               <TableRow key={doc.url || doc.name || index}>
-                <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {doc.document_type || doc.type}
-                </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   <Tooltip title={doc.description || doc.name} arrow>
                     <Typography noWrap sx={{ maxWidth: '100%' }}>
@@ -686,9 +710,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
                     <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
                       {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
                     </Avatar>
-                    <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
+                    {/* <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
                       {doc.user_name || doc.user || '—'}
-                    </Typography>
+                    </Typography> */}
                   </Stack>
                 </TableCell>
                 <TableCell align='right'>
@@ -744,16 +768,15 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         <DialogTitle>Detalles del documento</DialogTitle>
         <DialogContent>
           <DialogContentText>Ingrese la descripción y fecha de vencimiento del documento.</DialogContentText>
-          <TextField
-            autoFocus
-            margin='dense'
-            id='description'
-            label='Descripción'
-            type='text'
-            fullWidth
-            variant='standard'
+          <Autocomplete
+            freeSolo
+            options={descriptionOptions}
             value={uploadMetadata.description}
-            onChange={e => setUploadMetadata({ ...uploadMetadata, description: e.target.value })}
+            onChange={(_, newValue) => setUploadMetadata({ ...uploadMetadata, description: newValue || '' })}
+            onInputChange={(_, newInputValue) => setUploadMetadata({ ...uploadMetadata, description: newInputValue })}
+            renderInput={params => (
+              <TextField {...params} margin='dense' label='Descripción' variant='standard' fullWidth />
+            )}
           />
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
             <DatePicker
