@@ -5,6 +5,7 @@ import { useState, useCallback, useRef } from 'react'
 import { Box, Typography, Paper, Button, Stack, Alert, CircularProgress } from '@mui/material'
 
 import { CloudUpload as CloudUploadIcon, CloudDownload as CloudDownloadIcon } from '@mui/icons-material'
+
 import { API_ROUTES } from '@/constants/routes'
 import { useApi } from '@/hooks/useApi'
 
@@ -36,6 +37,7 @@ export default function BulkClientCreatePage() {
         setSuccess('Los clientes han sido añadidos con éxito.')
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error desconocido al subir el archivo.'
+
         setError(message)
       } finally {
         setUploading(false)
@@ -50,6 +52,7 @@ export default function BulkClientCreatePage() {
       setIsDragging(false)
 
       const file = e.dataTransfer.files?.[0]
+
       if (!file) return
 
       void performUpload(file)
@@ -60,6 +63,7 @@ export default function BulkClientCreatePage() {
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
+
       if (!file) return
       void performUpload(file)
       e.currentTarget.value = ''
