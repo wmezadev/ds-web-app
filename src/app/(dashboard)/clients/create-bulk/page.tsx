@@ -89,7 +89,9 @@ export default function BulkClientCreatePage() {
               }}
             >
               <Typography component='pre' sx={{ m: 0, fontFamily: 'monospace' }}>
-                tipo_documento,documento,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,fecha_nacimiento,genero,email,telefono,direccion,ciudad_id
+                Tipo de Doc [CI/RIF], Número de doc, Nombres/ Razón social, Apellidos, Lugar de Nac/Fund, Fecha de
+                Nac/Fund, Email 1, Email 2, Fecha de Ingreso, Tipo de persona [Natural o jurídica], Estado [Activo o
+                inactivo], Dirección, Teléfono, Celular 1, Celular 2, Ciudad, Zona, Punto de referencia
               </Typography>
             </Paper>
           </Box>
