@@ -1,12 +1,19 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 
-import { Box, Typography, Paper, Button, Stack } from '@mui/material'
+import { Box, Typography, Paper, Button, Stack, Alert, CircularProgress } from '@mui/material'
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
+import { API_ROUTES } from '@/constants/routes'
+import { useApi } from '@/hooks/useApi'
 
 export default function BulkClientCreatePage() {
+  const { uploadFile } = useApi()
   const [isDragging, setIsDragging] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -17,10 +24,47 @@ export default function BulkClientCreatePage() {
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
+  const performUpload = useCallback(
+    async (file: File) => {
+      setError(null)
+      setSuccess(null)
+      setUploading(true)
+
+      try {
+        await uploadFile<unknown>(API_ROUTES.CLIENTS.CREATE_BULK, file, {})
+        setSuccess('Los clientes han sido añadidos con éxito.')
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error desconocido al subir el archivo.'
+        setError(message)
+      } finally {
+        setUploading(false)
+      }
+    },
+    [uploadFile]
+  )
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      setIsDragging(false)
+
+      const file = e.dataTransfer.files?.[0]
+      if (!file) return
+
+      void performUpload(file)
+    },
+    [performUpload]
+  )
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      void performUpload(file)
+      e.currentTarget.value = ''
+    },
+    [performUpload]
+  )
 
   return (
     <Box sx={{ p: 3, maxWidth: 1000, mx: 'auto' }}>
@@ -52,19 +96,53 @@ export default function BulkClientCreatePage() {
             backgroundColor: 'action.hover'
           }
         }}
+        onClick={() => fileInputRef.current?.click()}
       >
         <CloudUploadIcon color={isDragging ? 'primary' : 'action'} sx={{ fontSize: 64, mb: 2 }} />
         <Typography variant='h6' gutterBottom>
-          Arrastra y suelta tu archivo CSV aquí
+          Arrastra y suelta tu archivo de Excel aquí
         </Typography>
         <Typography variant='body2' color='text.secondary' paragraph>
           O haz clic para seleccionar un archivo
         </Typography>
-        <Button variant='contained' component='label' startIcon={<CloudUploadIcon />} sx={{ mt: 2 }}>
-          Seleccionar archivo
-          <input type='file' hidden accept='.csv' />
-        </Button>
+        <Stack direction='row' spacing={2} alignItems='center' sx={{ mt: 2 }}>
+          <Button
+            variant='contained'
+            startIcon={<CloudUploadIcon />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Subiendo...' : 'Seleccionar archivo'}
+          </Button>
+          {uploading && <CircularProgress size={24} />}
+        </Stack>
+        <input
+          ref={fileInputRef}
+          type='file'
+          hidden
+          onChange={handleFileChange}
+          accept={[
+            '.csv',
+            '.xls',
+            '.xlsx',
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          ].join(',')}
+        />
       </Paper>
+
+      {error && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       <Paper elevation={2} sx={{ p: 4 }}>
         <Typography variant='h5' gutterBottom>
@@ -77,7 +155,7 @@ export default function BulkClientCreatePage() {
               1. Prepara tu archivo
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              Asegúrate de que tu archivo CSV contenga las siguientes columnas:
+              Asegúrate de que tu archivo Excel contenga las siguientes columnas:
             </Typography>
             <Paper
               variant='outlined'
