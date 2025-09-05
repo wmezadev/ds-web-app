@@ -3,7 +3,8 @@
 import { useState, useCallback, useRef } from 'react'
 
 import { Box, Typography, Paper, Button, Stack, Alert, CircularProgress } from '@mui/material'
-import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
+
+import { CloudUpload as CloudUploadIcon, CloudDownload as CloudDownloadIcon } from '@mui/icons-material'
 import { API_ROUTES } from '@/constants/routes'
 import { useApi } from '@/hooks/useApi'
 
@@ -145,9 +146,14 @@ export default function BulkClientCreatePage() {
       )}
 
       <Paper elevation={2} sx={{ p: 4 }}>
-        <Typography variant='h5' gutterBottom>
-          Instrucciones
-        </Typography>
+        <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+          <Typography variant='h5' gutterBottom sx={{ mb: 0 }}>
+            Instrucciones
+          </Typography>
+          <Button variant='outlined' startIcon={<CloudDownloadIcon />} href='/plantilla-carga-clientes.xlsx' download>
+            Descargar plantilla
+          </Button>
+        </Box>
 
         <Stack spacing={2} mt={2}>
           <Box>
