@@ -26,7 +26,6 @@ import {
 import Tooltip from '@mui/material/Tooltip'
 import { useSession } from 'next-auth/react'
 import Alert from '@mui/material/Alert'
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined'
 
@@ -36,13 +35,14 @@ import { es } from 'date-fns/locale'
 
 import useProfileData from '@/hooks/useProfileData'
 import { useApi } from '@/hooks/useApi'
+import { getFileIconClass } from '@/utils/fileHandlers'
 
 interface Document {
   expiring_date: string | undefined
   name: string
   url: string
   s3_key?: string
-  type: string
+  file_type: string
   date_uploaded: string
   document_type?: string
   description?: string
@@ -82,6 +82,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
     null
 
   const [documents, setDocuments] = useState<Document[]>([])
+
+  console.log('documents', documents)
+
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
@@ -136,8 +139,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       const nameFromUrl = url ? url.split('?')[0].split('/').pop() || '' : ''
       const name = item?.name || item?.original_name || key || nameFromUrl
 
-      const displayType = getExt(name).toString().toUpperCase()
-
       const created =
         item?.created_at ||
         item?.last_modified ||
@@ -162,9 +163,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         name,
         url: url || '',
         s3_key: key || undefined,
-        type: displayType,
+        file_type: item?.file_type,
         date_uploaded: createdAt || '',
-        document_type: displayType,
         description: item?.description || baseName(item?.original_name || name),
         created_at: createdAt || '',
         expiring_date: item?.expiring_date || item?.expiry_date || '',
@@ -270,6 +270,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
           url: isUrl ? s : '',
           type: ext,
           date_uploaded: '',
+          file_type: '',
           document_type: ext,
           description: baseName(name),
           created_at: '',
@@ -374,7 +375,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       const tempDoc: Document = {
         name: fileToUpload.name,
         url: `${URL.createObjectURL(fileToUpload)}?tempid=${Date.now()}`,
-        type: fileToUpload.type || 'application/octet-stream',
+        file_type: '',
         date_uploaded: new Date().toISOString(),
         document_type: fileToUpload.name.split('.').pop()?.toUpperCase() || 'FILE',
         description: uploadMetadata.description,
@@ -389,7 +390,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       const uploadedFile = await uploadFile<any>('aws/s3/upload', fileToUpload, {
         entity: 'clients',
         entity_id: String(client?.id),
-        description_type: 'Cedula de identidad',
         description: uploadMetadata.description,
         expiring_date: uploadMetadata.expiryDate ? uploadMetadata.expiryDate.toISOString().split('T')[0] : '',
         is_public: 'false'
@@ -399,7 +399,9 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
         throw new Error('La respuesta de la API no contiene una key válida.')
       }
 
-      setDocuments(prev => [{ ...tempDoc, s3_key: uploadedFile?.key }, ...prev])
+      console.log('uploadedFile', uploadedFile)
+
+      setDocuments(prev => [{ ...tempDoc, ...uploadedFile, s3_key: uploadedFile?.key }, ...prev])
 
       try {
         setSnackbarSeverity('success')
@@ -697,15 +699,12 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
                     <Avatar src={doc.user_avatar || undefined} sx={{ width: 35, height: 35 }}>
                       {(doc.user_name || doc.user || '—').charAt(0).toUpperCase()}
                     </Avatar>
-                    {/* <Typography variant='body2' noWrap sx={{ maxWidth: 130 }}>
-                      {doc.user_name || doc.user || '—'}
-                    </Typography> */}
                   </Stack>
                 </TableCell>
                 <TableCell align='right'>
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
                     <IconButton size='small' onClick={() => handleViewDocument(doc)}>
-                      <VisibilityOutlinedIcon fontSize='small' />
+                      <i className={getFileIconClass(doc.file_type)}></i>
                     </IconButton>
                     <IconButton size='small' color='error' onClick={() => setDeleteIndex(index)}>
                       <DeleteOutlinedIcon fontSize='small' />
