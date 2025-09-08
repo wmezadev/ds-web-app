@@ -20,7 +20,8 @@ export const API_ROUTES = {
     SEARCH: 'clients/search',
     UPDATE: (id: string | number) => `clients/${id}`,
     DELETE: (id: string | number) => `clients/${id}`,
-    POST: 'clients'
+    POST: 'clients',
+    CREATE_BULK: 'clients/bulk-upload'
   },
   QUOTATIONS: {
     LIST: '/quotations',
@@ -34,6 +35,7 @@ export const ROUTES = {
   CLIENTS: {
     INDEX: '/clients',
     CREATE: '/clients/create',
+    CREATE_BULK: '/clients/create-bulk',
     DETAIL: (id: string | number) => `/clients/${id}`
   },
   QUOTATIONS: {
