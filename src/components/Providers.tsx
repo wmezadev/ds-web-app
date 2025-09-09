@@ -13,6 +13,7 @@ import { SessionProvider } from '@/context/sessionContext'
 import { SessionExpiredProvider } from '@/context/SessionExpiredContext'
 import SessionExpiredModal from './SessionExpiredModal'
 import { SnackbarProvider } from '@/context/SnackBarContext'
+import { ToastProvider } from '@/context/ToastContext'
 
 type Props = ChildrenType & {
   direction: Direction
@@ -32,14 +33,16 @@ const Providers = async (props: Props) => {
       <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
         <ThemeProvider direction={direction} systemMode={systemMode}>
           <SnackbarProvider>
-            <SessionProvider>
-              <SessionExpiredProvider>
-                <PageNavProvider>
-                  <SessionExpiredModal />
-                  {children}
-                </PageNavProvider>
-              </SessionExpiredProvider>
-            </SessionProvider>
+            <ToastProvider>
+              <SessionProvider>
+                <SessionExpiredProvider>
+                  <PageNavProvider>
+                    <SessionExpiredModal />
+                    {children}
+                  </PageNavProvider>
+                </SessionExpiredProvider>
+              </SessionProvider>
+            </ToastProvider>
           </SnackbarProvider>
         </ThemeProvider>
       </SettingsProvider>

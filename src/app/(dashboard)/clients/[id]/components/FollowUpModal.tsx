@@ -16,9 +16,7 @@ import {
   MenuItem,
   Typography,
   IconButton,
-  Box,
-  Snackbar,
-  Alert
+  Box
 } from '@mui/material'
 
 import { useForm, Controller } from 'react-hook-form'
@@ -26,6 +24,7 @@ import { useForm, Controller } from 'react-hook-form'
 import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
 import { useApi } from '@/hooks/useApi'
 import type { CreateFollowUpPromise } from '@/hooks/useClient'
+import useSnackbar from '@/hooks/useSnackbar'
 
 interface FollowUpFormData {
   currentDate: string
@@ -62,16 +61,7 @@ const FollowUpModal = ({ open, onClose, onSuccess, followUpTypes, createFollowUp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [users, setUsers] = useState<BasicUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error'
-  })
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }))
-  }
+  const { showSuccess, showError } = useSnackbar()
 
   useEffect(() => {
     if (open) {
@@ -131,7 +121,7 @@ const FollowUpModal = ({ open, onClose, onSuccess, followUpTypes, createFollowUp
 
       await createFollowUp(followUpData)
 
-      setSnackbar({ open: true, message: 'Seguimiento creado con éxito', severity: 'success' })
+      showSuccess('Seguimiento creado con éxito')
 
       reset({
         currentDate: new Date().toISOString().split('T')[0],
@@ -146,7 +136,7 @@ const FollowUpModal = ({ open, onClose, onSuccess, followUpTypes, createFollowUp
       onSuccess()
       onClose()
     } catch (err: any) {
-      setSnackbar({ open: true, message: 'Error al crear el seguimiento', severity: 'error' })
+      showError('Error al crear el seguimiento')
       console.error('Error creating follow-up:', err)
     } finally {
       setIsSubmitting(false)
@@ -353,17 +343,6 @@ const FollowUpModal = ({ open, onClose, onSuccess, followUpTypes, createFollowUp
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </>
   )
 }
