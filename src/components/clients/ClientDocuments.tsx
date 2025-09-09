@@ -37,7 +37,6 @@ import { getFileIconClass } from '@/utils/fileHandlers'
 import { FILE_DESCRIPTION_OPTIONS } from '@/constants/texts'
 import { isExpired, dateToYearMonthDay, strToDayMonthYear } from '@/utils/dates'
 import type { S3File, S3FilesResponse, S3FileUploadResponse, UploadFileForm } from '@/types/files'
-import CommonSnackbar from '@/components/common/CommonSnackbar'
 
 interface ClientDocumentsProps {
   client?: { id?: string }
@@ -48,7 +47,7 @@ interface ClientDocumentsProps {
 const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocuments }) => {
   const { data: session } = useSession()
   const { fetchApi, uploadFile } = useApi()
-  const { snackbar, showSuccess, showError, hideSnackbar } = useSnackbar()
+  const { showSuccess, showError } = useSnackbar()
 
   const [documents, setDocuments] = useState<S3File[]>([])
 
@@ -131,6 +130,7 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
 
       const tempFile: S3File = {
         ...resp.file,
+        created_at: new Date().toISOString(),
         created_by_username: session?.user.username,
         created_by_avatar: session?.user.username
       }
@@ -194,19 +194,15 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
   }
 
   const handleViewDocument = async (doc: S3File) => {
-    if (doc.is_public && doc.url) {
-      window.open(doc.url, '_blank', 'noopener,noreferrer')
-
-      return
-    }
-
-    if (!doc.is_public && !doc.key) {
-      showError('No se puede mostrar: el documento no tiene key.')
-
-      return
-    }
-
     try {
+      if (doc.is_public && doc.url) {
+        window.open(doc.url, '_blank', 'noopener,noreferrer')
+
+        return
+      }
+
+      if (!doc.is_public && !doc.key) throw new Error('No se puede mostrar: el documento no tiene key.')
+
       const resp = await fetchApi<{ url: string }>('aws/s3/presigned-url', {
         method: 'POST',
         body: {
@@ -217,8 +213,8 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
       if (!resp.url) throw new Error('La respuesta no contiene una URL válida.')
 
       window.open(resp.url, '_blank', 'noopener,noreferrer')
-    } catch (err: any) {
-      showError(`Error al obtener URL firmada: ${err.message || 'Error desconocido'}`)
+    } catch (err) {
+      showError(`Error al obtener URL firmada: ${err || 'Error desconocido'}`)
     }
   }
 
@@ -372,8 +368,6 @@ const ClientDocuments: React.FC<ClientDocumentsProps> = ({ client, onExpiredDocu
           </TableBody>
         </Table>
       )}
-
-      <CommonSnackbar snackbar={snackbar} onClose={hideSnackbar} />
 
       <Dialog open={deleteIndex !== null} onClose={() => setDeleteIndex(null)}>
         <DialogTitle>Eliminar documento</DialogTitle>

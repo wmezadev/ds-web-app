@@ -161,7 +161,9 @@ const DetailItemEditablePair: React.FC<DetailItemEditablePairProps> = ({
             </>
           ) : (
             <>
-              <Box fontWeight='bold'>{`${value1 || ''} | ${value2 || ''}` || '—'}</Box>
+              <Box component='span' fontWeight='bold'>
+                {`${value1 || ''} | ${value2 || ''}` || '—'}
+              </Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
@@ -318,7 +320,10 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
             </>
           ) : (
             <>
-              <Box fontWeight='bold'>{`${getCityLabel(displayCityId)} / ${getZoneLabel(displayZoneId)}`}</Box>
+              <Box
+                component='span'
+                fontWeight='bold'
+              >{`${getCityLabel(displayCityId)} / ${getZoneLabel(displayZoneId)}`}</Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
@@ -438,7 +443,9 @@ const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
             )
           ) : (
             <>
-              <Box fontWeight='bold'>{value || placeholder || '—'}</Box>
+              <Box component='span' fontWeight='bold'>
+                {value || placeholder || '—'}
+              </Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
