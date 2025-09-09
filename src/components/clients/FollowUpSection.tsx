@@ -11,8 +11,6 @@ import {
   Avatar,
   Switch,
   FormControlLabel,
-  Snackbar,
-  Alert,
   Stack
 } from '@mui/material'
 
@@ -21,6 +19,7 @@ import { Add } from '@mui/icons-material'
 import { useClient } from '@/hooks/useClient'
 import { useApi } from '@/hooks/useApi'
 import FollowUpModal from '@/app/(dashboard)/clients/[id]/components/FollowUpModal'
+import useSnackbar from '@/hooks/useSnackbar'
 
 interface BasicUser {
   id: number
@@ -39,16 +38,7 @@ const FollowUpSection: React.FC<{
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [users, setUsers] = useState<BasicUser[]>([])
   const [modalOpen, setModalOpen] = useState(false)
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error'
-  })
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }))
-  }
+  const { showSuccess, showError } = useSnackbar()
 
   // Cargar usuarios para mostrar nombres en el historial
   useEffect(() => {
@@ -83,17 +73,6 @@ const FollowUpSection: React.FC<{
         followUpTypes={followUpTypes}
         createFollowUp={createFollowUp}
       />
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
 
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h6' fontWeight='bold'>
@@ -193,17 +172,10 @@ const FollowUpSection: React.FC<{
 
                                   try {
                                     await updateFollowUpStatus(record.id, e.target.checked)
-                                    setSnackbar({
-                                      open: true,
-                                      message: 'Estado actualizado con éxito',
-                                      severity: 'success'
-                                    })
+                                    showSuccess('Estado actualizado con éxito')
                                   } catch (error) {
-                                    setSnackbar({
-                                      open: true,
-                                      message: 'Error al actualizar el estado',
-                                      severity: 'error'
-                                    })
+                                    showError('Error al actualizar el estado')
+                                    console.error(error)
                                   } finally {
                                     setUpdatingStatus(null)
                                   }

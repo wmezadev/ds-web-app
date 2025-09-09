@@ -16,16 +16,15 @@ import {
   FormControl,
   InputLabel,
   TextField,
-  Snackbar,
   IconButton
 } from '@mui/material'
-import Alert from '@mui/material/Alert'
 import { Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
+import useSnackbar from '@/hooks/useSnackbar'
 
 interface DetailItemProps {
   label: string
@@ -57,12 +56,7 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
 
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  })
+  const { showSuccess, showError } = useSnackbar()
 
   const [form, setForm] = useState({
     client_category_id: client.client_category_id ?? '',
@@ -351,12 +345,11 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
                   notes: merged.notes || ''
                 })
 
-                setSnackbar({ open: true, message: 'Información de registro actualizada', severity: 'success' })
+                showSuccess('Información de registro actualizada')
                 setOpen(false)
               } catch (e: any) {
-                const msg = e?.message || 'No fue posible actualizar'
-
-                setSnackbar({ open: true, message: msg, severity: 'error' })
+                showError(e?.message || 'No fue posible actualizar')
+                console.error(e?.message)
               } finally {
                 setSaving(false)
               }
@@ -367,22 +360,6 @@ const ClientRegistration: React.FC<ClientRegistrationProps> = ({ client, clientI
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          severity={snackbar.severity}
-          variant='filled'
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

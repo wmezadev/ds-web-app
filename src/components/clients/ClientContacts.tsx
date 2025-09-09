@@ -13,16 +13,15 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
   IconButton
 } from '@mui/material'
-import Alert from '@mui/material/Alert'
 
 import { Add, Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi } from '@/components/clients/ClientForm'
+import useSnackbar from '@/hooks/useSnackbar'
 
 interface DetailItemProps {
   label: string
@@ -61,9 +60,7 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
   })
 
   const [saving, setSaving] = useState(false)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const { showSuccess, showError } = useSnackbar()
   const [isEditing, setIsEditing] = useState(false)
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -115,13 +112,9 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
 
       setContacts(updatedContacts)
       setModalOpen(false)
-      setSnackbarSeverity('success')
-      setSnackbarMessage(isEditing ? 'Contacto actualizado exitosamente' : 'Contacto agregado exitosamente')
-      setSnackbarOpen(true)
+      showSuccess(isEditing ? 'Contacto actualizado exitosamente' : 'Contacto agregado exitosamente')
     } catch (err) {
-      setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible guardar el contacto')
-      setSnackbarOpen(true)
+      showError('No fue posible guardar el contacto')
     } finally {
       setSaving(false)
       setIsEditing(false)
@@ -148,13 +141,10 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
 
       setContacts(updatedContacts)
       setModalOpen(false)
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Contacto eliminado exitosamente')
-      setSnackbarOpen(true)
+      showSuccess('Contacto eliminado exitosamente')
     } catch (err) {
-      setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible eliminar el contacto')
-      setSnackbarOpen(true)
+      showError('No fue posible eliminar el contacto')
+      console.error(err)
     } finally {
       setSaving(false)
       setIsEditing(false)
@@ -276,21 +266,6 @@ const ClientContacts: React.FC<ClientContactsProps> = ({ client }) => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant='filled'
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

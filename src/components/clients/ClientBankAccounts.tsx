@@ -13,16 +13,15 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
   IconButton
 } from '@mui/material'
 
-import Alert from '@mui/material/Alert'
 import { Add, Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
+import useSnackbar from '@/hooks/useSnackbar'
 
 interface DetailItemProps {
   label: string
@@ -61,9 +60,7 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
   })
 
   const [saving, setSaving] = useState(false)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const { showSuccess, showError } = useSnackbar()
   const [isEditing, setIsEditing] = useState(false)
   const [selectedAccountIndex, setSelectedAccountIndex] = useState<number | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -119,16 +116,10 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
 
       setBankAccounts(updatedBankAccounts)
       setModalOpen(false)
-      setSnackbarSeverity('success')
-      setSnackbarMessage(
-        isEditing ? 'Cuenta bancaria actualizada exitosamente' : 'Cuenta bancaria agregada exitosamente'
-      )
-      setSnackbarOpen(true)
+      showSuccess(isEditing ? 'Cuenta bancaria actualizada exitosamente' : 'Cuenta bancaria agregada exitosamente')
     } catch (err) {
       console.error(err)
-      setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible guardar la cuenta bancaria')
-      setSnackbarOpen(true)
+      showError('No fue posible guardar la cuenta bancaria')
     } finally {
       setSaving(false)
       setIsEditing(false)
@@ -158,14 +149,10 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
 
       setBankAccounts(updatedBankAccounts)
       setModalOpen(false)
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Cuenta bancaria eliminada exitosamente')
-      setSnackbarOpen(true)
+      showSuccess('Cuenta bancaria eliminada exitosamente')
     } catch (err) {
       console.error(err)
-      setSnackbarSeverity('error')
-      setSnackbarMessage('No fue posible eliminar la cuenta bancaria')
-      setSnackbarOpen(true)
+      showError('No fue posible eliminar la cuenta bancaria')
     } finally {
       setSaving(false)
       setIsEditing(false)
@@ -288,22 +275,6 @@ const ClientBankAccounts: React.FC<ClientBankAccountsProps> = ({ client }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant='filled'
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

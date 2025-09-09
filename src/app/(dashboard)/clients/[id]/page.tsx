@@ -16,7 +16,6 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material'
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -33,7 +32,6 @@ import {
   IconButton,
   TextField,
   Tooltip,
-  Snackbar,
   Autocomplete,
   Stack,
   Tab
@@ -43,8 +41,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { es } from 'date-fns/locale'
 
 import { TabContext, TabPanel } from '@mui/lab'
-
-import { ToastContainer, toast } from 'react-toastify'
 
 import TabList from '@core/components/mui/TabList'
 import ClientPersonalData from '@/components/clients/ClientPersonalData'
@@ -59,10 +55,11 @@ import { useClient } from '@/hooks/useClient'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import { usePageNavContent } from '@/hooks/usePageNavContent'
 
-import 'react-toastify/dist/ReactToastify.css'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
+import useSnackbar from '@/hooks/useSnackbar'
+import { useToast } from '@/context/ToastContext'
 
 interface DetailItemEditablePairProps {
   icon: React.ElementType
@@ -161,7 +158,9 @@ const DetailItemEditablePair: React.FC<DetailItemEditablePairProps> = ({
             </>
           ) : (
             <>
-              <Box fontWeight='bold'>{`${value1 || ''} | ${value2 || ''}` || '—'}</Box>
+              <Box component='span' fontWeight='bold'>
+                {`${value1 || ''} | ${value2 || ''}` || '—'}
+              </Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
@@ -318,7 +317,10 @@ const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
             </>
           ) : (
             <>
-              <Box fontWeight='bold'>{`${getCityLabel(displayCityId)} / ${getZoneLabel(displayZoneId)}`}</Box>
+              <Box
+                component='span'
+                fontWeight='bold'
+              >{`${getCityLabel(displayCityId)} / ${getZoneLabel(displayZoneId)}`}</Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
@@ -438,7 +440,9 @@ const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
             )
           ) : (
             <>
-              <Box fontWeight='bold'>{value || placeholder || '—'}</Box>
+              <Box component='span' fontWeight='bold'>
+                {value || placeholder || '—'}
+              </Box>
               <Tooltip title='Editar'>
                 <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
                   <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
@@ -611,9 +615,7 @@ const ClientDetailsCard = ({
 }) => {
   const { fetchApi } = useApi()
   const router = useRouter()
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false)
-  const [snackbarMessage, setSnackbarMessage] = React.useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success')
+  const { showSuccess, showError } = useSnackbar()
   const [clientDisplay, setClientDisplay] = React.useState<Partial<Client>>(client)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
@@ -689,16 +691,9 @@ const ClientDetailsCard = ({
         join_date: patch.join_date ?? prev.join_date
       }))
 
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Cliente actualizado exitosamente')
-      setSnackbarOpen(true)
+      showSuccess('Cliente actualizado exitosamente')
     } catch (err: any) {
-      const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
-
-      setSnackbarSeverity('error')
-
-      setSnackbarMessage(apiMsg)
-      setSnackbarOpen(true)
+      showError(err?.message || 'Ocurrió un error al actualizar el cliente')
       throw err
     }
   }
@@ -740,31 +735,23 @@ const ClientDetailsCard = ({
 
     try {
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
-      setSnackbarSeverity('success')
-      setSnackbarMessage('Cliente eliminado exitosamente')
-      setSnackbarOpen(true)
+      showSuccess('Cliente eliminado exitosamente')
       setConfirmOpen(false)
 
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
       try {
         await fetchApi(`clients/${clientId}`)
-        setSnackbarSeverity('error')
-        setSnackbarMessage('No fue posible eliminar el cliente')
-        setSnackbarOpen(true)
+        showError('No fue posible eliminar el cliente')
       } catch (e2: any) {
         const msg = String(e2?.message || '')
 
         if (msg.includes('status: 404')) {
-          setSnackbarSeverity('success')
-          setSnackbarMessage('Cliente eliminado exitosamente')
-          setSnackbarOpen(true)
+          showSuccess('Cliente eliminado exitosamente')
           setConfirmOpen(false)
           setTimeout(() => router.replace('/clients'), 1200)
         } else {
-          setSnackbarSeverity('error')
-          setSnackbarMessage('No fue posible eliminar el cliente')
-          setSnackbarOpen(true)
+          showError('No fue posible eliminar el cliente')
         }
       }
     } finally {
@@ -875,22 +862,6 @@ const ClientDetailsCard = ({
               </Button>
             </DialogActions>
           </Dialog>
-
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={3000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <Alert
-              onClose={() => setSnackbarOpen(false)}
-              severity={snackbarSeverity}
-              variant='filled'
-              sx={{ width: '100%' }}
-            >
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
         </CardContent>
       </Card>
     </LocalizationProvider>
@@ -917,33 +888,24 @@ const ClientMainContent = ({
   const [curTab, setTab] = React.useState(0)
 
   const shownExpiredRef = React.useRef<Set<string>>(new Set())
+  const { showToastAlert } = useToast()
 
-  const handleExpiredDocs = React.useCallback((docs: any[]) => {
-    if (!Array.isArray(docs) || docs.length === 0) return
-    docs.forEach(d => {
-      const id = (d.url || d.name || '') + (d.expiring_date || d.expiry_date || '')
+  const handleExpiredDocs = React.useCallback(
+    (docs: any[]) => {
+      if (!Array.isArray(docs) || docs.length === 0) return
+      docs.forEach(d => {
+        const id = (d.url || d.name || '') + (d.expiring_date || d.expiry_date || '')
 
-      if (!id || shownExpiredRef.current.has(id)) return
-      shownExpiredRef.current.add(id)
+        if (!id || shownExpiredRef.current.has(id)) return
+        shownExpiredRef.current.add(id)
 
-      const title = d.description || d.name || 'Documento'
+        const title = d.description || d.name || 'Documento'
 
-      toast(`Documento vencido: ${title}`, {
-        icon: <i className='ri-error-warning-line' style={{ color: '#d32f2f' }} />,
-        onClick: () => setTab(1),
-        autoClose: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        style: {
-          background: '#F5F5F7',
-          color: '#3c3c3c',
-          fontWeight: 600,
-          border: '1px solid #e0e0e0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-        }
+        showToastAlert(`Documento vencido: ${title}`, () => setTab(1))
       })
-    })
-  }, [])
+    },
+    [showToastAlert]
+  )
 
   return (
     <>
@@ -1051,8 +1013,6 @@ const ClientDetailPage = () => {
 
   return (
     <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
-      {/* Contenedor global de toasts (tema neutro para permitir estilos custom) */}
-      <ToastContainer position='top-right' newestOnTop closeOnClick draggable pauseOnHover theme='light' />
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
           <Grid container direction='column' spacing={4}>

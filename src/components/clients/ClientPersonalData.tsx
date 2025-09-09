@@ -16,16 +16,15 @@ import {
   MenuItem,
   TextField,
   Button,
-  Snackbar,
   IconButton
 } from '@mui/material'
-import Alert from '@mui/material/Alert'
 import { Edit } from '@mui/icons-material'
 
 import type { Client } from '@/types/client'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
+import useSnackbar from '@/hooks/useSnackbar'
 
 const getCivilStatusDisplay = (status: string | null): string => {
   if (!status) return '-'
@@ -78,11 +77,7 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
 
   const [saving, setSaving] = React.useState(false)
 
-  const [snackbar, setSnackbar] = React.useState<{
-    open: boolean
-    message: string
-    severity: 'success' | 'error'
-  }>({ open: false, message: '', severity: 'success' })
+  const { showSuccess, showError } = useSnackbar()
 
   const [display, setDisplay] = React.useState({
     gender: client.personal_data?.gender ?? '',
@@ -174,12 +169,11 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
       await fetchApi(`clients/${clientId}`, { method: 'PUT', body: payload })
 
       setDisplay({ ...form })
-      setSnackbar({ open: true, message: 'Datos personales actualizados', severity: 'success' })
+      showSuccess('Datos personales actualizados')
       setOpen(false)
     } catch (e: any) {
-      const msg = e?.message || 'No fue posible actualizar'
-
-      setSnackbar({ open: true, message: msg, severity: 'error' })
+      showError(e?.message || 'No fue posible actualizar')
+      console.error(e?.message)
     } finally {
       setSaving(false)
     }
@@ -378,22 +372,6 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          severity={snackbar.severity}
-          variant='filled'
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

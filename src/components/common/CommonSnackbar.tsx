@@ -4,7 +4,7 @@ import React from 'react'
 
 import { Snackbar, Alert, type AlertProps, type SnackbarProps } from '@mui/material'
 
-import type { SnackbarState } from '@/hooks/useSnackbar'
+import type { SnackbarState } from '@/context/SnackBarContext'
 
 export interface CommonSnackbarProps {
   snackbar: SnackbarState
