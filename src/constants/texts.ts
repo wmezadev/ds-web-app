@@ -87,3 +87,30 @@ export const CERTIFICATES_PAGE = {
   NO_RESULTS: 'No se encontraron certificados.',
   CREATE_CERTIFICATE: 'Crear certificado'
 }
+
+export const FILE_DESCRIPTION_OPTIONS = [
+  'Cédula de Identidad',
+  'Registro Único de Información Fiscal (RIF)',
+  'Pasaporte',
+  'Visa',
+  'Acta de Matrimonio',
+  'Acta de Divorcio',
+  'Constancia de Union Estable',
+  'Certificado Medico',
+  'Licencia de Conducir',
+  'Recibo de Servicio',
+  'Tarjeta de Crédito',
+  'Cuenta Bancaria',
+  'Partida de Nacimiento',
+  'Solicitud del contrato de seguro',
+  'Referencia bancaria',
+  'Declaración del Impuesto Sobre la Renta (ISLR)',
+  'Comprobante de propiedad',
+  'Contragarantía en contratos de fianza',
+  'Registro de Asociación Gremial',
+  'Contrato según actividad del Sujeto Obligado',
+  'Acta constitutiva y estatutos sociales',
+  'Constancia de verificación de datos RCSNU',
+  'Constancia de actualización de datos del cliente',
+  'Constancia de verificación de datos por medios públicos'
+]

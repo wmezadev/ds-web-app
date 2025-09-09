@@ -1,5 +1,4 @@
 export function getFileIconClass(mimeType: string | undefined): string {
-  console.log(mimeType)
   if (mimeType === 'application/pdf') return 'ri-file-pdf-2-line'
 
   if (
