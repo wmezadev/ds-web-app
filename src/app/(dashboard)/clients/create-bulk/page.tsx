@@ -34,7 +34,7 @@ export default function BulkClientCreatePage() {
 
       try {
         const response = await uploadFile<any>(API_ROUTES.CLIENTS.CREATE_BULK, file, {})
-        console.log('Respuesta de la API:', response)
+
         if (response?.success === false) {
           setError('Uno de tus clientes ya está registrado.')
         } else if (response?.errors?.length) {
@@ -44,6 +44,7 @@ export default function BulkClientCreatePage() {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error desconocido al subir el archivo.'
+
         setError(message)
       }
     },
