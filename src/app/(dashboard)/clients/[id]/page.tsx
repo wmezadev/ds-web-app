@@ -4,18 +4,16 @@ import React, { useMemo } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 
+import { Business, Cake, Email, Home, Phone, Place, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
+
+import EditIcon from '@mui/icons-material/Edit'
+
+import { Business, Cake, Email, Home, Phone, Place, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
+
+import EditIcon from '@mui/icons-material/Edit'
+
 import {
-  Business,
-  Cake,
-  Email,
-  Home,
-  Phone,
-  Place,
-  DriveFileRenameOutline as EditIcon,
-  Check as CheckIcon,
-  Close as CloseIcon
-} from '@mui/icons-material'
-import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -615,24 +613,30 @@ const ClientDetailsCard = ({
 }) => {
   const { fetchApi } = useApi()
   const router = useRouter()
-  const { showSuccess, showError } = useSnackbar()
-  const [clientDisplay, setClientDisplay] = React.useState<Partial<Client>>(client)
-  const [confirmOpen, setConfirmOpen] = React.useState(false)
-  const [deleting, setDeleting] = React.useState(false)
-
-  React.useEffect(() => {
-    setClientDisplay(client)
-  }, [client])
-
-  const [localDetails, setLocalDetails] = React.useState({
+  const [open, setOpen] = React.useState(false)
+  const [saving, setSaving] = React.useState(false)
+  const [form, setForm] = React.useState({
+    mobile_1: client.mobile_1 || '',
+    phone: client.phone || '',
+    email_1: client.email_1 || '',
+    email_2: client.email_2 || '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? '',
     billing_address: client.billing_address || '',
-    birth_place: client.birth_place || '',
     birth_date: client.birth_date || '',
+    birth_place: client.birth_place || '',
     join_date: client.join_date || ''
   })
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error'
+  })
+  const [deleting, setDeleting] = React.useState(false)
 
   const [citiesOptions, setCitiesOptions] = React.useState(cities || [])
   const [zonesOptions, setZonesOptions] = React.useState(zones || [])
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
 
   React.useEffect(() => {
     setCitiesOptions(cities || [])
@@ -662,68 +666,29 @@ const ClientDetailsCard = ({
     loadFallback()
   }, [cities, zones, fetchApi])
 
-  React.useEffect(() => {
-    setLocalDetails({
-      billing_address: client.billing_address || '',
-      birth_place: client.birth_place || '',
-      birth_date: client.birth_date || '',
-      join_date: client.join_date || ''
-    })
-  }, [client.billing_address, client.birth_place, client.birth_date, client.join_date])
-
-  const updateClient = async (patch: Partial<ClientFormFields>) => {
+  const updateClient = async () => {
     try {
       const formFromApi = clientApiToForm(client as Client)
 
-      const mergedForm: ClientFormFields = { ...formFromApi, ...patch }
+      const mergedForm: ClientFormFields = { ...formFromApi, ...form }
       const apiPayload = clientFormToApi(mergedForm)
 
       await fetchApi(`clients/${clientId}`, {
         method: 'PUT',
         body: apiPayload
       })
-      setClientDisplay(prev => ({ ...prev, ...(patch as any) }))
 
-      setLocalDetails(prev => ({
-        billing_address: patch.billing_address ?? prev.billing_address,
-        birth_place: patch.birth_place ?? prev.birth_place,
-        birth_date: patch.birth_date ?? prev.birth_date,
-        join_date: patch.join_date ?? prev.join_date
-      }))
-
-      showSuccess('Cliente actualizado exitosamente')
+      setSnackbar({
+        open: true,
+        message: 'Cliente actualizado exitosamente',
+        severity: 'success'
+      })
+      setOpen(false)
     } catch (err: any) {
-      showError(err?.message || 'Ocurrió un error al actualizar el cliente')
+      const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
+      setSnackbar({ open: true, message: apiMsg, severity: 'error' })
       throw err
     }
-  }
-
-  const saveBirthPlace = async (newBirthPlace: string) => {
-    await updateClient({ birth_place: newBirthPlace })
-  }
-
-  const saveBillingAddress = async (newBillingAddress: string) => {
-    await updateClient({ billing_address: newBillingAddress })
-  }
-
-  const saveBirthDate = async (newBirthDate: string) => {
-    await updateClient({ birth_date: newBirthDate })
-  }
-
-  const saveJoinDate = async (newJoinDate: string) => {
-    await updateClient({ join_date: newJoinDate })
-  }
-
-  const savePhones = async (mobile_1: string, phone: string) => {
-    await updateClient({ mobile_1, phone })
-  }
-
-  const saveEmails = async (email_1: string, email_2: string) => {
-    await updateClient({ email_1, email_2 })
-  }
-
-  const saveCityZone = async (city_id: number | null, zone_id: number | null) => {
-    await updateClient({ city_id, zone_id })
   }
 
   const handleOpenConfirm = () => setConfirmOpen(true)
@@ -735,24 +700,30 @@ const ClientDetailsCard = ({
 
     try {
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
-      showSuccess('Cliente eliminado exitosamente')
-      setConfirmOpen(false)
 
+      setSnackbar({
+        open: true,
+        message: 'Cliente eliminado exitosamente',
+        severity: 'success'
+      })
+      setConfirmOpen(false)
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
-      try {
-        await fetchApi(`clients/${clientId}`)
-        showError('No fue posible eliminar el cliente')
-      } catch (e2: any) {
-        const msg = String(e2?.message || '')
-
-        if (msg.includes('status: 404')) {
-          showSuccess('Cliente eliminado exitosamente')
-          setConfirmOpen(false)
-          setTimeout(() => router.replace('/clients'), 1200)
-        } else {
-          showError('No fue posible eliminar el cliente')
-        }
+      const msg = String(err?.message || '')
+      if (msg.includes('status: 404')) {
+        setSnackbar({
+          open: true,
+          message: 'Cliente eliminado exitosamente',
+          severity: 'success'
+        })
+        setConfirmOpen(false)
+        setTimeout(() => router.replace('/clients'), 1200)
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'No fue posible eliminar el cliente',
+          severity: 'error'
+        })
       }
     } finally {
       setDeleting(false)
@@ -761,107 +732,102 @@ const ClientDetailsCard = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-      <Card elevation={0} sx={{ borderRadius: 2 }}>
+      <Card elevation={0} sx={{ borderRadius: 2, position: 'relative' }}>
         <CardContent>
+          <IconButton size='small' onClick={() => setOpen(true)} sx={{ position: 'absolute', top: 8, right: 8 }}>
+            <EditIcon />
+          </IconButton>
+
           <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
             Detalles
           </Typography>
 
-          <DetailItemEditable
-            icon={Cake}
-            label='Fecha Ingreso'
-            value={localDetails.join_date}
-            onSave={saveJoinDate}
-            type='date'
-            placeholder='Seleccionar fecha'
-          />
-
-          <Divider sx={{ my: 1 }} />
-
-          <DetailItemEditablePair
-            icon={Phone}
-            label='Teléfonos'
-            value1={clientDisplay.mobile_1 as string}
-            value2={clientDisplay.phone as string}
-            onSave={savePhones}
-            placeholder1='Móvil'
-            placeholder2='Fijo'
-          />
-          <DetailItemEditablePair
-            icon={Email}
-            label='Correos'
-            value1={clientDisplay.email_1 as string}
-            value2={clientDisplay.email_2 as string}
-            onSave={saveEmails}
-            placeholder1='Email 1'
-            placeholder2='Email 2'
-          />
-          <Divider sx={{ my: 1 }} />
-          <DetailItemEditableCityZone
-            icon={Business}
-            label='Ciudad/Zona'
-            cityId={(clientDisplay.city_id as number) ?? null}
-            zoneId={(clientDisplay.zone_id as number) ?? null}
-            cities={citiesOptions}
-            zones={zonesOptions}
-            onSave={saveCityZone}
-          />
-          <DetailItemEditable
-            icon={Home}
-            label='Dirección'
-            value={localDetails.billing_address}
-            onSave={saveBillingAddress}
-            placeholder='Ingrese la dirección'
-          />
-
-          <Divider sx={{ my: 1 }} />
-
-          <DetailItemEditable
-            icon={Cake}
-            label='Fecha Nac./Fund.'
-            value={localDetails.birth_date}
-            onSave={saveBirthDate}
-            type='date'
-            placeholder='Seleccionar fecha'
-          />
-
-          <DetailItemEditable
-            icon={Place}
-            label='Lugar de Nac./Fund.'
-            value={localDetails.birth_place}
-            onSave={saveBirthPlace}
-            placeholder='Ingrese el lugar'
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
-            <Button
-              variant='outlined'
-              startIcon={<i className='ri-delete-bin-6-line' />}
-              color='error'
-              onClick={handleOpenConfirm}
-              sx={{ textTransform: 'none', py: 1.25, px: 2, fontSize: '0.9rem' }}
-            >
-              <Typography color='error' sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                Eliminar
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Móvil
               </Typography>
-            </Button>
-          </Box>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.mobile_1 || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fijo
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.phone || '-'}
+              </Typography>
+            </Grid>
 
-          <Dialog open={confirmOpen} onClose={handleCloseConfirm} aria-labelledby='confirm-delete-title'>
-            <DialogTitle id='confirm-delete-title'>Confirmar eliminación</DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                ¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseConfirm} variant='text' disabled={deleting}>
-                Cancelar
-              </Button>
-              <Button onClick={handleConfirmDelete} color='error' variant='contained' autoFocus disabled={deleting}>
-                {deleting ? 'Eliminando...' : 'Eliminar'}
-              </Button>
-            </DialogActions>
-          </Dialog>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Email 1
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.email_1 || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Email 2
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.email_2 || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Ciudad
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {client.cityName || citiesOptions.find(c => c.id === form.city_id)?.name || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Zona
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {client.zoneName || zonesOptions.find(z => z.id === form.zone_id)?.name || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant='body2' color='text.secondary'>
+                Dirección
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.billing_address || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fecha Ingreso
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.join_date || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fecha Nac./Fund.
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.birth_date || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant='body2' color='text.secondary'>
+                Lugar de Nac./Fund.
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.birth_place || '-'}
+              </Typography>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
     </LocalizationProvider>
