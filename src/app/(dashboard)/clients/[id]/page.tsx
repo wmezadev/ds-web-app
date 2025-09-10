@@ -8,10 +8,6 @@ import { Business, Cake, Email, Home, Phone, Place, Check as CheckIcon, Close as
 
 import EditIcon from '@mui/icons-material/Edit'
 
-import { Business, Cake, Email, Home, Phone, Place, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
-
-import EditIcon from '@mui/icons-material/Edit'
-
 import {
   Alert,
   Avatar,
@@ -613,6 +609,7 @@ const ClientDetailsCard = ({
 }) => {
   const { fetchApi } = useApi()
   const router = useRouter()
+  const { showSuccess, showError } = useSnackbar()
   const [open, setOpen] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [form, setForm] = React.useState({
@@ -626,11 +623,6 @@ const ClientDetailsCard = ({
     birth_date: client.birth_date || '',
     birth_place: client.birth_place || '',
     join_date: client.join_date || ''
-  })
-  const [snackbar, setSnackbar] = React.useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error'
   })
   const [deleting, setDeleting] = React.useState(false)
 
@@ -678,15 +670,11 @@ const ClientDetailsCard = ({
         body: apiPayload
       })
 
-      setSnackbar({
-        open: true,
-        message: 'Cliente actualizado exitosamente',
-        severity: 'success'
-      })
+      showSuccess('Cliente actualizado exitosamente')
       setOpen(false)
     } catch (err: any) {
       const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
-      setSnackbar({ open: true, message: apiMsg, severity: 'error' })
+      showError(apiMsg)
       throw err
     }
   }
@@ -701,29 +689,17 @@ const ClientDetailsCard = ({
     try {
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
 
-      setSnackbar({
-        open: true,
-        message: 'Cliente eliminado exitosamente',
-        severity: 'success'
-      })
+      showSuccess('Cliente eliminado exitosamente')
       setConfirmOpen(false)
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
       const msg = String(err?.message || '')
       if (msg.includes('status: 404')) {
-        setSnackbar({
-          open: true,
-          message: 'Cliente eliminado exitosamente',
-          severity: 'success'
-        })
+        showSuccess('Cliente eliminado exitosamente')
         setConfirmOpen(false)
         setTimeout(() => router.replace('/clients'), 1200)
       } else {
-        setSnackbar({
-          open: true,
-          message: 'No fue posible eliminar el cliente',
-          severity: 'error'
-        })
+        showError('No fue posible eliminar el cliente')
       }
     } finally {
       setDeleting(false)
@@ -764,15 +740,15 @@ const ClientDetailsCard = ({
               <Typography variant='body2' color='text.secondary'>
                 Email 1
               </Typography>
-              <Typography variant='body1' fontWeight='bold'>
+              <Typography variant='body1' fontWeight='bold' title={form.email_1 || ''} sx={{ whiteSpace: 'nowrap' }}>
                 {form.email_1 || '-'}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={12}>
               <Typography variant='body2' color='text.secondary'>
                 Email 2
               </Typography>
-              <Typography variant='body1' fontWeight='bold'>
+              <Typography variant='body1' fontWeight='bold' sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                 {form.email_2 || '-'}
               </Typography>
             </Grid>
@@ -828,6 +804,70 @@ const ClientDetailsCard = ({
               </Typography>
             </Grid>
           </Grid>
+
+          <Dialog open={open} onClose={() => setOpen(false)} maxWidth='sm' fullWidth>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} mt={1}>
+                <DatePicker
+                  label='Fecha Ingreso'
+                  value={form.join_date ? new Date(form.join_date) : null}
+                  onChange={d => setForm(prev => ({ ...prev, join_date: d ? d.toISOString().split('T')[0] : '' }))}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+                <TextField
+                  label='Móvil'
+                  value={form.mobile_1}
+                  onChange={e => setForm(prev => ({ ...prev, mobile_1: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Fijo'
+                  value={form.phone}
+                  onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Email 1'
+                  value={form.email_1}
+                  onChange={e => setForm(prev => ({ ...prev, email_1: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Email 2'
+                  value={form.email_2}
+                  onChange={e => setForm(prev => ({ ...prev, email_2: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Dirección'
+                  value={form.billing_address}
+                  onChange={e => setForm(prev => ({ ...prev, billing_address: e.target.value }))}
+                  fullWidth
+                />
+                <DatePicker
+                  label='Fecha Nac./Fund.'
+                  value={form.birth_date ? new Date(form.birth_date) : null}
+                  onChange={d => setForm(prev => ({ ...prev, birth_date: d ? d.toISOString().split('T')[0] : '' }))}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+                <TextField
+                  label='Lugar de Nac./Fund.'
+                  value={form.birth_place}
+                  onChange={e => setForm(prev => ({ ...prev, birth_place: e.target.value }))}
+                  fullWidth
+                />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button onClick={updateClient} variant='contained' disabled={saving}>
+                {saving ? 'Guardando...' : 'Guardar'}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </CardContent>
       </Card>
     </LocalizationProvider>
