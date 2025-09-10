@@ -33,14 +33,18 @@ export default function BulkClientCreatePage() {
       setUploading(true)
 
       try {
-        await uploadFile<unknown>(API_ROUTES.CLIENTS.CREATE_BULK, file, {})
-        setSuccess('Los clientes han sido añadidos con éxito.')
+        const response = await uploadFile<any>(API_ROUTES.CLIENTS.CREATE_BULK, file, {})
+        console.log('Respuesta de la API:', response)
+        if (response?.success === false) {
+          setError('Uno de tus clientes ya está registrado.')
+        } else if (response?.errors?.length) {
+          setError(`No se pudo subir el archivo. Errores: ${response.errors.join(', ')}`)
+        } else {
+          setSuccess('Los clientes han sido añadidos con éxito.')
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error desconocido al subir el archivo.'
-
         setError(message)
-      } finally {
-        setUploading(false)
       }
     },
     [uploadFile]
@@ -177,9 +181,8 @@ export default function BulkClientCreatePage() {
               }}
             >
               <Typography component='pre' sx={{ m: 0, fontFamily: 'monospace' }}>
-                Tipo de Doc [CI/RIF], Número de doc, Nombres/ Razón social, Apellidos, Lugar de Nac/Fund, Fecha de
-                Nac/Fund, Email 1, Email 2, Fecha de Ingreso, Tipo de persona [Natural o jurídica], Estado [Activo o
-                inactivo], Dirección, Teléfono, Celular 1, Celular 2, Ciudad, Zona, Punto de referencia
+                Tipo de Doc [V,J,G,P], Numero de doc Tipo de persona [N o J], Nombres/ Razon social, Apellidos,
+                Direccion, Celular 1, Celular 2, Email 1, Email 2, Lugar de Nac/Fund
               </Typography>
             </Paper>
           </Box>
@@ -189,8 +192,7 @@ export default function BulkClientCreatePage() {
               2. Formato de datos
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              - Fechas deben estar en formato YYYY-MM-DD - Los campos de género deben ser M o F - El ciudad_id debe
-              coincidir con un ID existente en el sistema
+              - Tipo de documento acepta un carácter: V, J, G, P <br />- Tipo de persona acepta un carácter: N, J
             </Typography>
           </Box>
 
@@ -208,8 +210,8 @@ export default function BulkClientCreatePage() {
               }}
             >
               <Typography component='pre' sx={{ m: 0, fontFamily: 'monospace' }}>
-                V,12345678,Juan,Carlos,Pérez,González,1985-05-15,M,juan@email.com,5551234,Calle Principal 123,1
-                E,87654321,María,Isabel,Rodríguez,López,1990-08-22,F,maria@email.com,5555678,Avenida Central 456,2
+                V, 12345678, N, Juan Carlos, Pérez González, Calle Principal 123, 4241234567, 04169876543,
+                juan@email.com, juan.work@email.com, Caracas
               </Typography>
             </Paper>
           </Box>
