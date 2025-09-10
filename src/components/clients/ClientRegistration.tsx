@@ -24,7 +24,7 @@ import type { Client } from '@/types/client'
 import { useCatalogs } from '@/hooks/useCatalogs'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface DetailItemProps {
   label: string

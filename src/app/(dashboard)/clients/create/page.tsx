@@ -9,7 +9,7 @@ import { Box } from '@mui/material'
 import ClientForm, { clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
 import { useApi } from '@/hooks/useApi'
 import { API_ROUTES, ROUTES } from '@/constants/routes'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 
 export default function ClientCreatePage() {
   const router = useRouter()

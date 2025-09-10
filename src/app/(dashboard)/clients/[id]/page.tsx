@@ -4,12 +4,11 @@ import React, { useMemo } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 
-import { Business, Cake, Email, Home, Phone, Place, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
+import { Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
 
 import EditIcon from '@mui/icons-material/Edit'
 
 import {
-  Alert,
   Avatar,
   Box,
   Button,
@@ -18,9 +17,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
-  Divider,
   Grid,
   Typography,
   IconButton,
@@ -52,121 +49,8 @@ import { usePageNavContent } from '@/hooks/usePageNavContent'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 import { useToast } from '@/context/ToastContext'
-
-interface DetailItemEditablePairProps {
-  icon: React.ElementType
-  label: string
-  value1: string | null | undefined
-  value2: string | null | undefined
-  onSave: (v1: string, v2: string) => Promise<void> | void
-  placeholder1?: string
-  placeholder2?: string
-}
-
-const DetailItemEditablePair: React.FC<DetailItemEditablePairProps> = ({
-  icon: Icon,
-  label,
-  value1,
-  value2,
-  onSave,
-  placeholder1,
-  placeholder2
-}) => {
-  const [editing, setEditing] = React.useState(false)
-  const [local1, setLocal1] = React.useState(value1 ?? '')
-  const [local2, setLocal2] = React.useState(value2 ?? '')
-
-  React.useEffect(() => {
-    setLocal1(value1 ?? '')
-    setLocal2(value2 ?? '')
-  }, [value1, value2])
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-      <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
-      <Typography variant='body2' sx={{ color: 'text.primary' }}>
-        <Box component='span' sx={{ color: 'text.secondary' }}>
-          {label}:
-        </Box>
-        <Box component='span' sx={{ ml: 1, display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-          {editing ? (
-            <>
-              <TextField
-                size='small'
-                variant='standard'
-                hiddenLabel
-                value={local1}
-                onChange={e => setLocal1(e.target.value)}
-                placeholder={placeholder1}
-                InputProps={{
-                  sx: { fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 700, px: 0.25, py: 0, minHeight: 24 },
-                  disableUnderline: true
-                }}
-                sx={{ minWidth: 120, alignSelf: 'center' }}
-              />
-              <Box sx={{ color: 'text.disabled' }}>|</Box>
-              <TextField
-                size='small'
-                variant='standard'
-                hiddenLabel
-                value={local2}
-                onChange={e => setLocal2(e.target.value)}
-                placeholder={placeholder2}
-                InputProps={{
-                  sx: { fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 700, px: 0.25, py: 0, minHeight: 24 },
-                  disableUnderline: true
-                }}
-                sx={{ minWidth: 120, alignSelf: 'center' }}
-              />
-              <Tooltip title='Guardar'>
-                <span>
-                  <IconButton
-                    size='small'
-                    color='primary'
-                    onClick={() => {
-                      onSave(local1, local2)
-                      setEditing(false)
-                    }}
-                    sx={{ p: 0.25 }}
-                  >
-                    <CheckIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title='Cancelar'>
-                <IconButton
-                  size='small'
-                  color='secondary'
-                  onClick={() => {
-                    setLocal1(value1 ?? '')
-                    setLocal2(value2 ?? '')
-                    setEditing(false)
-                  }}
-                  sx={{ p: 0.25 }}
-                >
-                  <CloseIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            </>
-          ) : (
-            <>
-              <Box component='span' fontWeight='bold'>
-                {`${value1 || ''} | ${value2 || ''}` || '—'}
-              </Box>
-              <Tooltip title='Editar'>
-                <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
-                  <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Box>
-      </Typography>
-    </Box>
-  )
-}
 
 interface DetailItemEditableCityZoneProps {
   icon: React.ElementType
@@ -178,6 +62,7 @@ interface DetailItemEditableCityZoneProps {
   onSave: (cityId: number | null, zoneId: number | null) => Promise<void> | void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
   icon: Icon,
   label,
@@ -337,6 +222,7 @@ interface DetailItemEditableProps {
   type?: 'text' | 'date'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
   icon: Icon,
   label,
@@ -611,7 +497,7 @@ const ClientDetailsCard = ({
   const router = useRouter()
   const { showSuccess, showError } = useSnackbar()
   const [open, setOpen] = React.useState(false)
-  const [saving, setSaving] = React.useState(false)
+
   const [form, setForm] = React.useState({
     mobile_1: client.mobile_1 || '',
     phone: client.phone || '',
@@ -624,11 +510,11 @@ const ClientDetailsCard = ({
     birth_place: client.birth_place || '',
     join_date: client.join_date || ''
   })
+
   const [deleting, setDeleting] = React.useState(false)
 
   const [citiesOptions, setCitiesOptions] = React.useState(cities || [])
   const [zonesOptions, setZonesOptions] = React.useState(zones || [])
-  const [confirmOpen, setConfirmOpen] = React.useState(false)
 
   React.useEffect(() => {
     setCitiesOptions(cities || [])
@@ -674,14 +560,19 @@ const ClientDetailsCard = ({
       setOpen(false)
     } catch (err: any) {
       const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
+
       showError(apiMsg)
+
       throw err
     }
   }
 
-  const handleOpenConfirm = () => setConfirmOpen(true)
-  const handleCloseConfirm = () => setConfirmOpen(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleOpenConfirm = () => setDeleting(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleCloseConfirm = () => setDeleting(false)
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConfirmDelete = async () => {
     if (deleting) return
     setDeleting(true)
@@ -690,13 +581,14 @@ const ClientDetailsCard = ({
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
 
       showSuccess('Cliente eliminado exitosamente')
-      setConfirmOpen(false)
+      setDeleting(false)
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
       const msg = String(err?.message || '')
+
       if (msg.includes('status: 404')) {
         showSuccess('Cliente eliminado exitosamente')
-        setConfirmOpen(false)
+        setDeleting(false)
         setTimeout(() => router.replace('/clients'), 1200)
       } else {
         showError('No fue posible eliminar el cliente')
@@ -860,11 +752,11 @@ const ClientDetailsCard = ({
               </Stack>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpen(false)} disabled={saving}>
+              <Button onClick={() => setOpen(false)} disabled={deleting}>
                 Cancelar
               </Button>
-              <Button onClick={updateClient} variant='contained' disabled={saving}>
-                {saving ? 'Guardando...' : 'Guardar'}
+              <Button onClick={updateClient} variant='contained' disabled={deleting}>
+                {deleting ? 'Guardando...' : 'Guardar'}
               </Button>
             </DialogActions>
           </Dialog>
