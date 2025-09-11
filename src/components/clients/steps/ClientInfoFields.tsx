@@ -61,51 +61,7 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
     }
   }, [mode, getValues])
 
-  useEffect(() => {
-    const { clientType: ct, documentNumber: dn } = debouncedQuery || {}
-
-    if (!ct || !dn) {
-      clearErrors('document_number')
-
-      return
-    }
-
-    const orig = originalRef.current
-
-    if (mode === 'edit' && orig && orig.ct === ct && orig.dn === dn) {
-      clearErrors('document_number')
-
-      return
-    }
-
-    let cancelled = false
-
-    const run = async () => {
-      try {
-        const url = `clients/exists?client_type=${encodeURIComponent(ct)}&document_number=${encodeURIComponent(dn)}`
-        const { exists } = await fetchApi<{ exists: boolean }>(url)
-
-        if (!cancelled) {
-          if (Boolean(exists)) {
-            setError('document_number', {
-              type: 'manual',
-              message: 'Ya existe un cliente con este tipo y número de documento.'
-            })
-          } else {
-            clearErrors('document_number')
-          }
-        }
-      } catch (e: any) {
-        if (!cancelled) clearErrors('document_number')
-      }
-    }
-
-    run()
-
-    return () => {
-      cancelled = true
-    }
-  }, [debouncedQuery, mode, fetchApi, setError, clearErrors])
+  // Removed effect-based uniqueness validation in favor of async validate rule below
 
   return (
     <Box>
@@ -148,7 +104,32 @@ const ClientInfoFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='document_number'
             control={control}
-            rules={{ required: mode === 'create' ? 'El número de documento es requerido' : false }}
+            rules={{
+              required: mode === 'create' ? 'El número de documento es requerido' : false,
+              validate: async (value: string) => {
+                // Skip when empty; 'required' rule above handles it in create mode
+                if (!value) return true
+
+                const ct = getValues('client_type')
+                if (!ct) return 'El tipo de documento es requerido'
+
+                // In edit mode, if type + number are unchanged, skip uniqueness check
+                const orig = originalRef.current
+                if (mode === 'edit' && orig && orig.ct === ct && orig.dn === value) {
+                  return true
+                }
+
+                try {
+                  const url = `clients/exists?client_type=${encodeURIComponent(ct)}&document_number=${encodeURIComponent(value)}`
+                  const { exists } = await fetchApi<{ exists: boolean }>(url)
+
+                  return exists ? 'Ya existe un cliente con este tipo y número de documento.' : true
+                } catch (e) {
+                  // On API error, do not block the user with a false positive
+                  return true
+                }
+              }
+            }}
             render={({ field }) => (
               <TextField
                 {...field}

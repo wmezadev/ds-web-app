@@ -154,6 +154,9 @@ const ClientForm: React.FC<Props> = ({
 
   const isLastStep = activeStep === steps.length - 1
   const isFirstStep = activeStep === 0
+  const {
+    formState: { isValidating }
+  } = methods
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -302,7 +305,13 @@ const ClientForm: React.FC<Props> = ({
                   )}
 
                   {!isLastStep ? (
-                    <Button variant='contained' onClick={handleNext} aria-label='Paso siguiente' type='button'>
+                    <Button
+                      variant='contained'
+                      onClick={handleNext}
+                      aria-label='Paso siguiente'
+                      type='button'
+                      disabled={isValidating}
+                    >
                       <ArrowForwardIcon />
                     </Button>
                   ) : (
