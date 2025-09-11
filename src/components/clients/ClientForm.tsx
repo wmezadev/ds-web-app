@@ -141,6 +141,7 @@ const ClientForm: React.FC<Props> = ({
     },
     mode: 'onChange'
   })
+
   const steps = [
     'Información del Cliente',
     'Datos de Contacto',
@@ -149,11 +150,14 @@ const ClientForm: React.FC<Props> = ({
     'Cuentas Bancarias',
     'Opciones de Registro'
   ]
+
   const [activeStep, setActiveStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
   const isLastStep = activeStep === steps.length - 1
+
   const isFirstStep = activeStep === 0
+
   const {
     formState: { isValidating }
   } = methods

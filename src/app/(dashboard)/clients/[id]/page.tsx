@@ -20,7 +20,6 @@ import {
   Typography,
   IconButton,
   TextField,
-  Tooltip,
   Stack,
   Tab,
   MenuItem
@@ -108,6 +107,7 @@ const ClientProfileCard: React.FC<ClientProfileCardProps> = ({ client, refreshCl
   const handleDelete = async () => {
     if (deleting) return
     setDeleting(true)
+
     try {
       await fetchApi(`clients/${client.id}`, { method: 'DELETE' })
       showSuccess('Cliente eliminado exitosamente')
@@ -168,6 +168,7 @@ const ClientProfileCard: React.FC<ClientProfileCardProps> = ({ client, refreshCl
                       type='file'
                       onChange={e => {
                         const file = e.target.files?.[0]
+
                         if (file) {
                           // TODO: Implementar subida de archivo
                         }
