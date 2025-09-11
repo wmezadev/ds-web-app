@@ -19,7 +19,7 @@ import { Add } from '@mui/icons-material'
 import { useClient } from '@/hooks/useClient'
 import { useApi } from '@/hooks/useApi'
 import FollowUpModal from '@/app/(dashboard)/clients/[id]/components/FollowUpModal'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface BasicUser {
   id: number

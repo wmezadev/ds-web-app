@@ -24,7 +24,7 @@ import { useForm, Controller } from 'react-hook-form'
 import RichTextEditorComponent from '@/@core/components/rich-text-editor/RichTextEditor'
 import { useApi } from '@/hooks/useApi'
 import type { CreateFollowUpPromise } from '@/hooks/useClient'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface FollowUpFormData {
   currentDate: string

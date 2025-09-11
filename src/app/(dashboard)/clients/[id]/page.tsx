@@ -4,17 +4,10 @@ import React, { useMemo } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 
-import {
-  Business,
-  Cake,
-  Email,
-  Home,
-  Phone,
-  Place,
-  DriveFileRenameOutline as EditIcon,
-  Check as CheckIcon,
-  Close as CloseIcon
-} from '@mui/icons-material'
+import { Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material'
+
+import EditIcon from '@mui/icons-material/Edit'
+
 import {
   Avatar,
   Box,
@@ -24,9 +17,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
-  Divider,
   Grid,
   Typography,
   IconButton,
@@ -58,121 +49,8 @@ import { usePageNavContent } from '@/hooks/usePageNavContent'
 import type { Client } from '@/types/client'
 import { useApi } from '@/hooks/useApi'
 import { clientApiToForm, clientFormToApi, type ClientFormFields } from '@/components/clients/ClientForm'
-import useSnackbar from '@/hooks/useSnackbar'
+import { useSnackbar } from '@/hooks/useSnackbar'
 import { useToast } from '@/context/ToastContext'
-
-interface DetailItemEditablePairProps {
-  icon: React.ElementType
-  label: string
-  value1: string | null | undefined
-  value2: string | null | undefined
-  onSave: (v1: string, v2: string) => Promise<void> | void
-  placeholder1?: string
-  placeholder2?: string
-}
-
-const DetailItemEditablePair: React.FC<DetailItemEditablePairProps> = ({
-  icon: Icon,
-  label,
-  value1,
-  value2,
-  onSave,
-  placeholder1,
-  placeholder2
-}) => {
-  const [editing, setEditing] = React.useState(false)
-  const [local1, setLocal1] = React.useState(value1 ?? '')
-  const [local2, setLocal2] = React.useState(value2 ?? '')
-
-  React.useEffect(() => {
-    setLocal1(value1 ?? '')
-    setLocal2(value2 ?? '')
-  }, [value1, value2])
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-      <Icon sx={{ color: 'text.secondary' }} fontSize='small' />
-      <Typography variant='body2' sx={{ color: 'text.primary' }}>
-        <Box component='span' sx={{ color: 'text.secondary' }}>
-          {label}:
-        </Box>
-        <Box component='span' sx={{ ml: 1, display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-          {editing ? (
-            <>
-              <TextField
-                size='small'
-                variant='standard'
-                hiddenLabel
-                value={local1}
-                onChange={e => setLocal1(e.target.value)}
-                placeholder={placeholder1}
-                InputProps={{
-                  sx: { fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 700, px: 0.25, py: 0, minHeight: 24 },
-                  disableUnderline: true
-                }}
-                sx={{ minWidth: 120, alignSelf: 'center' }}
-              />
-              <Box sx={{ color: 'text.disabled' }}>|</Box>
-              <TextField
-                size='small'
-                variant='standard'
-                hiddenLabel
-                value={local2}
-                onChange={e => setLocal2(e.target.value)}
-                placeholder={placeholder2}
-                InputProps={{
-                  sx: { fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 700, px: 0.25, py: 0, minHeight: 24 },
-                  disableUnderline: true
-                }}
-                sx={{ minWidth: 120, alignSelf: 'center' }}
-              />
-              <Tooltip title='Guardar'>
-                <span>
-                  <IconButton
-                    size='small'
-                    color='primary'
-                    onClick={() => {
-                      onSave(local1, local2)
-                      setEditing(false)
-                    }}
-                    sx={{ p: 0.25 }}
-                  >
-                    <CheckIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title='Cancelar'>
-                <IconButton
-                  size='small'
-                  color='secondary'
-                  onClick={() => {
-                    setLocal1(value1 ?? '')
-                    setLocal2(value2 ?? '')
-                    setEditing(false)
-                  }}
-                  sx={{ p: 0.25 }}
-                >
-                  <CloseIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            </>
-          ) : (
-            <>
-              <Box component='span' fontWeight='bold'>
-                {`${value1 || ''} | ${value2 || ''}` || '—'}
-              </Box>
-              <Tooltip title='Editar'>
-                <IconButton size='small' onClick={() => setEditing(true)} sx={{ opacity: 0.7, p: 0.25 }}>
-                  <EditIcon fontSize='inherit' sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Box>
-      </Typography>
-    </Box>
-  )
-}
 
 interface DetailItemEditableCityZoneProps {
   icon: React.ElementType
@@ -184,6 +62,7 @@ interface DetailItemEditableCityZoneProps {
   onSave: (cityId: number | null, zoneId: number | null) => Promise<void> | void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DetailItemEditableCityZone: React.FC<DetailItemEditableCityZoneProps> = ({
   icon: Icon,
   label,
@@ -343,6 +222,7 @@ interface DetailItemEditableProps {
   type?: 'text' | 'date'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DetailItemEditable: React.FC<DetailItemEditableProps> = ({
   icon: Icon,
   label,
@@ -616,20 +496,22 @@ const ClientDetailsCard = ({
   const { fetchApi } = useApi()
   const router = useRouter()
   const { showSuccess, showError } = useSnackbar()
-  const [clientDisplay, setClientDisplay] = React.useState<Partial<Client>>(client)
-  const [confirmOpen, setConfirmOpen] = React.useState(false)
-  const [deleting, setDeleting] = React.useState(false)
+  const [open, setOpen] = React.useState(false)
 
-  React.useEffect(() => {
-    setClientDisplay(client)
-  }, [client])
-
-  const [localDetails, setLocalDetails] = React.useState({
+  const [form, setForm] = React.useState({
+    mobile_1: client.mobile_1 || '',
+    phone: client.phone || '',
+    email_1: client.email_1 || '',
+    email_2: client.email_2 || '',
+    city_id: client.city_id ?? '',
+    zone_id: client.zone_id ?? '',
     billing_address: client.billing_address || '',
-    birth_place: client.birth_place || '',
     birth_date: client.birth_date || '',
+    birth_place: client.birth_place || '',
     join_date: client.join_date || ''
   })
+
+  const [deleting, setDeleting] = React.useState(false)
 
   const [citiesOptions, setCitiesOptions] = React.useState(cities || [])
   const [zonesOptions, setZonesOptions] = React.useState(zones || [])
@@ -662,97 +544,54 @@ const ClientDetailsCard = ({
     loadFallback()
   }, [cities, zones, fetchApi])
 
-  React.useEffect(() => {
-    setLocalDetails({
-      billing_address: client.billing_address || '',
-      birth_place: client.birth_place || '',
-      birth_date: client.birth_date || '',
-      join_date: client.join_date || ''
-    })
-  }, [client.billing_address, client.birth_place, client.birth_date, client.join_date])
-
-  const updateClient = async (patch: Partial<ClientFormFields>) => {
+  const updateClient = async () => {
     try {
       const formFromApi = clientApiToForm(client as Client)
 
-      const mergedForm: ClientFormFields = { ...formFromApi, ...patch }
+      const mergedForm: ClientFormFields = { ...formFromApi, ...form }
       const apiPayload = clientFormToApi(mergedForm)
 
       await fetchApi(`clients/${clientId}`, {
         method: 'PUT',
         body: apiPayload
       })
-      setClientDisplay(prev => ({ ...prev, ...(patch as any) }))
-
-      setLocalDetails(prev => ({
-        billing_address: patch.billing_address ?? prev.billing_address,
-        birth_place: patch.birth_place ?? prev.birth_place,
-        birth_date: patch.birth_date ?? prev.birth_date,
-        join_date: patch.join_date ?? prev.join_date
-      }))
 
       showSuccess('Cliente actualizado exitosamente')
+      setOpen(false)
     } catch (err: any) {
-      showError(err?.message || 'Ocurrió un error al actualizar el cliente')
+      const apiMsg = err?.message || 'Ocurrió un error al actualizar el cliente'
+
+      showError(apiMsg)
+
       throw err
     }
   }
 
-  const saveBirthPlace = async (newBirthPlace: string) => {
-    await updateClient({ birth_place: newBirthPlace })
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleOpenConfirm = () => setDeleting(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleCloseConfirm = () => setDeleting(false)
 
-  const saveBillingAddress = async (newBillingAddress: string) => {
-    await updateClient({ billing_address: newBillingAddress })
-  }
-
-  const saveBirthDate = async (newBirthDate: string) => {
-    await updateClient({ birth_date: newBirthDate })
-  }
-
-  const saveJoinDate = async (newJoinDate: string) => {
-    await updateClient({ join_date: newJoinDate })
-  }
-
-  const savePhones = async (mobile_1: string, phone: string) => {
-    await updateClient({ mobile_1, phone })
-  }
-
-  const saveEmails = async (email_1: string, email_2: string) => {
-    await updateClient({ email_1, email_2 })
-  }
-
-  const saveCityZone = async (city_id: number | null, zone_id: number | null) => {
-    await updateClient({ city_id, zone_id })
-  }
-
-  const handleOpenConfirm = () => setConfirmOpen(true)
-  const handleCloseConfirm = () => setConfirmOpen(false)
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConfirmDelete = async () => {
     if (deleting) return
     setDeleting(true)
 
     try {
       await fetchApi(`clients/${clientId}`, { method: 'DELETE' })
-      showSuccess('Cliente eliminado exitosamente')
-      setConfirmOpen(false)
 
+      showSuccess('Cliente eliminado exitosamente')
+      setDeleting(false)
       setTimeout(() => router.replace('/clients'), 1200)
     } catch (err: any) {
-      try {
-        await fetchApi(`clients/${clientId}`)
-        showError('No fue posible eliminar el cliente')
-      } catch (e2: any) {
-        const msg = String(e2?.message || '')
+      const msg = String(err?.message || '')
 
-        if (msg.includes('status: 404')) {
-          showSuccess('Cliente eliminado exitosamente')
-          setConfirmOpen(false)
-          setTimeout(() => router.replace('/clients'), 1200)
-        } else {
-          showError('No fue posible eliminar el cliente')
-        }
+      if (msg.includes('status: 404')) {
+        showSuccess('Cliente eliminado exitosamente')
+        setDeleting(false)
+        setTimeout(() => router.replace('/clients'), 1200)
+      } else {
+        showError('No fue posible eliminar el cliente')
       }
     } finally {
       setDeleting(false)
@@ -761,104 +600,163 @@ const ClientDetailsCard = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-      <Card elevation={0} sx={{ borderRadius: 2 }}>
+      <Card elevation={0} sx={{ borderRadius: 2, position: 'relative' }}>
         <CardContent>
+          <IconButton size='small' onClick={() => setOpen(true)} sx={{ position: 'absolute', top: 8, right: 8 }}>
+            <EditIcon />
+          </IconButton>
+
           <Typography variant='h6' fontWeight='bold' sx={{ mb: 2 }}>
             Detalles
           </Typography>
 
-          <DetailItemEditable
-            icon={Cake}
-            label='Fecha Ingreso'
-            value={localDetails.join_date}
-            onSave={saveJoinDate}
-            type='date'
-            placeholder='Seleccionar fecha'
-          />
-
-          <Divider sx={{ my: 1 }} />
-
-          <DetailItemEditablePair
-            icon={Phone}
-            label='Teléfonos'
-            value1={clientDisplay.mobile_1 as string}
-            value2={clientDisplay.phone as string}
-            onSave={savePhones}
-            placeholder1='Móvil'
-            placeholder2='Fijo'
-          />
-          <DetailItemEditablePair
-            icon={Email}
-            label='Correos'
-            value1={clientDisplay.email_1 as string}
-            value2={clientDisplay.email_2 as string}
-            onSave={saveEmails}
-            placeholder1='Email 1'
-            placeholder2='Email 2'
-          />
-          <Divider sx={{ my: 1 }} />
-          <DetailItemEditableCityZone
-            icon={Business}
-            label='Ciudad/Zona'
-            cityId={(clientDisplay.city_id as number) ?? null}
-            zoneId={(clientDisplay.zone_id as number) ?? null}
-            cities={citiesOptions}
-            zones={zonesOptions}
-            onSave={saveCityZone}
-          />
-          <DetailItemEditable
-            icon={Home}
-            label='Dirección'
-            value={localDetails.billing_address}
-            onSave={saveBillingAddress}
-            placeholder='Ingrese la dirección'
-          />
-
-          <Divider sx={{ my: 1 }} />
-
-          <DetailItemEditable
-            icon={Cake}
-            label='Fecha Nac./Fund.'
-            value={localDetails.birth_date}
-            onSave={saveBirthDate}
-            type='date'
-            placeholder='Seleccionar fecha'
-          />
-
-          <DetailItemEditable
-            icon={Place}
-            label='Lugar de Nac./Fund.'
-            value={localDetails.birth_place}
-            onSave={saveBirthPlace}
-            placeholder='Ingrese el lugar'
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
-            <Button
-              variant='outlined'
-              startIcon={<i className='ri-delete-bin-6-line' />}
-              color='error'
-              onClick={handleOpenConfirm}
-              sx={{ textTransform: 'none', py: 1.25, px: 2, fontSize: '0.9rem' }}
-            >
-              <Typography color='error' sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                Eliminar
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Móvil
               </Typography>
-            </Button>
-          </Box>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.mobile_1 || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fijo
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.phone || '-'}
+              </Typography>
+            </Grid>
 
-          <Dialog open={confirmOpen} onClose={handleCloseConfirm} aria-labelledby='confirm-delete-title'>
-            <DialogTitle id='confirm-delete-title'>Confirmar eliminación</DialogTitle>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Email 1
+              </Typography>
+              <Typography variant='body1' fontWeight='bold' title={form.email_1 || ''} sx={{ whiteSpace: 'nowrap' }}>
+                {form.email_1 || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={12}>
+              <Typography variant='body2' color='text.secondary'>
+                Email 2
+              </Typography>
+              <Typography variant='body1' fontWeight='bold' sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                {form.email_2 || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Ciudad
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {client.cityName || citiesOptions.find(c => c.id === form.city_id)?.name || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Zona
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {client.zoneName || zonesOptions.find(z => z.id === form.zone_id)?.name || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant='body2' color='text.secondary'>
+                Dirección
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.billing_address || '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fecha Ingreso
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.join_date || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='body2' color='text.secondary'>
+                Fecha Nac./Fund.
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.birth_date || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant='body2' color='text.secondary'>
+                Lugar de Nac./Fund.
+              </Typography>
+              <Typography variant='body1' fontWeight='bold'>
+                {form.birth_place || '-'}
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Dialog open={open} onClose={() => setOpen(false)} maxWidth='sm' fullWidth>
+            <DialogTitle>Editar Cliente</DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                ¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer.
-              </DialogContentText>
+              <Stack spacing={2} mt={1}>
+                <DatePicker
+                  label='Fecha Ingreso'
+                  value={form.join_date ? new Date(form.join_date) : null}
+                  onChange={d => setForm(prev => ({ ...prev, join_date: d ? d.toISOString().split('T')[0] : '' }))}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+                <TextField
+                  label='Móvil'
+                  value={form.mobile_1}
+                  onChange={e => setForm(prev => ({ ...prev, mobile_1: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Fijo'
+                  value={form.phone}
+                  onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Email 1'
+                  value={form.email_1}
+                  onChange={e => setForm(prev => ({ ...prev, email_1: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Email 2'
+                  value={form.email_2}
+                  onChange={e => setForm(prev => ({ ...prev, email_2: e.target.value }))}
+                  fullWidth
+                />
+                <TextField
+                  label='Dirección'
+                  value={form.billing_address}
+                  onChange={e => setForm(prev => ({ ...prev, billing_address: e.target.value }))}
+                  fullWidth
+                />
+                <DatePicker
+                  label='Fecha Nac./Fund.'
+                  value={form.birth_date ? new Date(form.birth_date) : null}
+                  onChange={d => setForm(prev => ({ ...prev, birth_date: d ? d.toISOString().split('T')[0] : '' }))}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+                <TextField
+                  label='Lugar de Nac./Fund.'
+                  value={form.birth_place}
+                  onChange={e => setForm(prev => ({ ...prev, birth_place: e.target.value }))}
+                  fullWidth
+                />
+              </Stack>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseConfirm} variant='text' disabled={deleting}>
+              <Button onClick={() => setOpen(false)} disabled={deleting}>
                 Cancelar
               </Button>
-              <Button onClick={handleConfirmDelete} color='error' variant='contained' autoFocus disabled={deleting}>
-                {deleting ? 'Eliminando...' : 'Eliminar'}
+              <Button onClick={updateClient} variant='contained' disabled={deleting}>
+                {deleting ? 'Guardando...' : 'Guardar'}
               </Button>
             </DialogActions>
           </Dialog>
