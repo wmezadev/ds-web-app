@@ -414,6 +414,15 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     return trimmed === '' ? null : trimmed
   }
 
+  const genderMap: Record<string, 'M' | 'F'> = {
+    M: 'M',
+    F: 'F',
+    male: 'M',
+    female: 'F',
+    Masculino: 'M',
+    Femenino: 'F'
+  }
+
   const apiData = {
     is_member_of_group: formData.is_member_of_group === 'yes',
 
@@ -454,7 +463,7 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
     client_branch_id: toNumberOrNull(formData.client_branch_id),
 
     personal_data: {
-      gender: formData.personal_data?.gender?.trim() || 'M',
+      gender: genderMap[formData.personal_data?.gender || 'M'] || 'M',
       civil_status: formData.personal_data?.civil_status?.trim() || null,
       height: formData.personal_data?.height || 0,
       weight: formData.personal_data?.weight || 0,
