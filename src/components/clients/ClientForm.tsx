@@ -3,24 +3,9 @@
 import React, { useState } from 'react'
 
 import { useForm, FormProvider } from 'react-hook-form'
-import {
-  Box,
-  Button,
-  Step,
-  StepLabel,
-  Stepper,
-  Typography,
-  Paper,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions
-} from '@mui/material'
+import { Box, Button, Step, StepLabel, Stepper, Typography, Paper, Stack } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import DeleteIcon from '@mui/icons-material/Delete'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
@@ -31,20 +16,8 @@ import ClientInfoFields from './steps/ClientInfoFields'
 import ContactFields from './steps/ContactFields'
 import PersonalDataFields from './steps/PersonalDataFields'
 import ContactListFields from './steps/ContactListFields'
-import DocumentFields from './steps/DocumentFields'
 import BankAccountFields from './steps/BankAccountFields'
 import RegistrationOptionsFields from './steps/RegistrationOptionsFields'
-
-const getStepsForMode = (mode: 'create' | 'edit') => {
-  const baseSteps = ['Información del Cliente', 'Datos de Contacto', 'Datos Personales', 'Contactos']
-
-  if (mode === 'edit') {
-    return [...baseSteps, 'Documentos', 'Cuentas Bancarias', 'Opciones de Registro']
-  }
-
-  // For create mode, skip Documents step
-  return [...baseSteps, 'Cuentas Bancarias', 'Opciones de Registro']
-}
 
 export type ClientFormFields = {
   id?: string | number
@@ -102,27 +75,12 @@ export type ClientFormFields = {
   risk_variables?: any[]
 }
 
-interface Props {
-  mode?: 'create' | 'edit'
-  initialValues?: ClientFormFields
-  onSubmit: (data: ClientFormFields) => void
-  onCancel?: () => void
-  onDelete?: (clientId: string | number) => void
-  isSubmitting?: boolean
-  submitError?: string | null
-}
-
 const ClientForm: React.FC<Props> = ({
-  mode = 'create',
   initialValues = {} as ClientFormFields,
   onSubmit,
   onCancel,
-  onDelete,
   isSubmitting = false
 }) => {
-  const steps = getStepsForMode(mode)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-
   const methods = useForm<ClientFormFields>({
     defaultValues: {
       first_name: initialValues.first_name || '',
@@ -183,7 +141,14 @@ const ClientForm: React.FC<Props> = ({
     },
     mode: 'onChange'
   })
-
+  const steps = [
+    'Información del Cliente',
+    'Datos de Contacto',
+    'Datos Personales',
+    'Contactos',
+    'Cuentas Bancarias',
+    'Opciones de Registro'
+  ]
   const [activeStep, setActiveStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
@@ -194,43 +159,21 @@ const ClientForm: React.FC<Props> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const getFieldsForStep = (step: number): (keyof ClientFormFields)[] => {
-    if (mode === 'create') {
-      // Create mode: no Documents step
-      switch (step) {
-        case 0:
-          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
-        case 1:
-          return ['email_1', 'mobile_1']
-        case 2:
-          return ['birth_date', 'birth_place']
-        case 3:
-          return ['email_2', 'mobile_2']
-        case 4:
-          return []
-        case 5:
-          return ['client_category_id', 'office_id']
-        default:
-          return []
-      }
-    } else {
-      switch (step) {
-        case 0:
-          return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
-        case 1:
-          return ['email_1', 'mobile_1']
-        case 2:
-          return ['birth_date', 'birth_place']
-        case 3:
-          return ['email_2', 'mobile_2']
-        case 4:
-          return ['doc']
-        case 5: // Bank Accounts
-          return []
-        case 6: // Registration Options
-          return ['client_category_id', 'office_id']
-        default:
-          return []
-      }
+    switch (step) {
+      case 0:
+        return ['person_type', 'document_number', 'client_type', 'first_name', 'last_name']
+      case 1:
+        return ['email_1', 'mobile_1']
+      case 2:
+        return ['birth_date', 'birth_place']
+      case 3:
+        return ['email_2', 'mobile_2']
+      case 4:
+        return []
+      case 5:
+        return ['client_category_id', 'office_id']
+      default:
+        return []
     }
   }
 
@@ -260,46 +203,25 @@ const ClientForm: React.FC<Props> = ({
   const handleStepClick = async (step: number) => {
     const isValid = await validateCurrentStep()
 
-    if (isValid || mode === 'edit') {
+    if (isValid) {
       setActiveStep(step)
     }
   }
 
   const renderStepContent = (step: number) => {
-    if (mode === 'create') {
-      // Create mode: no Documents step
+    {
       switch (step) {
         case 0:
-          return <ClientInfoFields mode={mode} />
+          return <ClientInfoFields mode='create' />
         case 1:
-          return <ContactFields mode={mode} />
+          return <ContactFields mode='create' />
         case 2:
           return <PersonalDataFields />
         case 3:
           return <ContactListFields />
-        case 4: // Bank Accounts (Documents step skipped)
+        case 4:
           return <BankAccountFields />
-        case 5: // Registration Options
-          return <RegistrationOptionsFields />
-        default:
-          return <Typography variant='body2'>[Por agregar]</Typography>
-      }
-    } else {
-      // Edit mode: includes Documents step
-      switch (step) {
-        case 0:
-          return <ClientInfoFields mode={mode} />
-        case 1:
-          return <ContactFields mode={mode} />
-        case 2:
-          return <PersonalDataFields />
-        case 3:
-          return <ContactListFields />
-        case 4: // Documents
-          return <DocumentFields />
-        case 5: // Bank Accounts
-          return <BankAccountFields />
-        case 6: // Registration Options
+        case 5:
           return <RegistrationOptionsFields />
         default:
           return <Typography variant='body2'>[Por agregar]</Typography>
@@ -311,29 +233,12 @@ const ClientForm: React.FC<Props> = ({
     methods.handleSubmit(onSubmit)()
   }
 
-  const handleDeleteClick = () => {
-    setDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = () => {
-    if (onDelete && initialValues?.id) {
-      onDelete(initialValues.id)
-    }
-
-    setDeleteDialogOpen(false)
-  }
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false)
-  }
-
   return (
     <FormProvider {...methods}>
       <Box sx={{ p: { xs: 2, md: 4 } }}>
-        {/* Header with title and back button */}
         <Box display='flex' justifyContent='space-between' alignItems='center' mb={3}>
           <Typography variant='h4' sx={{ fontWeight: 600 }}>
-            {mode === 'create' ? 'Crear nuevo cliente' : 'Editar cliente'}
+            Crear nuevo cliente
           </Typography>
           {onCancel && (
             <Button variant='outlined' onClick={onCancel} type='button'>
@@ -389,23 +294,6 @@ const ClientForm: React.FC<Props> = ({
               <Box>{renderStepContent(activeStep)}</Box>
 
               <Box display='flex' justifyContent='space-between' alignItems='center' mt={4}>
-                {/* Delete button on the left */}
-                <Box>
-                  {mode === 'edit' && onDelete && initialValues?.id && (
-                    <Button
-                      variant='outlined'
-                      color='error'
-                      startIcon={<DeleteIcon />}
-                      onClick={handleDeleteClick}
-                      disabled={isSubmitting}
-                      sx={{ minWidth: 120 }}
-                    >
-                      Eliminar Cliente
-                    </Button>
-                  )}
-                </Box>
-
-                {/* Navigation buttons on the right */}
                 <Stack direction='row' spacing={2} alignItems='center'>
                   {!isFirstStep && (
                     <Button variant='outlined' onClick={handleBack} aria-label='Paso anterior' type='button'>
@@ -419,7 +307,7 @@ const ClientForm: React.FC<Props> = ({
                     </Button>
                   ) : (
                     <Button type='button' variant='contained' onClick={handleFinalSubmit} disabled={isSubmitting}>
-                      {isSubmitting ? 'Guardando...' : mode === 'create' ? 'Crear Cliente' : 'Actualizar Cliente'}
+                      {isSubmitting ? 'Guardando...' : 'Crear Cliente'}
                     </Button>
                   )}
                 </Stack>
@@ -428,37 +316,6 @@ const ClientForm: React.FC<Props> = ({
           </form>
         </Paper>
       </Box>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleDeleteCancel}
-        aria-labelledby='delete-dialog-title'
-        aria-describedby='delete-dialog-description'
-      >
-        <DialogTitle id='delete-dialog-title'>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='delete-dialog-description'>
-            ¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer.
-            {initialValues?.first_name && initialValues?.last_name && (
-              <>
-                <br />
-                <strong>
-                  Cliente: {initialValues.first_name} {initialValues.last_name}
-                </strong>
-              </>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel} color='primary'>
-            Cancelar
-          </Button>
-          <Button onClick={handleDeleteConfirm} color='error' variant='contained'>
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </FormProvider>
   )
 }
@@ -558,10 +415,8 @@ export const clientFormToApi = (formData: ClientFormFields): any => {
   }
 
   const apiData = {
-    // Boolean fields (exact match)
     is_member_of_group: formData.is_member_of_group === 'yes',
 
-    // String fields (exact match)
     client_type: formData.client_type?.trim() || 'V',
     document_number: formData.document_number?.trim() || '',
     first_name: formData.first_name?.trim() || '',
