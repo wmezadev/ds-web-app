@@ -1,10 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 
-import { Box, Button, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper } from '@mui/material'
+import { Box, Button, Typography, Paper } from '@mui/material'
 
+import { DataTable } from '@/components/common'
 import SearchBar from '@/components/common/SearchBar'
+
 import { POLICIES_PAGE } from '@/constants/texts'
 
 type PolicyUI = {
@@ -36,7 +38,18 @@ export default function PoliciesPage() {
     )
   }, [query])
 
-  const hasResults = filtered.length > 0
+  const columns = useMemo(
+    () => [
+      { key: 'nroPoliza' as const, label: POLICIES_PAGE.tableHeaders.nroPoliza },
+      { key: 'cliente' as const, label: POLICIES_PAGE.tableHeaders.cliente },
+      { key: 'ramo' as const, label: POLICIES_PAGE.tableHeaders.ramo },
+      { key: 'aseguradora' as const, label: POLICIES_PAGE.tableHeaders.aseguradora },
+      { key: 'fechaEmision' as const, label: POLICIES_PAGE.tableHeaders.fechaEmision },
+      { key: 'estado' as const, label: POLICIES_PAGE.tableHeaders.estado },
+      { key: 'estadoGestion' as const, label: POLICIES_PAGE.tableHeaders.estadoGestion }
+    ],
+    []
+  )
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
@@ -68,45 +81,18 @@ export default function PoliciesPage() {
         />
       </Paper>
 
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>{POLICIES_PAGE.tableHeaders.nroPoliza}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.cliente}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.ramo}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.aseguradora}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.fechaEmision}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.estado}</TableCell>
-              <TableCell>{POLICIES_PAGE.tableHeaders.estadoGestion}</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {hasResults ? (
-              filtered.map(row => (
-                <TableRow key={row.id} hover>
-                  <TableCell>{row.nroPoliza}</TableCell>
-                  <TableCell>{row.cliente}</TableCell>
-                  <TableCell>{row.ramo}</TableCell>
-                  <TableCell>{row.aseguradora}</TableCell>
-                  <TableCell>{row.fechaEmision}</TableCell>
-                  <TableCell>{row.estado}</TableCell>
-                  <TableCell>{row.estadoGestion}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7}>
-                  <Typography variant='body2' color='text.secondary' textAlign='center' py={6}>
-                    {POLICIES_PAGE.noResults}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
+      <Box>
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          emptyMessage={POLICIES_PAGE.noResults}
+          page={1}
+          onPageChange={() => {}}
+          itemsPerPage={10}
+          totalPages={1}
+          paginateLocally={true}
+        />
+      </Box>
     </Box>
   )
 }
