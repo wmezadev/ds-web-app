@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 
 import { useSession } from 'next-auth/react'
 
-import { Box, Button, Typography, Paper, CircularProgress } from '@mui/material'
+import { Box, Button, Typography, Paper, CircularProgress, FormControl, Select, MenuItem } from '@mui/material'
 
 import { DataTable } from '@/components/common'
 import SearchBar from '@/components/common/SearchBar'
@@ -13,12 +13,16 @@ import { POLICIES_PAGE } from '@/constants/texts'
 import { ROUTES } from '@/constants/routes'
 import type { Policy } from '@/types/policy'
 import { usePolicies } from '@/hooks/usePolicies'
+import { usePolicySearchTypes } from '@/hooks/usePolicySearchTypes'
 
 export default function PoliciesPage() {
   const { status: sessionStatus } = useSession()
   const apiEnabled = sessionStatus === 'authenticated'
 
   const [query, setQuery] = React.useState('')
+  const [searchType, setSearchType] = React.useState('')
+
+  const { options: searchTypeOptions, loading: searchTypesLoading } = usePolicySearchTypes(apiEnabled)
 
   const {
     data: policies,
@@ -38,7 +42,13 @@ export default function PoliciesPage() {
   const handleSearch = (query: string) => {
     setQuery(query)
     setPage(1)
-    setParams({ search_param: query })
+    setParams({ search_param: query, search_type: searchType || undefined })
+  }
+
+  const handleSearchTypeChange = (value: string) => {
+    setSearchType(value)
+    setPage(1)
+    setParams({ search_param: query, search_type: value || undefined })
   }
 
   const columns = useMemo(
@@ -146,6 +156,35 @@ export default function PoliciesPage() {
           onChange={handleSearch}
           onClear={() => handleSearch('')}
           delay={400}
+          leadActions={
+            <FormControl size='small' sx={{ minWidth: 220 }}>
+              <Select
+                displayEmpty
+                value={searchType}
+                onChange={e => handleSearchTypeChange(String(e.target.value))}
+                disabled={searchTypesLoading}
+                renderValue={selected => {
+                  if (searchTypesLoading) return 'Cargando tipos...'
+                  if (!selected) return 'Opciones de Búsqueda'
+                  const item = searchTypeOptions.find(o => o.value === selected)
+
+                  return item?.label || selected
+                }}
+              >
+                <MenuItem value=''>Opciones de Búsqueda</MenuItem>
+                {searchTypeOptions.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+                {searchTypeOptions.length === 0 && !searchTypesLoading && (
+                  <MenuItem value='' disabled>
+                    Tipos no disponibles
+                  </MenuItem>
+                )}
+              </Select>
+            </FormControl>
+          }
         />
       </Paper>
 

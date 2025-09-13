@@ -12,7 +12,8 @@ interface SearchBarProps {
   onChange: (value: string) => void
   onClear?: () => void
   extraActions?: React.ReactNode
-  delay?: number // <-- tiempo para debounce
+  leadActions?: React.ReactNode
+  delay?: number
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -21,6 +22,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onChange,
   onClear,
   extraActions,
+  leadActions,
   delay = 300
 }) => {
   const [internalValue, setInternalValue] = useState(value)
@@ -45,6 +47,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      {leadActions}
       <TextField
         fullWidth
         variant='outlined'
