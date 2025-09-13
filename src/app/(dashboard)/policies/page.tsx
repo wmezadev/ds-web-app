@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
+
 import { useSession } from 'next-auth/react'
 
 import { Box, Button, Typography, Paper, CircularProgress } from '@mui/material'
@@ -27,9 +28,7 @@ export default function PoliciesPage() {
     perPage,
     totalPages,
     setPage,
-    setPerPage,
-    setParams,
-    refetch
+    setParams
   } = usePolicies({
     initialPerPage: 10,
     dataKey: 'policies',
@@ -64,6 +63,7 @@ export default function PoliciesPage() {
         label: POLICIES_PAGE.tableHeaders.cliente,
         render: (_: any, row: Policy) => {
           if (!row.insured) return '-'
+
           return row.insured.client_type === 'J'
             ? row.insured.last_name
             : `${row.insured.first_name} ${row.insured.last_name}`.trim()
