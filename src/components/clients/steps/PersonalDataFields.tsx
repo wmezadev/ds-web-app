@@ -5,6 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ClientFormFields } from '../ClientForm'
 import LegalDataFields from './LegalDataFields'
+import { useCatalogs } from '@/hooks/useCatalogs'
 
 interface Props {
   mode?: 'create' | 'edit'
@@ -16,6 +17,8 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
     formState: { errors },
     watch
   } = useFormContext<ClientFormFields>()
+
+  const { catalogs } = useCatalogs()
 
   const personType = watch('person_type')
 
@@ -32,13 +35,12 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.gender'
             control={control}
-            rules={{ required: mode === 'create' ? 'El género es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.personal_data?.gender}>
                 <InputLabel>Género</InputLabel>
                 <Select {...field} label='Género' value={field.value ?? ''}>
-                  <MenuItem value='Masculino'>Masculino</MenuItem>
-                  <MenuItem value='Femenino'>Femenino</MenuItem>
+                  <MenuItem value='M'>Masculino</MenuItem>
+                  <MenuItem value='F'>Femenino</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -48,15 +50,14 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.civil_status'
             control={control}
-            rules={{ required: mode === 'create' ? 'El estado civil es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.personal_data?.civil_status}>
                 <InputLabel>Estado Civil</InputLabel>
                 <Select {...field} label='Estado Civil' value={field.value ?? ''}>
-                  <MenuItem value='Soltero'>Soltero</MenuItem>
-                  <MenuItem value='Casado'>Casado</MenuItem>
-                  <MenuItem value='Divorciado'>Divorciado</MenuItem>
-                  <MenuItem value='Viudo'>Viudo</MenuItem>
+                  <MenuItem value='S'>Soltero</MenuItem>
+                  <MenuItem value='C'>Casado</MenuItem>
+                  <MenuItem value='D'>Divorciado</MenuItem>
+                  <MenuItem value='V'>Viudo</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -66,7 +67,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.height'
             control={control}
-            rules={{ required: mode === 'create' ? 'La altura es requerida' : false }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -83,7 +83,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.weight'
             control={control}
-            rules={{ required: mode === 'create' ? 'El peso es requerido' : false }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -100,7 +99,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.smoker'
             control={control}
-            rules={{ required: mode === 'create' ? 'El fumador es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.personal_data?.smoker}>
                 <InputLabel>Fumador</InputLabel>
@@ -116,7 +114,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.sports'
             control={control}
-            rules={{ required: mode === 'create' ? 'El deporte es requerido' : false }}
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.personal_data?.sports}>
                 <InputLabel>Deporte</InputLabel>
@@ -132,7 +129,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.pathology'
             control={control}
-            rules={{ required: mode === 'create' ? 'La patología es requerida' : false }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -148,15 +144,17 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.profession_id'
             control={control}
-            rules={{ required: mode === 'create' ? 'La profesión es requerida' : false }}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label='Profesión'
-                fullWidth
-                error={!!errors.personal_data?.profession_id}
-                helperText={errors.personal_data?.profession_id?.message}
-              />
+              <FormControl fullWidth error={!!errors.personal_data?.profession_id}>
+                <InputLabel>Profesión</InputLabel>
+                <Select {...field} label='Profesión' value={field.value ?? ''}>
+                  {(catalogs?.client_professions || []).map(b => (
+                    <MenuItem key={b.id} value={b.id}>
+                      {b.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
           />
         </Grid>
@@ -164,15 +162,17 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.occupation_id'
             control={control}
-            rules={{ required: mode === 'create' ? 'La ocupación es requerida' : false }}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label='Ocupación'
-                fullWidth
-                error={!!errors.personal_data?.occupation_id}
-                helperText={errors.personal_data?.occupation_id?.message}
-              />
+              <FormControl fullWidth error={!!errors.personal_data?.occupation_id}>
+                <InputLabel>Ocupación</InputLabel>
+                <Select {...field} label='Ocupación' value={field.value ?? ''}>
+                  {(catalogs?.client_occupations || []).map(b => (
+                    <MenuItem key={b.id} value={b.id}>
+                      {b.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
           />
         </Grid>
@@ -180,7 +180,6 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.monthly_income'
             control={control}
-            rules={{ required: mode === 'create' ? 'El ingreso es requerido' : false }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -196,7 +195,7 @@ const PersonalDataFields: React.FC<Props> = ({ mode = 'create' }) => {
           <Controller
             name='personal_data.rif'
             control={control}
-            rules={{ required: mode === 'create' ? 'El rif es requerido' : false }}
+            rules={{ required: 'El rif es requerido' }}
             render={({ field }) => (
               <TextField
                 {...field}

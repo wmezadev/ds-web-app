@@ -30,10 +30,10 @@ const getCivilStatusDisplay = (status: string | null): string => {
   if (!status) return '-'
 
   const statusMap: Record<string, string> = {
-    single: 'Soltero',
-    married: 'Casado',
-    divorced: 'Divorciado',
-    widowed: 'Viudo'
+    S: 'Soltero',
+    C: 'Casado',
+    D: 'Divorciado',
+    V: 'Viudo'
   }
 
   return statusMap[status] || status
@@ -239,10 +239,10 @@ const ClientPersonalData: React.FC<ClientPersonalDataProps> = ({ client, clientI
                   value={form.civil_status ?? ''}
                   onChange={e => setForm(prev => ({ ...prev, civil_status: e.target.value as string }))}
                 >
-                  <MenuItem value='single'>Soltero</MenuItem>
-                  <MenuItem value='married'>Casado</MenuItem>
-                  <MenuItem value='divorced'>Divorciado</MenuItem>
-                  <MenuItem value='widowed'>Viudo</MenuItem>
+                  <MenuItem value='S'>Soltero</MenuItem>
+                  <MenuItem value='C'>Casado</MenuItem>
+                  <MenuItem value='D'>Divorciado</MenuItem>
+                  <MenuItem value='V'>Viudo</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
