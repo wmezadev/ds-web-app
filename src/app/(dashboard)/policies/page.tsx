@@ -49,8 +49,8 @@ export default function PoliciesPage() {
     setSearchType(value)
   }
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const base = [
       {
         key: 'nroPoliza' as const,
         label: POLICIES_PAGE.tableHeaders.nroPoliza,
@@ -91,19 +91,49 @@ export default function PoliciesPage() {
 
           return `${start ? formatDate(start) : '-'} al ${end ? formatDate(end) : '-'}`
         }
-      },
+      }
+    ]
+
+    const withInterest = [
+      ...base,
+      {
+        key: 'interesAsegurado' as const,
+        label: 'Interés asegurado',
+        render: (_: any, row: any) => {
+          const interest =
+            row?.insured_interest ||
+            row?.interes_asegurado ||
+            row?.interest ||
+            (row?.vehicle
+              ? [row?.vehicle?.brand, row?.vehicle?.model, row?.vehicle?.plate].filter(Boolean).join(' - ')
+              : null)
+
+          return interest || '-'
+        }
+      }
+    ]
+
+    const finalCols = searchType === '3' ? withInterest : base
+
+    return [
+      ...finalCols,
       {
         key: 'actions' as const,
         label: 'Acciones',
         render: (_: any, row: any) => (
-          <Button variant='outlined' color='primary' size='small' href={ROUTES.POLICIES.DETAIL(row.id)}>
+          <Button
+            variant='outlined'
+            color='primary'
+            size='small'
+            href={ROUTES.POLICIES.DETAIL(row.id)}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
             Ver Detalles
           </Button>
         )
       }
-    ],
-    []
-  )
+    ]
+  }, [searchType])
 
   if (sessionStatus === 'loading') {
     return (
