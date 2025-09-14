@@ -75,6 +75,13 @@ export type ClientFormFields = {
   risk_variables?: any[]
 }
 
+type Props = {
+  initialValues?: Partial<ClientFormFields>
+  onSubmit: (data: ClientFormFields) => void | Promise<void>
+  onCancel?: () => void
+  isSubmitting?: boolean
+}
+
 const ClientForm: React.FC<Props> = ({
   initialValues = {} as ClientFormFields,
   onSubmit,
