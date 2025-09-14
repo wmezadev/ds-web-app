@@ -39,16 +39,14 @@ export default function PoliciesPage() {
     enabled: apiEnabled
   })
 
-  const handleSearch = (query: string) => {
-    setQuery(query)
+  const handleSearch = (value: string) => {
+    setQuery(value)
     setPage(1)
-    setParams({ search_param: query, search_type: searchType || undefined })
+    setParams({ search_param: value, search_type: searchType || undefined })
   }
 
   const handleSearchTypeChange = (value: string) => {
     setSearchType(value)
-    setPage(1)
-    setParams({ search_param: query, search_type: value || undefined })
   }
 
   const columns = useMemo(
@@ -153,9 +151,12 @@ export default function PoliciesPage() {
         <SearchBar
           placeholder={POLICIES_PAGE.searchPlaceholder}
           value={query}
-          onChange={handleSearch}
-          onClear={() => handleSearch('')}
+          onChange={setQuery}
+          onClear={() => setQuery('')}
           delay={400}
+          autoOnChange={false}
+          showSearchButton
+          onSearch={handleSearch}
           leadActions={
             <FormControl size='small' sx={{ minWidth: 220 }}>
               <Select
