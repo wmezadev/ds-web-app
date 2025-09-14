@@ -50,7 +50,7 @@ export default function ClientCreatePage() {
 
   return (
     <Box>
-      <ClientForm mode='create' onSubmit={handleCreate} onCancel={() => router.back()} isSubmitting={isSubmitting} />
+      <ClientForm onSubmit={handleCreate} onCancel={() => router.back()} isSubmitting={isSubmitting} />
     </Box>
   )
 }
