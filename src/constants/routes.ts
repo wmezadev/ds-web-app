@@ -1,4 +1,3 @@
-// Client-side safe constants
 export const API_PROXY_PATH = '/api/proxy'
 
 export const API_ROUTES = {
@@ -44,7 +43,8 @@ export const ROUTES = {
   },
   POLICIES: {
     INDEX: '/policies',
-    CREATE: '/policies/create'
+    CREATE: '/policies/create',
+    DETAIL: (id: string | number) => `/policies/${id}`
   },
   CERTIFICATES: {
     INDEX: '/certificates',

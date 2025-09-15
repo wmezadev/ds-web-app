@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 
-import { TextField, InputAdornment, IconButton, Box } from '@mui/material'
+import { TextField, InputAdornment, IconButton, Box, Button } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
 
@@ -12,7 +12,11 @@ interface SearchBarProps {
   onChange: (value: string) => void
   onClear?: () => void
   extraActions?: React.ReactNode
-  delay?: number // <-- tiempo para debounce
+  leadActions?: React.ReactNode
+  delay?: number
+  onSearch?: (value: string) => void
+  autoOnChange?: boolean
+  showSearchButton?: boolean
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -21,7 +25,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onChange,
   onClear,
   extraActions,
-  delay = 300
+  leadActions,
+  delay = 300,
+  onSearch,
+  autoOnChange = true,
+  showSearchButton = false
 }) => {
   const [internalValue, setInternalValue] = useState(value)
 
@@ -30,6 +38,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [value])
 
   useEffect(() => {
+    if (!autoOnChange) return
+
     const handler = setTimeout(() => {
       if (internalValue !== value) {
         onChange(internalValue)
@@ -37,7 +47,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }, delay)
 
     return () => clearTimeout(handler)
-  }, [internalValue, delay, onChange, value])
+  }, [internalValue, delay, onChange, value, autoOnChange])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInternalValue(e.target.value)
@@ -45,12 +55,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      {leadActions}
       <TextField
         fullWidth
         variant='outlined'
         placeholder={placeholder}
         value={internalValue}
         onChange={handleInputChange}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && onSearch) {
+            e.preventDefault()
+            onSearch(internalValue)
+          }
+        }}
         InputProps={{
           startAdornment: (
             <InputAdornment position='start'>
@@ -66,6 +83,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
           )
         }}
       />
+      {showSearchButton && (
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={() => onSearch?.(internalValue)}
+          startIcon={<SearchIcon />}
+        >
+          Buscar
+        </Button>
+      )}
       {extraActions}
     </Box>
   )
