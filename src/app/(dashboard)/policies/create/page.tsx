@@ -22,6 +22,7 @@ import {
 } from '@mui/material'
 
 import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
+import { useInsuranceLines } from '@/hooks/useInsuranceLines'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -35,6 +36,7 @@ const POLICY_PERIOD_OPTIONS = [
 
 export default function PolicyForm() {
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
+  const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const today = new Date().toISOString().split('T')[0]
 
   const {
@@ -272,6 +274,36 @@ export default function PolicyForm() {
                   helperText={fieldState.error?.message}
                   inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name='line_id'
+              control={control}
+              rules={{ required: 'Ramo requerido' }}
+              render={({ field, fieldState }) => (
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Ramo</InputLabel>
+                  <Select {...field} label='Ramo' disabled={linesLoading}>
+                    {insuranceLines.map(line => (
+                      <MenuItem key={line.id} value={line.id}>
+                        {line.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldState.error && (
+                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                      {fieldState.error.message}
+                    </Typography>
+                  )}
+                  {linesError && (
+                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                      {linesError}
+                    </Typography>
+                  )}
+                </FormControl>
               )}
             />
           </Grid>
