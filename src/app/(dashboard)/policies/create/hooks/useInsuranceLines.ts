@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import { useApi } from '@/hooks/useApi'
 import type { InsuranceLine } from '@/types/insurance-line'
 
@@ -15,6 +16,7 @@ export function useInsuranceLines() {
       try {
         setLoading(true)
         const response = await fetchApi<InsuranceLine[]>('admin/insurance_lines')
+
         setLines(response)
       } catch (err) {
         setError('Error al cargar los ramos de seguro')

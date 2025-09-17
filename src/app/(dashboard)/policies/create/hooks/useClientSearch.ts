@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import { useApi } from '@/hooks/useApi'
 import type { Client } from '@/types/client'
 
@@ -38,10 +39,9 @@ export function useClientSearch(query: string, enabled: boolean) {
     const controller = new AbortController()
 
     async function searchClients() {
-      // No buscar si no está habilitado o si el query (después del debounce) está vacío
-      // Si no está habilitado, no hacemos nada.
       if (!enabled) {
         setResults([])
+
         return
       }
 

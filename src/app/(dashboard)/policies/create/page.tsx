@@ -1,12 +1,10 @@
 'use client'
 
 import React, { useEffect } from 'react'
+
 import { useRouter } from 'next/navigation'
 
 import { useForm, Controller } from 'react-hook-form'
-
-import { useApi } from '@/hooks/useApi'
-import { useSnackbar } from '@/hooks/useSnackbar'
 
 import {
   Box,
@@ -25,7 +23,10 @@ import {
   Switch
 } from '@mui/material'
 
-import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
+import { useApi } from '@/hooks/useApi'
+import { useSnackbar } from '@/hooks/useSnackbar'
+
+import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs } from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
@@ -106,9 +107,6 @@ export default function PolicyForm() {
   }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId])
 
   const onSubmit = async (data: PolicyFormInputs) => {
-    // Remove policy_modality as it's not needed by the API
-    const { policy_modality, ...rest } = data
-
     // Build the base payload with required fields
     const payload: any = {
       policy_number: String(data.policy_number),
@@ -194,6 +192,7 @@ export default function PolicyForm() {
                         value={field.value}
                         onChange={newId => {
                           field.onChange(newId)
+
                           if (!isHolderDifferent) {
                             setValue('insured_id', newId, { shouldValidate: true })
                           }

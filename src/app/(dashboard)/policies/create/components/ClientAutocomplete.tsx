@@ -1,7 +1,9 @@
 'use client'
 
 import React from 'react'
+
 import { Autocomplete, TextField, CircularProgress } from '@mui/material'
+
 import { useClientSearch } from '../hooks/useClientSearch'
 import type { Client } from '@/types/client'
 
@@ -21,6 +23,7 @@ export function ClientAutocomplete({ label, value, onChange, error, helperText }
 
   const selectedOption = React.useMemo(() => {
     if (!value || options.length === 0) return null
+
     return options.find(option => option.id === value) || null
   }, [value, options])
 
