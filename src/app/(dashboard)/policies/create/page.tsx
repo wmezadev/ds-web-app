@@ -204,26 +204,6 @@ export default function PolicyForm() {
               render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
             />
           </Grid>
-          {/* Status */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='status'
-              control={control}
-              rules={{ required: 'Estado requerido' }}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Estado</InputLabel>
-                  <Select {...field} label='Estado'>
-                    {POLICY_STATUS_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            />
-          </Grid>
 
           <Grid item xs={12} md={6}>
             <Controller
