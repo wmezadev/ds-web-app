@@ -17,7 +17,8 @@ import {
   MenuItem,
   Paper,
   Typography,
-  Grid
+  Grid,
+  Switch
 } from '@mui/material'
 
 import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
@@ -33,6 +34,7 @@ const POLICY_PERIOD_OPTIONS = [
 ]
 
 export default function PolicyForm() {
+  const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const today = new Date().toISOString().split('T')[0]
 
   const {
@@ -66,6 +68,7 @@ export default function PolicyForm() {
   })
 
   const effectiveDate = watch('effective_date')
+  const holderId = watch('holder_id')
 
   const policyPeriod = watch('policy_period')
 
@@ -82,7 +85,11 @@ export default function PolicyForm() {
     } else if (policyPeriod === 0) {
       setValue('expiration_date', '')
     }
-  }, [effectiveDate, policyPeriod, setValue])
+
+    if (!isHolderDifferent && holderId) {
+      setValue('insured_id', holderId, { shouldValidate: true })
+    }
+  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId])
 
   const onSubmit = (data: PolicyFormInputs) => {
     console.log('Policy Created:', data)
@@ -95,6 +102,66 @@ export default function PolicyForm() {
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Grid container spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
+          <Grid item xs={12} md={3}>
+            <FormControlLabel
+              control={<Switch checked={isHolderDifferent} onChange={e => setIsHolderDifferent(e.target.checked)} />}
+              label='¿El tomador es distinto al asegurado?'
+            />
+          </Grid>
+          <Grid item xs={12} md={isHolderDifferent ? 4 : 8}>
+            <Controller
+              name='holder_id'
+              control={control}
+              rules={{ required: isHolderDifferent ? 'Tomador requerido' : 'Asegurado y Tomador requerido' }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  label={isHolderDifferent ? 'Tomador' : 'Asegurado y Tomador'}
+                  type='text'
+                  fullWidth
+                  value={field.value ?? ''}
+                  onChange={e => {
+                    const onlyDigits = e.target.value.replace(/\D/g, '')
+                    const value = onlyDigits === '' ? null : Number(onlyDigits)
+
+                    field.onChange(value)
+                    if (!isHolderDifferent) {
+                      setValue('insured_id', value, { shouldValidate: true })
+                    }
+                  }}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                />
+              )}
+            />
+          </Grid>
+          {isHolderDifferent && (
+            <Grid item xs={12} md={4}>
+              <Controller
+                name='insured_id'
+                control={control}
+                rules={{ required: 'Asegurado requerido' }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    label='Asegurado'
+                    type='text'
+                    fullWidth
+                    value={field.value ?? ''}
+                    onChange={e => {
+                      const onlyDigits = e.target.value.replace(/\D/g, '')
+
+                      field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
+                    }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  />
+                )}
+              />
+            </Grid>
+          )}
+        </Grid>
         <Grid container spacing={2}>
           {/* Tipo de Póliza */}
           <Grid item xs={12}>
@@ -180,54 +247,6 @@ export default function PolicyForm() {
                   fullWidth
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='holder_id'
-              control={control}
-              rules={{ required: 'Titular requerido' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  label='Titular'
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                    field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                  }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='insured_id'
-              control={control}
-              rules={{ required: 'Asegurado requerido' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  label='Asegurado'
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                    field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                  }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 />
               )}
             />
