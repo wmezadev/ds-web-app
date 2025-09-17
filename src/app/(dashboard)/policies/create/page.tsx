@@ -23,6 +23,7 @@ import {
 
 import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
+import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
 
 const POLICY_PERIOD_OPTIONS = [
@@ -38,6 +39,7 @@ const POLICY_PERIOD_OPTIONS = [
 export default function PolicyForm() {
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
+  const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const today = new Date().toISOString().split('T')[0]
 
   const {
@@ -195,16 +197,6 @@ export default function PolicyForm() {
               )}
             />
           </Grid>
-
-          {/* Interest */}
-          <Grid item xs={12}>
-            <Controller
-              name='insured_interest'
-              control={control}
-              render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
-            />
-          </Grid>
-
           <Grid item xs={12} md={6}>
             <Controller
               name='policy_number'
@@ -228,21 +220,36 @@ export default function PolicyForm() {
               control={control}
               rules={{ required: 'Compañía requerida' }}
               render={({ field, fieldState }) => (
-                <TextField
-                  label='Compañía'
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                    field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                  }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                />
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Compañía</InputLabel>
+                  <Select {...field} label='Compañía' disabled={companiesLoading}>
+                    {insuranceCompanies.map(company => (
+                      <MenuItem key={company.id} value={company.id}>
+                        {company.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldState.error && (
+                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                      {fieldState.error.message}
+                    </Typography>
+                  )}
+                  {companiesError && (
+                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                      {companiesError}
+                    </Typography>
+                  )}
+                </FormControl>
               )}
+            />
+          </Grid>
+
+          {/* Interest */}
+          <Grid item xs={12}>
+            <Controller
+              name='insured_interest'
+              control={control}
+              render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
             />
           </Grid>
 
