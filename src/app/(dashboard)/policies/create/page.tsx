@@ -25,6 +25,7 @@ import {
 import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
+import { useCollectors } from './hooks/useCollectors'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
 
 const POLICY_PERIOD_OPTIONS = [
@@ -42,6 +43,7 @@ export default function PolicyForm() {
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
+  const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
   const today = new Date().toISOString().split('T')[0]
 
   const {
@@ -394,19 +396,27 @@ export default function PolicyForm() {
               <Controller
                 name='collector_id'
                 control={control}
-                render={({ field }) => (
-                  <TextField
-                    label='Cobrador (ID)'
-                    type='text'
-                    fullWidth
-                    value={field.value ?? ''}
-                    onChange={e => {
-                      const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                      field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                    }}
-                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                  />
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel>Cobrador</InputLabel>
+                    <Select {...field} label='Cobrador' disabled={collectorsLoading}>
+                      {collectors.map(collector => (
+                        <MenuItem key={collector.id} value={collector.id}>
+                          {collector.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {fieldState.error && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                    {collectorsError && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {collectorsError}
+                      </Typography>
+                    )}
+                  </FormControl>
                 )}
               />
             </Grid>
