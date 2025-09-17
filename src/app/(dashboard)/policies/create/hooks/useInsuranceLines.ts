@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useApi } from './useApi'
+import { useApi } from '@/hooks/useApi'
 import type { InsuranceLine } from '@/types/insurance-line'
 
 export function useInsuranceLines() {

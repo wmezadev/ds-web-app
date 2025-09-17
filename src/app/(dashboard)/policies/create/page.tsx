@@ -22,7 +22,8 @@ import {
 } from '@mui/material'
 
 import { PAYMENT_MODE_OPTIONS, POLICY_STATUS_OPTIONS, type PolicyFormInputs } from '@/types/policy'
-import { useInsuranceLines } from '@/hooks/useInsuranceLines'
+import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
+import { ClientAutocomplete } from './components/ClientAutocomplete'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -117,23 +118,17 @@ export default function PolicyForm() {
               control={control}
               rules={{ required: isHolderDifferent ? 'Tomador requerido' : 'Asegurado y Tomador requerido' }}
               render={({ field, fieldState }) => (
-                <TextField
+                <ClientAutocomplete
                   label={isHolderDifferent ? 'Tomador' : 'Asegurado y Tomador'}
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
-                    const value = onlyDigits === '' ? null : Number(onlyDigits)
-
-                    field.onChange(value)
+                  value={field.value}
+                  onChange={newId => {
+                    field.onChange(newId)
                     if (!isHolderDifferent) {
-                      setValue('insured_id', value, { shouldValidate: true })
+                      setValue('insured_id', newId, { shouldValidate: true })
                     }
                   }}
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                 />
               )}
             />
@@ -145,19 +140,12 @@ export default function PolicyForm() {
                 control={control}
                 rules={{ required: 'Asegurado requerido' }}
                 render={({ field, fieldState }) => (
-                  <TextField
+                  <ClientAutocomplete
                     label='Asegurado'
-                    type='text'
-                    fullWidth
-                    value={field.value ?? ''}
-                    onChange={e => {
-                      const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                      field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                    }}
+                    value={field.value}
+                    onChange={field.onChange}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
-                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                   />
                 )}
               />
