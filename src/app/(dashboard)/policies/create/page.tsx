@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useForm, Controller } from 'react-hook-form'
 
@@ -37,6 +38,7 @@ const POLICY_PERIOD_OPTIONS = [
 ]
 
 export default function PolicyForm() {
+  const router = useRouter()
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
@@ -101,336 +103,343 @@ export default function PolicyForm() {
   }
 
   return (
-    <Paper sx={{ p: 4 }}>
-      <Typography variant='h5' mb={2}>
-        Crear Póliza
-      </Typography>
+    <Box>
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={3}>
+        <Typography variant='h4' sx={{ fontWeight: 600 }}>
+          Crear Póliza
+        </Typography>
+        <Button variant='outlined' onClick={() => router.back()} type='button'>
+          Volver
+        </Button>
+      </Box>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Grid container spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
-          <Grid item xs={12} md={3}>
-            <FormControlLabel
-              control={<Switch checked={isHolderDifferent} onChange={e => setIsHolderDifferent(e.target.checked)} />}
-              label='¿El tomador es distinto al asegurado?'
-            />
-          </Grid>
-          <Grid item xs={12} md={isHolderDifferent ? 4 : 8}>
-            <Controller
-              name='holder_id'
-              control={control}
-              rules={{ required: isHolderDifferent ? 'Tomador requerido' : 'Asegurado y Tomador requerido' }}
-              render={({ field, fieldState }) => (
-                <ClientAutocomplete
-                  label={isHolderDifferent ? 'Tomador' : 'Asegurado y Tomador'}
-                  value={field.value}
-                  onChange={newId => {
-                    field.onChange(newId)
-                    if (!isHolderDifferent) {
-                      setValue('insured_id', newId, { shouldValidate: true })
-                    }
-                  }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
-          {isHolderDifferent && (
-            <Grid item xs={12} md={4}>
+      <Paper sx={{ p: 4 }}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Grid container spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
+            <Grid item xs={12} md={3}>
+              <FormControlLabel
+                control={<Switch checked={isHolderDifferent} onChange={e => setIsHolderDifferent(e.target.checked)} />}
+                label='¿El tomador es distinto al asegurado?'
+              />
+            </Grid>
+            <Grid item xs={12} md={isHolderDifferent ? 4 : 8}>
               <Controller
-                name='insured_id'
+                name='holder_id'
                 control={control}
-                rules={{ required: 'Asegurado requerido' }}
+                rules={{ required: isHolderDifferent ? 'Tomador requerido' : 'Asegurado y Tomador requerido' }}
                 render={({ field, fieldState }) => (
                   <ClientAutocomplete
-                    label='Asegurado'
+                    label={isHolderDifferent ? 'Tomador' : 'Asegurado y Tomador'}
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={newId => {
+                      field.onChange(newId)
+                      if (!isHolderDifferent) {
+                        setValue('insured_id', newId, { shouldValidate: true })
+                      }
+                    }}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                   />
                 )}
               />
             </Grid>
-          )}
-        </Grid>
-        <Grid container spacing={2}>
-          {/* Tipo de Póliza */}
-          <Grid item xs={12}>
-            <Controller
-              name='is_new'
-              control={control}
-              render={({ field }) => (
-                <FormControl component='fieldset'>
-                  <Typography variant='subtitle1' gutterBottom>
-                    Tipo de Póliza
-                  </Typography>
-                  <RadioGroup
-                    row
+            {isHolderDifferent && (
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name='insured_id'
+                  control={control}
+                  rules={{ required: 'Asegurado requerido' }}
+                  render={({ field, fieldState }) => (
+                    <ClientAutocomplete
+                      label='Asegurado'
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            )}
+          </Grid>
+          <Grid container spacing={2}>
+            {/* Tipo de Póliza */}
+            <Grid item xs={12}>
+              <Controller
+                name='is_new'
+                control={control}
+                render={({ field }) => (
+                  <FormControl component='fieldset'>
+                    <Typography variant='subtitle1' gutterBottom>
+                      Tipo de Póliza
+                    </Typography>
+                    <RadioGroup
+                      row
+                      {...field}
+                      value={field.value ? 'new' : 'renewal'}
+                      onChange={e => field.onChange(e.target.value === 'new')}
+                    >
+                      <FormControlLabel value='new' control={<Radio />} label='Nueva' />
+                      <FormControlLabel value='renewal' control={<Radio />} label='Renovación' />
+                    </RadioGroup>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            {/* Tipo de Póliza */}
+            <Grid item xs={12}>
+              <Controller
+                name='policy_modality'
+                control={control}
+                rules={{ required: 'Tipo de póliza requerido' }}
+                render={({ field }) => (
+                  <FormControl component='fieldset'>
+                    <Typography variant='subtitle1' gutterBottom>
+                      Tipo
+                    </Typography>
+                    <RadioGroup row {...field} value={field.value} onChange={e => field.onChange(e.target.value)}>
+                      <FormControlLabel value='I' control={<Radio />} label='Póliza' />
+                      <FormControlLabel value='C' control={<Radio />} label='Certificado' />
+                    </RadioGroup>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='policy_number'
+                control={control}
+                rules={{ required: 'Número de póliza requerido' }}
+                render={({ field, fieldState }) => (
+                  <TextField
                     {...field}
-                    value={field.value ? 'new' : 'renewal'}
-                    onChange={e => field.onChange(e.target.value === 'new')}
-                  >
-                    <FormControlLabel value='new' control={<Radio />} label='Nueva' />
-                    <FormControlLabel value='renewal' control={<Radio />} label='Renovación' />
-                  </RadioGroup>
-                </FormControl>
-              )}
-            />
-          </Grid>
-          {/* Tipo de Póliza */}
-          <Grid item xs={12}>
-            <Controller
-              name='policy_modality'
-              control={control}
-              rules={{ required: 'Tipo de póliza requerido' }}
-              render={({ field }) => (
-                <FormControl component='fieldset'>
-                  <Typography variant='subtitle1' gutterBottom>
-                    Tipo
-                  </Typography>
-                  <RadioGroup row {...field} value={field.value} onChange={e => field.onChange(e.target.value)}>
-                    <FormControlLabel value='I' control={<Radio />} label='Póliza' />
-                    <FormControlLabel value='C' control={<Radio />} label='Certificado' />
-                  </RadioGroup>
-                </FormControl>
-              )}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='policy_number'
-              control={control}
-              rules={{ required: 'Número de póliza requerido' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label='Número de Póliza'
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
+                    label='Número de Póliza'
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='insurance_company_id'
-              control={control}
-              rules={{ required: 'Compañía requerida' }}
-              render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>Compañía</InputLabel>
-                  <Select {...field} label='Compañía' disabled={companiesLoading}>
-                    {insuranceCompanies.map(company => (
-                      <MenuItem key={company.id} value={company.id}>
-                        {company.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
-                      {fieldState.error.message}
-                    </Typography>
-                  )}
-                  {companiesError && (
-                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
-                      {companiesError}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='insurance_company_id'
+                control={control}
+                rules={{ required: 'Compañía requerida' }}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel>Compañía</InputLabel>
+                    <Select {...field} label='Compañía' disabled={companiesLoading}>
+                      {insuranceCompanies.map(company => (
+                        <MenuItem key={company.id} value={company.id}>
+                          {company.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {fieldState.error && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                    {companiesError && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {companiesError}
+                      </Typography>
+                    )}
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
-          {/* Interest */}
-          <Grid item xs={12}>
-            <Controller
-              name='insured_interest'
-              control={control}
-              render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
-            />
-          </Grid>
+            {/* Interest */}
+            <Grid item xs={12}>
+              <Controller
+                name='insured_interest'
+                control={control}
+                render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='line_id'
-              control={control}
-              rules={{ required: 'Ramo requerido' }}
-              render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>Ramo</InputLabel>
-                  <Select {...field} label='Ramo' disabled={linesLoading}>
-                    {insuranceLines.map(line => (
-                      <MenuItem key={line.id} value={line.id}>
-                        {line.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
-                      {fieldState.error.message}
-                    </Typography>
-                  )}
-                  {linesError && (
-                    <Typography variant='caption' color='error' sx={{ pl: 2 }}>
-                      {linesError}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='line_id'
+                control={control}
+                rules={{ required: 'Ramo requerido' }}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel>Ramo</InputLabel>
+                    <Select {...field} label='Ramo' disabled={linesLoading}>
+                      {insuranceLines.map(line => (
+                        <MenuItem key={line.id} value={line.id}>
+                          {line.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {fieldState.error && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                    {linesError && (
+                      <Typography variant='caption' color='error' sx={{ pl: 2 }}>
+                        {linesError}
+                      </Typography>
+                    )}
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Controller
-              name='issue_date'
-              control={control}
-              rules={{ required: 'Fecha de emisión requerida' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label='Fecha de Emisión'
-                  type='date'
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ readOnly: true }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name='issue_date'
+                control={control}
+                rules={{ required: 'Fecha de emisión requerida' }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label='Fecha de Emisión'
+                    type='date'
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ readOnly: true }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Controller
-              name='effective_date'
-              control={control}
-              rules={{ required: 'Fecha de inicio requerida' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label='Fecha de Inicio'
-                  type='date'
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name='effective_date'
+                control={control}
+                rules={{ required: 'Fecha de inicio requerida' }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label='Fecha de Inicio'
+                    type='date'
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Controller
-              name='expiration_date'
-              control={control}
-              rules={{ required: 'Fecha de vencimiento requerida' }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label='Fecha de Vencimiento'
-                  type='date'
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name='expiration_date'
+                control={control}
+                rules={{ required: 'Fecha de vencimiento requerida' }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label='Fecha de Vencimiento'
+                    type='date'
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Controller
-              name='policy_period'
-              control={control}
-              rules={{ required: 'Período requerido' }}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Período</InputLabel>
-                  <Select {...field} label='Período'>
-                    {POLICY_PERIOD_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            />
-          </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name='policy_period'
+                control={control}
+                rules={{ required: 'Período requerido' }}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Período</InputLabel>
+                    <Select {...field} label='Período'>
+                      {POLICY_PERIOD_OPTIONS.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
-          {/* Payment Mode */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='payment_mode'
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Modo de Pago</InputLabel>
-                  <Select {...field} label='Modo de Pago'>
-                    {PAYMENT_MODE_OPTIONS.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            />
-          </Grid>
+            {/* Payment Mode */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='payment_mode'
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Modo de Pago</InputLabel>
+                    <Select {...field} label='Modo de Pago'>
+                      {PAYMENT_MODE_OPTIONS.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
-          {/* IDs adicionales */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='collector_id'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  label='Cobrador (ID)'
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
+            {/* IDs adicionales */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='collector_id'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label='Cobrador (ID)'
+                    type='text'
+                    fullWidth
+                    value={field.value ?? ''}
+                    onChange={e => {
+                      const onlyDigits = e.target.value.replace(/\D/g, '')
 
-                    field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                  }}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                />
-              )}
-            />
+                      field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
+                    }}
+                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Controller
+                name='vehicle_id'
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label='Vehículo (ID)'
+                    type='text'
+                    fullWidth
+                    value={field.value ?? ''}
+                    onChange={e => {
+                      const onlyDigits = e.target.value.replace(/\D/g, '')
+
+                      field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
+                    }}
+                    inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                  />
+                )}
+              />
+            </Grid>
           </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Controller
-              name='vehicle_id'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  label='Vehículo (ID)'
-                  type='text'
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={e => {
-                    const onlyDigits = e.target.value.replace(/\D/g, '')
-
-                    field.onChange(onlyDigits === '' ? null : Number(onlyDigits))
-                  }}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                />
-              )}
-            />
-          </Grid>
-        </Grid>
-
-        <Box mt={3}>
-          <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>
-            Guardar Póliza
-          </Button>
-        </Box>
-      </form>
-    </Paper>
+          <Box mt={3}>
+            <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>
+              Guardar Póliza
+            </Button>
+          </Box>
+        </form>
+      </Paper>
+    </Box>
   )
 }
