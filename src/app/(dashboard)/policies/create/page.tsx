@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 
 import { useForm, Controller } from 'react-hook-form'
 
+import { useApi } from '@/hooks/useApi'
+import { useSnackbar } from '@/hooks/useSnackbar'
+
 import {
   Box,
   Button,
@@ -40,6 +43,8 @@ const POLICY_PERIOD_OPTIONS = [
 
 export default function PolicyForm() {
   const router = useRouter()
+  const { fetchApi } = useApi()
+  const { showSuccess, showError } = useSnackbar()
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
@@ -100,8 +105,60 @@ export default function PolicyForm() {
     }
   }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId])
 
-  const onSubmit = (data: PolicyFormInputs) => {
-    console.log('Policy Created:', data)
+  const onSubmit = async (data: PolicyFormInputs) => {
+    // Remove policy_modality as it's not needed by the API
+    const { policy_modality, ...rest } = data
+
+    // Build the base payload with required fields
+    const payload: any = {
+      policy_number: String(data.policy_number),
+      holder_id: data.holder_id ? Number(data.holder_id) : null,
+      insured_id: data.insured_id ? Number(data.insured_id) : null,
+      insurance_company_id: data.insurance_company_id ? Number(data.insurance_company_id) : null,
+      line_id: data.line_id ? Number(data.line_id) : null,
+      status: data.status,
+      is_new: data.is_new,
+      issue_date: data.issue_date,
+      effective_date: data.effective_date,
+      expiration_date: data.expiration_date,
+      policy_period: data.policy_period ? Number(data.policy_period) : null,
+      is_renewable: data.is_renewable,
+      has_co_insurance: data.has_co_insurance,
+      payment_mode: data.payment_mode,
+      insured_interest: data.insured_interest || '',
+      collector_id: data.collector_id ? Number(data.collector_id) : null
+    }
+
+    // Only include vehicle_id if it has a valid value
+    if (data.vehicle_id) {
+      payload.vehicle_id = Number(data.vehicle_id)
+    }
+
+    // Only include installment_plan if payment_mode is 'I' (Fraccionado)
+    if (data.payment_mode === 'I') {
+      payload.installment_plan = {
+        period_months: data.policy_period || 12,
+        installments_count: 0, // This would need to be calculated or added to form
+        annual_premium: '0.00', // This would need to be added to form if required
+        installments: []
+      }
+    }
+
+    if (data.has_co_insurance) {
+      payload.co_insurance_entries = []
+    }
+
+    try {
+      await fetchApi('policies', {
+        method: 'POST',
+        body: payload
+      })
+      showSuccess('Póliza creada exitosamente')
+      router.push('/policies')
+    } catch (error) {
+      showError('Error al crear la póliza')
+      console.error('Error creating policy:', error)
+    }
   }
 
   return (
