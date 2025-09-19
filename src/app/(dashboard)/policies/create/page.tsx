@@ -20,7 +20,9 @@ import {
   Paper,
   Typography,
   Grid,
-  Switch
+  Switch,
+  IconButton,
+  Tooltip
 } from '@mui/material'
 
 import { useApi } from '@/hooks/useApi'
@@ -31,6 +33,8 @@ import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useIn
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
+import { VehicleAutocomplete } from './components/VehicleAutocomplete'
+import AddIcon from '@mui/icons-material/Add'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -84,8 +88,21 @@ export default function PolicyForm() {
 
   const effectiveDate = watch('effective_date')
   const holderId = watch('holder_id')
+  const lineId = watch('line_id')
 
   const policyPeriod = watch('policy_period')
+
+  const selectedLine = React.useMemo(() => {
+    if (!lineId || !insuranceLines.length) return null
+    return insuranceLines.find(line => line.id === lineId) || null
+  }, [lineId, insuranceLines])
+
+  const shouldShowVehicle = selectedLine?.entity === 'A'
+
+  const handleAddVehicle = () => {
+    // Añadir el modal que va a crear un nuevo vehiculo
+    showSuccess('Funcionalidad de agregar vehículo próximamente')
+  }
 
   useEffect(() => {
     if (effectiveDate && policyPeriod && policyPeriod > 0) {
@@ -104,10 +121,13 @@ export default function PolicyForm() {
     if (!isHolderDifferent && holderId) {
       setValue('insured_id', holderId, { shouldValidate: true })
     }
-  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId])
+
+    if (!shouldShowVehicle) {
+      setValue('vehicle_id', null)
+    }
+  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle])
 
   const onSubmit = async (data: PolicyFormInputs) => {
-    // Build the base payload with required fields
     const payload: any = {
       policy_number: String(data.policy_number),
       holder_id: data.holder_id ? Number(data.holder_id) : null,
@@ -127,17 +147,15 @@ export default function PolicyForm() {
       collector_id: data.collector_id ? Number(data.collector_id) : null
     }
 
-    // Only include vehicle_id if it has a valid value
     if (data.vehicle_id) {
       payload.vehicle_id = Number(data.vehicle_id)
     }
 
-    // Only include installment_plan if payment_mode is 'I' (Fraccionado)
     if (data.payment_mode === 'I') {
       payload.installment_plan = {
         period_months: data.policy_period || 12,
-        installments_count: 0, // This would need to be calculated or added to form
-        annual_premium: '0.00', // This would need to be added to form if required
+        installments_count: 0,
+        annual_premium: '0.00',
         installments: []
       }
     }
@@ -346,13 +364,48 @@ export default function PolicyForm() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} md={shouldShowVehicle ? 6 : 12}>
               <Controller
                 name='insured_interest'
                 control={control}
                 render={({ field }) => <TextField {...field} label='Interés Asegurado' fullWidth />}
               />
             </Grid>
+
+            {shouldShowVehicle && (
+              <Grid item xs={12} md={6}>
+                <Box display='flex' alignItems='center' gap={1}>
+                  <Box flexGrow={1}>
+                    <Controller
+                      name='vehicle_id'
+                      control={control}
+                      rules={{ required: shouldShowVehicle ? 'Vehículo requerido' : false }}
+                      render={({ field, fieldState }) => (
+                        <VehicleAutocomplete
+                          label='Vehículo'
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                        />
+                      )}
+                    />
+                  </Box>
+                  <Tooltip title='Agregar nuevo vehículo'>
+                    <IconButton
+                      onClick={handleAddVehicle}
+                      color='primary'
+                      sx={{
+                        alignSelf: 'flex-start',
+                        mt: '8px'
+                      }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Grid>
+            )}
 
             <Grid item xs={12} md={3}>
               <Controller
