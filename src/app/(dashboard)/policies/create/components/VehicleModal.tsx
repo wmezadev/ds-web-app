@@ -18,7 +18,8 @@ import {
   Box,
   FormControlLabel,
   Radio,
-  RadioGroup
+  RadioGroup,
+  Autocomplete
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import { useSnackbar } from '@/hooks/useSnackbar'
@@ -38,6 +39,48 @@ interface VehicleModalProps {
   open: boolean
   onClose: () => void
   onSuccess?: (vehicleData: VehicleFormData) => void
+}
+
+// Lista de colores predefinidos
+const PREDEFINED_COLORS = [
+  'Blanco',
+  'Negro',
+  'Gris',
+  'Plata',
+  'Azul',
+  'Rojo',
+  'Verde',
+  'Amarillo',
+  'Naranja',
+  'Marrón',
+  'Beige',
+  'Dorado',
+  'Violeta',
+  'Rosa',
+  'Turquesa'
+]
+
+// Función para obtener el código de color para la vista previa
+const getColorCode = (colorName: string): string => {
+  const colorMap: Record<string, string> = {
+    Blanco: '#FFFFFF',
+    Negro: '#000000',
+    Gris: '#808080',
+    Plata: '#C0C0C0',
+    Azul: '#0000FF',
+    Rojo: '#FF0000',
+    Verde: '#008000',
+    Amarillo: '#FFFF00',
+    Naranja: '#FFA500',
+    Marrón: '#A52A2A',
+    Beige: '#F5F5DC',
+    Dorado: '#FFD700',
+    Violeta: '#8A2BE2',
+    Rosa: '#FFC0CB',
+    Turquesa: '#40E0D0'
+  }
+
+  return colorMap[colorName] || '#CCCCCC'
 }
 
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
@@ -144,14 +187,42 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'El color es requerido' }}
                 render={({ field }) => (
-                  <TextField
+                  <Autocomplete
                     {...field}
-                    label='Color'
-                    fullWidth
-                    variant='outlined'
-                    error={!!errors.color}
-                    helperText={errors.color?.message}
-                    placeholder='Ej: Blanco, Negro, Azul'
+                    options={PREDEFINED_COLORS}
+                    freeSolo
+                    value={field.value || ''}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue || '')
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      field.onChange(newInputValue)
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Color'
+                        variant='outlined'
+                        error={!!errors.color}
+                        helperText={errors.color?.message || 'Selecciona un color o escribe uno personalizado'}
+                        placeholder='Ej: Blanco, Negro, Azul'
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Box
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            backgroundColor: getColorCode(option),
+                            border: '1px solid #ccc',
+                            marginRight: 1
+                          }}
+                        />
+                        {option}
+                      </Box>
+                    )}
                   />
                 )}
               />
