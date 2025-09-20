@@ -34,6 +34,7 @@ import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
+import VehicleModal from './components/VehicleModal'
 import AddIcon from '@mui/icons-material/Add'
 
 const POLICY_PERIOD_OPTIONS = [
@@ -51,6 +52,7 @@ export default function PolicyForm() {
   const { fetchApi } = useApi()
   const { showSuccess, showError } = useSnackbar()
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -100,8 +102,18 @@ export default function PolicyForm() {
   const shouldShowVehicle = selectedLine?.entity === 'A'
 
   const handleAddVehicle = () => {
-    // Añadir el modal que va a crear un nuevo vehiculo
-    showSuccess('Funcionalidad de agregar vehículo próximamente')
+    setIsVehicleModalOpen(true)
+  }
+
+  const handleVehicleModalClose = () => {
+    setIsVehicleModalOpen(false)
+  }
+
+  const handleVehicleCreated = (vehicleData: any) => {
+    // TODO: Cuando se conecte a la API, aquí se actualizará el autocomplete de vehículos
+    // y se seleccionará el vehículo recién creado
+    console.log('Vehicle created:', vehicleData)
+    showSuccess('Vehículo creado exitosamente')
   }
 
   useEffect(() => {
@@ -541,6 +553,8 @@ export default function PolicyForm() {
           </Box>
         </form>
       </Paper>
+
+      <VehicleModal open={isVehicleModalOpen} onClose={handleVehicleModalClose} onSuccess={handleVehicleCreated} />
     </Box>
   )
 }
