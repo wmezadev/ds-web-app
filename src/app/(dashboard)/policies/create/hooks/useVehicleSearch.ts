@@ -36,11 +36,13 @@ export function useVehicleSearch(query: string, enabled: boolean) {
     async function searchVehicles() {
       if (!enabled) {
         setResults([])
+
         return
       }
 
       if (debouncedQuery.length > 0 && debouncedQuery.length < 2) {
         setResults([])
+
         return
       }
 

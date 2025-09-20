@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +22,9 @@ import {
   RadioGroup,
   Autocomplete
 } from '@mui/material'
+
 import { useForm, Controller } from 'react-hook-form'
+
 import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface VehicleFormData {
@@ -41,7 +44,6 @@ interface VehicleModalProps {
   onSuccess?: (vehicleData: VehicleFormData) => void
 }
 
-// Lista de colores predefinidos
 const PREDEFINED_COLORS = [
   'Blanco',
   'Negro',
@@ -135,6 +137,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
   const currentYear = new Date().getFullYear() + 1
   const yearOptions: number[] = []
+
   for (let year = currentYear; year >= 1940; year--) {
     yearOptions.push(year)
   }

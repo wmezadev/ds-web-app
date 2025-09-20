@@ -24,6 +24,7 @@ import {
   IconButton,
   Tooltip
 } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
 
 import { useApi } from '@/hooks/useApi'
 import { useSnackbar } from '@/hooks/useSnackbar'
@@ -35,7 +36,6 @@ import { useCollectors } from './hooks/useCollectors'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
-import AddIcon from '@mui/icons-material/Add'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -96,6 +96,7 @@ export default function PolicyForm() {
 
   const selectedLine = React.useMemo(() => {
     if (!lineId || !insuranceLines.length) return null
+
     return insuranceLines.find(line => line.id === lineId) || null
   }, [lineId, insuranceLines])
 
