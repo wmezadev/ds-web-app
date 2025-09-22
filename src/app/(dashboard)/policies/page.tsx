@@ -2,6 +2,8 @@
 
 import React, { useMemo } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { useSession } from 'next-auth/react'
 
 import { Box, Button, Typography, Paper, CircularProgress, FormControl, Select, MenuItem } from '@mui/material'
@@ -16,6 +18,7 @@ import { usePolicies } from '@/hooks/usePolicies'
 import { usePolicySearchTypes } from '@/hooks/usePolicySearchTypes'
 
 export default function PoliciesPage() {
+  const router = useRouter()
   const { status: sessionStatus } = useSession()
   const apiEnabled = sessionStatus === 'authenticated'
 
@@ -171,7 +174,7 @@ export default function PoliciesPage() {
           {POLICIES_PAGE.title}
         </Typography>
         <div>
-          <Button variant='contained' color='primary' onClick={() => {}}>
+          <Button variant='contained' color='primary' onClick={() => router.push(ROUTES.POLICIES.CREATE)}>
             {POLICIES_PAGE.createPolicy}
           </Button>
         </div>
@@ -185,7 +188,6 @@ export default function PoliciesPage() {
           onClear={() => setQuery('')}
           delay={400}
           autoOnChange={false}
-          showSearchButton
           onSearch={handleSearch}
           leadActions={
             <FormControl size='small' sx={{ minWidth: 220 }}>
