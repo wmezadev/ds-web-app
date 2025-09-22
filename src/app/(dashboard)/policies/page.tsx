@@ -187,7 +187,6 @@ export default function PoliciesPage() {
           onClear={() => setQuery('')}
           delay={400}
           autoOnChange={false}
-          showSearchButton
           onSearch={handleSearch}
           leadActions={
             <FormControl size='small' sx={{ minWidth: 220 }}>
