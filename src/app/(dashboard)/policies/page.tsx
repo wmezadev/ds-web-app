@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useSession } from 'next-auth/react'
 
@@ -16,6 +17,7 @@ import { usePolicies } from '@/hooks/usePolicies'
 import { usePolicySearchTypes } from '@/hooks/usePolicySearchTypes'
 
 export default function PoliciesPage() {
+  const router = useRouter()
   const { status: sessionStatus } = useSession()
   const apiEnabled = sessionStatus === 'authenticated'
 
@@ -171,7 +173,7 @@ export default function PoliciesPage() {
           {POLICIES_PAGE.title}
         </Typography>
         <div>
-          <Button variant='contained' color='primary' onClick={() => {}}>
+          <Button variant='contained' color='primary' onClick={() => router.push(ROUTES.POLICIES.CREATE)}>
             {POLICIES_PAGE.createPolicy}
           </Button>
         </div>
