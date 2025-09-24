@@ -25,15 +25,17 @@ import {
 
 import { useForm, Controller } from 'react-hook-form'
 
+import { useBrands } from '@/app/(dashboard)/vehicles/hooks/useBrands'
+
 import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface VehicleFormData {
   license_plate: string
-  brand_id: string
-  model_id: string
-  version_id: string
-  year: number | string
-  circulation_city_id: string
+  brand_id: number | null
+  model_id: number | null
+  version_id: number | null
+  year: number | null
+  circulation_city_id: number | null
   color: string
   has_gps: boolean
 }
@@ -62,7 +64,6 @@ const PREDEFINED_COLORS = [
   'Turquesa'
 ]
 
-// Función para obtener el código de color para la vista previa
 const getColorCode = (colorName: string): string => {
   const colorMap: Record<string, string> = {
     Blanco: '#FFFFFF',
@@ -89,6 +90,8 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showSuccess, showError } = useSnackbar()
 
+  const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
+
   const {
     control,
     handleSubmit,
@@ -97,11 +100,11 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   } = useForm<VehicleFormData>({
     defaultValues: {
       license_plate: '',
-      brand_id: '',
-      model_id: '',
-      version_id: '',
-      year: '',
-      circulation_city_id: '',
+      brand_id: null,
+      model_id: null,
+      version_id: null,
+      year: null,
+      circulation_city_id: null,
       color: '',
       has_gps: false
     }
@@ -238,20 +241,34 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'La marca es requerida' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.brand_id}>
-                    <InputLabel>Marca</InputLabel>
-                    <Select {...field} label='Marca' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar marca</em>
-                      </MenuItem>
-                      {/* TODO: Cargar marcas desde la API */}
-                    </Select>
-                    {errors.brand_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.brand_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={brands || []}
+                    loading={brandsLoading}
+                    getOptionLabel={option => option.name}
+                    value={brands?.find(brand => brand.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : null)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setBrandParams({ q: newInputValue })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Marca'
+                        error={!!errors.brand_id}
+                        helperText={errors.brand_id?.message || brandsError}
+                        placeholder='Buscar marca...'
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={brandsLoading ? 'Cargando...' : 'No se encontraron marcas'}
+                    loadingText='Buscando marcas...'
+                  />
                 )}
               />
             </Grid>
