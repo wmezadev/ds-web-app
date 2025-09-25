@@ -25,17 +25,35 @@ import {
 
 import { useForm, Controller } from 'react-hook-form'
 
+import { useBrands } from '@/app/(dashboard)/vehicles/hooks/useBrands'
+import { useModels } from '@/app/(dashboard)/vehicles/hooks/useModels'
+import { useVersions } from '@/app/(dashboard)/vehicles/hooks/useVersions'
+
 import { useSnackbar } from '@/hooks/useSnackbar'
+import { useCatalogs, type CatalogsResponse } from '@/hooks/useCatalogs'
+import { useApi } from '@/hooks/useApi'
 
 interface VehicleFormData {
   license_plate: string
-  brand_id: string
-  model_id: string
-  version_id: string
-  year: number | string
-  circulation_city_id: string
+  brand_id: number | undefined
+  model_id: number | undefined
+  version_id: number | undefined
+  year: number | undefined
+  circulation_city_id: number | undefined
   color: string
   has_gps: boolean
+}
+
+interface VehicleApiPayload {
+  license_plate: string
+  brand_id: number
+  model_id: number
+  version_id: number
+  year: number
+  circulation_city_id: number
+  color: string
+  has_gps: boolean
+  [key: string]: unknown
 }
 
 interface VehicleModalProps {
@@ -62,7 +80,6 @@ const PREDEFINED_COLORS = [
   'Turquesa'
 ]
 
-// Función para obtener el código de color para la vista previa
 const getColorCode = (colorName: string): string => {
   const colorMap: Record<string, string> = {
     Blanco: '#FFFFFF',
@@ -85,36 +102,87 @@ const getColorCode = (colorName: string): string => {
   return colorMap[colorName] || '#CCCCCC'
 }
 
+const convertToApiPayload = (formData: VehicleFormData): VehicleApiPayload => {
+  return {
+    license_plate: formData.license_plate.trim().toUpperCase(),
+    brand_id: formData.brand_id!,
+    model_id: formData.model_id!,
+    version_id: formData.version_id!,
+    year: formData.year!,
+    circulation_city_id: formData.circulation_city_id!,
+    color: formData.color.trim(),
+    has_gps: formData.has_gps
+  }
+}
+
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
+  const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
+  const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
+
+  const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
+  const { fetchApi } = useApi()
+
   const { showSuccess, showError } = useSnackbar()
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors }
   } = useForm<VehicleFormData>({
     defaultValues: {
       license_plate: '',
-      brand_id: '',
-      model_id: '',
-      version_id: '',
-      year: '',
-      circulation_city_id: '',
+      brand_id: undefined,
+      model_id: undefined,
+      version_id: undefined,
+      year: undefined,
+      circulation_city_id: undefined,
       color: '',
       has_gps: false
     }
   })
 
+  const selectedBrandId = watch('brand_id')
+  const selectedModelId = watch('model_id')
+
+  React.useEffect(() => {
+    if (selectedBrandId) {
+      setModelParams({ brand_id: selectedBrandId })
+      setValue('model_id', undefined)
+      setValue('version_id', undefined)
+    } else {
+      setModelParams({})
+      setValue('model_id', undefined)
+      setValue('version_id', undefined)
+    }
+  }, [selectedBrandId, setModelParams, setValue])
+
+  React.useEffect(() => {
+    if (selectedModelId) {
+      setVersionParams({ model_id: selectedModelId })
+      setValue('version_id', undefined)
+    } else {
+      setVersionParams({})
+      setValue('version_id', undefined)
+    }
+  }, [selectedModelId, setVersionParams, setValue])
+
   const onSubmit = async (data: VehicleFormData) => {
     try {
       setIsSubmitting(true)
 
-      console.log('Vehicle data to save:', data)
+      const apiPayload = convertToApiPayload(data)
+
+      await fetchApi('vehicles', {
+        method: 'POST',
+        body: apiPayload
+      })
 
       showSuccess('Vehículo creado exitosamente')
-
       reset()
 
       if (onSuccess) {
@@ -123,8 +191,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
       onClose()
     } catch (err: any) {
-      showError('Error al crear el vehículo')
-      console.error('Error creating vehicle:', err)
+      const errorMessage =
+        err?.message || 'Error al crear el vehículo. Por favor, verifica los datos e intenta nuevamente.'
+
+      showError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -138,7 +208,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const currentYear = new Date().getFullYear() + 1
   const yearOptions: number[] = []
 
-  for (let year = currentYear; year >= 1940; year--) {
+  for (let year = currentYear; year >= 1900; year--) {
     yearOptions.push(year)
   }
 
@@ -188,7 +258,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
               <Controller
                 name='color'
                 control={control}
-                rules={{ required: 'El color es requerido' }}
+                rules={{
+                  required: 'El color es requerido',
+                  minLength: { value: 2, message: 'El color debe tener al menos 2 caracteres' }
+                }}
                 render={({ field }) => (
                   <Autocomplete
                     {...field}
@@ -238,20 +311,34 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'La marca es requerida' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.brand_id}>
-                    <InputLabel>Marca</InputLabel>
-                    <Select {...field} label='Marca' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar marca</em>
-                      </MenuItem>
-                      {/* TODO: Cargar marcas desde la API */}
-                    </Select>
-                    {errors.brand_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.brand_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={brands || []}
+                    loading={brandsLoading}
+                    getOptionLabel={option => option.name}
+                    value={brands?.find(brand => brand.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : undefined)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setBrandParams({ q: newInputValue })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Marca'
+                        error={!!errors.brand_id}
+                        helperText={errors.brand_id?.message || brandsError}
+                        placeholder='Buscar marca...'
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={brandsLoading ? 'Cargando...' : 'No se encontraron marcas'}
+                    loadingText='Buscando marcas...'
+                  />
                 )}
               />
             </Grid>
@@ -263,20 +350,39 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'El modelo es requerido' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.model_id}>
-                    <InputLabel>Modelo</InputLabel>
-                    <Select {...field} label='Modelo' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar modelo</em>
-                      </MenuItem>
-                      {/* TODO: Cargar modelos basados en la marca seleccionada */}
-                    </Select>
-                    {errors.model_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.model_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={models || []}
+                    loading={modelsLoading}
+                    disabled={!selectedBrandId}
+                    getOptionLabel={option => option.name}
+                    value={models?.find(model => model.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : undefined)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setModelParams({ q: newInputValue, brand_id: selectedBrandId })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Modelo'
+                        error={!!errors.model_id}
+                        helperText={
+                          errors.model_id?.message ||
+                          modelsError ||
+                          (!selectedBrandId ? 'Selecciona una marca primero' : '')
+                        }
+                        placeholder={selectedBrandId ? 'Buscar modelo...' : 'Selecciona una marca primero'}
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={modelsLoading ? 'Cargando...' : 'No se encontraron modelos'}
+                    loadingText='Buscando modelos...'
+                  />
                 )}
               />
             </Grid>
@@ -288,20 +394,39 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'La versión es requerida' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.version_id}>
-                    <InputLabel>Versión</InputLabel>
-                    <Select {...field} label='Versión' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar versión</em>
-                      </MenuItem>
-                      {/* TODO: Cargar versiones basadas en el modelo seleccionado */}
-                    </Select>
-                    {errors.version_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.version_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={versions || []}
+                    loading={versionsLoading}
+                    disabled={!selectedModelId}
+                    getOptionLabel={option => option.name}
+                    value={versions?.find(version => version.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : undefined)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setVersionParams({ q: newInputValue, model_id: selectedModelId })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Versión'
+                        error={!!errors.version_id}
+                        helperText={
+                          errors.version_id?.message ||
+                          versionsError ||
+                          (!selectedModelId ? 'Selecciona un modelo primero' : '')
+                        }
+                        placeholder={selectedModelId ? 'Buscar versión...' : 'Selecciona un modelo primero'}
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={versionsLoading ? 'Cargando...' : 'No se encontraron versiones'}
+                    loadingText='Buscando versiones...'
+                  />
                 )}
               />
             </Grid>
@@ -313,7 +438,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{
                   required: 'El año es requerido',
-                  min: { value: 1940, message: 'El año debe ser mayor a 1940' },
+                  min: { value: 1900, message: 'El año debe ser mayor o igual a 1900' },
                   max: { value: currentYear, message: `El año no puede ser mayor a ${currentYear}` }
                 }}
                 render={({ field }) => (
@@ -348,15 +473,29 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.circulation_city_id}>
                     <InputLabel>Lugar de Circulación</InputLabel>
-                    <Select {...field} label='Lugar de Circulación' value={field.value ?? ''}>
+                    <Select
+                      {...field}
+                      label='Lugar de Circulación'
+                      value={field.value ?? ''}
+                      disabled={catalogsLoading}
+                    >
                       <MenuItem value=''>
                         <em>Seleccionar ciudad</em>
                       </MenuItem>
-                      {/* TODO: Cargar ciudades desde la API */}
+                      {catalogs?.cities?.map((city: CatalogsResponse['cities'][0]) => (
+                        <MenuItem key={city.id} value={city.id}>
+                          {city.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                     {errors.circulation_city_id && (
                       <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
                         {errors.circulation_city_id.message}
+                      </Typography>
+                    )}
+                    {catalogsError && (
+                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
+                        {catalogsError}
                       </Typography>
                     )}
                   </FormControl>
