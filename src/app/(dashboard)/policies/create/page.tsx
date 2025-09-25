@@ -110,7 +110,7 @@ export default function PolicyForm() {
     setIsVehicleModalOpen(false)
   }
 
-  const handleVehicleCreated = (vehicleData: any) => {
+  const handleVehicleCreated = () => {
     showSuccess('Vehículo creado exitosamente')
   }
 

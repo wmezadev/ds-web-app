@@ -30,6 +30,7 @@ import { useModels } from '@/app/(dashboard)/vehicles/hooks/useModels'
 import { useVersions } from '@/app/(dashboard)/vehicles/hooks/useVersions'
 
 import { useSnackbar } from '@/hooks/useSnackbar'
+import { useCatalogs, type CatalogsResponse } from '@/hooks/useCatalogs'
 
 interface VehicleFormData {
   license_plate: string
@@ -93,6 +94,8 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
   const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
   const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
+
+  const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
 
   const { showSuccess, showError } = useSnackbar()
 
@@ -434,15 +437,29 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.circulation_city_id}>
                     <InputLabel>Lugar de Circulación</InputLabel>
-                    <Select {...field} label='Lugar de Circulación' value={field.value ?? ''}>
+                    <Select
+                      {...field}
+                      label='Lugar de Circulación'
+                      value={field.value ?? ''}
+                      disabled={catalogsLoading}
+                    >
                       <MenuItem value=''>
                         <em>Seleccionar ciudad</em>
                       </MenuItem>
-                      {/* TODO: Cargar ciudades desde la API */}
+                      {catalogs?.cities?.map((city: CatalogsResponse['cities'][0]) => (
+                        <MenuItem key={city.id} value={city.id}>
+                          {city.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                     {errors.circulation_city_id && (
                       <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
                         {errors.circulation_city_id.message}
+                      </Typography>
+                    )}
+                    {catalogsError && (
+                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
+                        {catalogsError}
                       </Typography>
                     )}
                   </FormControl>
