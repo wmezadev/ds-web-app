@@ -2,35 +2,35 @@ import { useState, useEffect, useCallback } from 'react'
 
 import { useApi } from '@/hooks/useApi'
 
-export interface Brand {
+export interface Model {
   id: number
   name: string
   code: string
 }
 
-interface BrandsApiResponse {
+interface ModelsApiResponse {
   success: boolean
-  brands: Brand[]
+  models: Model[]
   total?: number
   pages?: number
   page?: number
   per_page?: number
 }
 
-export function useBrands() {
+export function useModels() {
   const { fetchApi } = useApi()
-  const [brands, setBrands] = useState<Brand[]>([])
+  const [models, setModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [params, setParams] = useState<{ q?: string }>({})
+  const [params, setParams] = useState<{ q?: string; brand_id?: number }>({})
 
-  const fetchAllBrands = useCallback(
-    async (currentParams: { q?: string }) => {
+  const fetchAllModels = useCallback(
+    async (currentParams: { q?: string; brand_id?: number }) => {
       setLoading(true)
       setError(null)
 
       try {
-        let allBrands: Brand[] = []
+        let allModels: Model[] = []
         let currentPage = 1
         let hasMorePages = true
 
@@ -44,15 +44,19 @@ export function useBrands() {
             searchParams.set('q', currentParams.q)
           }
 
-          const url = `vehicles/brands?${searchParams.toString()}`
-          const response = await fetchApi<BrandsApiResponse>(url)
+          if (currentParams.brand_id) {
+            searchParams.set('brand_id', String(currentParams.brand_id))
+          }
 
-          if (response && response.brands) {
-            allBrands = [...allBrands, ...response.brands]
+          const url = `vehicles/models?${searchParams.toString()}`
+          const response = await fetchApi<ModelsApiResponse>(url)
+
+          if (response && response.models) {
+            allModels = [...allModels, ...response.models]
 
             if (response.pages && currentPage >= response.pages) {
               hasMorePages = false
-            } else if (response.brands.length < 100) {
+            } else if (response.models.length < 100) {
               hasMorePages = false
             } else {
               currentPage++
@@ -62,10 +66,10 @@ export function useBrands() {
           }
         }
 
-        setBrands(allBrands)
+        setModels(allModels)
       } catch (err: any) {
-        setError(err.message || 'Error al cargar las marcas.')
-        setBrands([])
+        setError(err.message || 'Error al cargar los modelos.')
+        setModels([])
       } finally {
         setLoading(false)
       }
@@ -74,11 +78,11 @@ export function useBrands() {
   )
 
   useEffect(() => {
-    fetchAllBrands(params)
-  }, [params, fetchAllBrands])
+    fetchAllModels(params)
+  }, [params, fetchAllModels])
 
   return {
-    data: brands,
+    data: models,
     loading,
     error,
     setParams

@@ -26,16 +26,17 @@ import {
 import { useForm, Controller } from 'react-hook-form'
 
 import { useBrands } from '@/app/(dashboard)/vehicles/hooks/useBrands'
+import { useModels } from '@/app/(dashboard)/vehicles/hooks/useModels'
 
 import { useSnackbar } from '@/hooks/useSnackbar'
 
 interface VehicleFormData {
   license_plate: string
-  brand_id: number | null
-  model_id: number | null
-  version_id: number | null
-  year: number | null
-  circulation_city_id: number | null
+  brand_id: number | undefined
+  model_id: number | undefined
+  version_id: number | undefined
+  year: number | undefined
+  circulation_city_id: number | undefined
   color: string
   has_gps: boolean
 }
@@ -88,27 +89,44 @@ const getColorCode = (colorName: string): string => {
 
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { showSuccess, showError } = useSnackbar()
-
   const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
+  const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
+
+  const { showSuccess, showError } = useSnackbar()
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors }
   } = useForm<VehicleFormData>({
     defaultValues: {
       license_plate: '',
-      brand_id: null,
-      model_id: null,
-      version_id: null,
-      year: null,
-      circulation_city_id: null,
+      brand_id: undefined,
+      model_id: undefined,
+      version_id: undefined,
+      year: undefined,
+      circulation_city_id: undefined,
       color: '',
       has_gps: false
     }
   })
+
+  const selectedBrandId = watch('brand_id')
+
+  React.useEffect(() => {
+    if (selectedBrandId) {
+      setModelParams({ brand_id: selectedBrandId })
+      setValue('model_id', undefined)
+      setValue('version_id', undefined)
+    } else {
+      setModelParams({})
+      setValue('model_id', undefined)
+      setValue('version_id', undefined)
+    }
+  }, [selectedBrandId, setModelParams, setValue])
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
@@ -247,7 +265,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                     getOptionLabel={option => option.name}
                     value={brands?.find(brand => brand.id === field.value) || null}
                     onChange={(_, newValue) => {
-                      field.onChange(newValue ? newValue.id : null)
+                      field.onChange(newValue ? newValue.id : undefined)
                     }}
                     onInputChange={(_, newInputValue) => {
                       setBrandParams({ q: newInputValue })
@@ -280,20 +298,39 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'El modelo es requerido' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.model_id}>
-                    <InputLabel>Modelo</InputLabel>
-                    <Select {...field} label='Modelo' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar modelo</em>
-                      </MenuItem>
-                      {/* TODO: Cargar modelos basados en la marca seleccionada */}
-                    </Select>
-                    {errors.model_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.model_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={models || []}
+                    loading={modelsLoading}
+                    disabled={!selectedBrandId}
+                    getOptionLabel={option => option.name}
+                    value={models?.find(model => model.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : undefined)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setModelParams({ q: newInputValue, brand_id: selectedBrandId })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Modelo'
+                        error={!!errors.model_id}
+                        helperText={
+                          errors.model_id?.message ||
+                          modelsError ||
+                          (!selectedBrandId ? 'Selecciona una marca primero' : '')
+                        }
+                        placeholder={selectedBrandId ? 'Buscar modelo...' : 'Selecciona una marca primero'}
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={modelsLoading ? 'Cargando...' : 'No se encontraron modelos'}
+                    loadingText='Buscando modelos...'
+                  />
                 )}
               />
             </Grid>

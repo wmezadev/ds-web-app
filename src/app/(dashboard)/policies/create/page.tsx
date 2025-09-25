@@ -111,9 +111,6 @@ export default function PolicyForm() {
   }
 
   const handleVehicleCreated = (vehicleData: any) => {
-    // TODO: Cuando se conecte a la API, aquí se actualizará el autocomplete de vehículos
-    // y se seleccionará el vehículo recién creado
-    console.log('Vehicle created:', vehicleData)
     showSuccess('Vehículo creado exitosamente')
   }
 
@@ -326,7 +323,7 @@ export default function PolicyForm() {
                 render={({ field, fieldState }) => (
                   <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel>Compañía</InputLabel>
-                    <Select {...field} label='Compañía' disabled={companiesLoading}>
+                    <Select {...field} label='Compañía' value={field.value ?? ''} disabled={companiesLoading}>
                       {insuranceCompanies.map(company => (
                         <MenuItem key={company.id} value={company.id}>
                           {company.name}
@@ -355,7 +352,7 @@ export default function PolicyForm() {
                 render={({ field, fieldState }) => (
                   <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel>Ramo</InputLabel>
-                    <Select {...field} label='Ramo' disabled={linesLoading}>
+                    <Select {...field} label='Ramo' value={field.value ?? ''} disabled={linesLoading}>
                       {insuranceLines.map(line => (
                         <MenuItem key={line.id} value={line.id}>
                           {line.name}
@@ -486,7 +483,7 @@ export default function PolicyForm() {
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>Período</InputLabel>
-                    <Select {...field} label='Período'>
+                    <Select {...field} label='Período' value={field.value ?? ''}>
                       {POLICY_PERIOD_OPTIONS.map(opt => (
                         <MenuItem key={opt.value} value={opt.value}>
                           {opt.label}
@@ -505,7 +502,7 @@ export default function PolicyForm() {
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>Modo de Pago</InputLabel>
-                    <Select {...field} label='Modo de Pago'>
+                    <Select {...field} label='Modo de Pago' value={field.value ?? ''}>
                       {PAYMENT_MODE_OPTIONS.map(opt => (
                         <MenuItem key={opt.value} value={opt.value}>
                           {opt.label}
@@ -524,7 +521,7 @@ export default function PolicyForm() {
                 render={({ field, fieldState }) => (
                   <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel>Cobrador</InputLabel>
-                    <Select {...field} label='Cobrador' disabled={collectorsLoading}>
+                    <Select {...field} label='Cobrador' value={field.value ?? ''} disabled={collectorsLoading}>
                       {collectors.map(collector => (
                         <MenuItem key={collector.id} value={collector.id}>
                           {collector.name}
