@@ -53,6 +53,7 @@ interface VehicleApiPayload {
   circulation_city_id: number
   color: string
   has_gps: boolean
+  [key: string]: unknown
 }
 
 interface VehicleModalProps {
@@ -102,40 +103,6 @@ const getColorCode = (colorName: string): string => {
 }
 
 const convertToApiPayload = (formData: VehicleFormData): VehicleApiPayload => {
-  const errors: string[] = []
-
-  if (!formData.license_plate?.trim()) {
-    errors.push('La placa es requerida')
-  }
-
-  if (!formData.brand_id) {
-    errors.push('La marca es requerida')
-  }
-
-  if (!formData.model_id) {
-    errors.push('El modelo es requerido')
-  }
-
-  if (!formData.version_id) {
-    errors.push('La versión es requerida')
-  }
-
-  if (!formData.year || formData.year < 1900) {
-    errors.push('El año debe ser mayor o igual a 1900')
-  }
-
-  if (!formData.circulation_city_id) {
-    errors.push('El lugar de circulación es requerido')
-  }
-
-  if (!formData.color?.trim()) {
-    errors.push('El color es requerido')
-  }
-
-  if (errors.length > 0) {
-    throw new Error(errors.join(', '))
-  }
-
   return {
     license_plate: formData.license_plate.trim().toUpperCase(),
     brand_id: formData.brand_id!,
@@ -210,19 +177,12 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
       const apiPayload = convertToApiPayload(data)
 
-      console.log('Vehicle API payload:', apiPayload)
-
-      const response = await fetchApi<any>('vehicles', {
+      await fetchApi('vehicles', {
         method: 'POST',
-        body: apiPayload,
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        body: apiPayload
       })
 
-      console.log('Vehicle created successfully:', response)
       showSuccess('Vehículo creado exitosamente')
-
       reset()
 
       if (onSuccess) {
@@ -231,17 +191,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
       onClose()
     } catch (err: any) {
-      console.error('Error creating vehicle:', err)
-      console.error('Full error object:', JSON.stringify(err, null, 2))
+      const errorMessage =
+        err?.message || 'Error al crear el vehículo. Por favor, verifica los datos e intenta nuevamente.'
 
-      if (err?.response?.data) {
-        console.error('API Error Response:', err.response.data)
-        showError(`Error al crear el vehículo: ${JSON.stringify(err.response.data)}`)
-      } else if (err?.message) {
-        showError(`Error al crear el vehículo: ${err.message}`)
-      } else {
-        showError('Error al crear el vehículo. Por favor, verifica los datos e intenta nuevamente.')
-      }
+      showError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
