@@ -27,6 +27,7 @@ import { useForm, Controller } from 'react-hook-form'
 
 import { useBrands } from '@/app/(dashboard)/vehicles/hooks/useBrands'
 import { useModels } from '@/app/(dashboard)/vehicles/hooks/useModels'
+import { useVersions } from '@/app/(dashboard)/vehicles/hooks/useVersions'
 
 import { useSnackbar } from '@/hooks/useSnackbar'
 
@@ -91,6 +92,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
   const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
+  const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
 
   const { showSuccess, showError } = useSnackbar()
 
@@ -115,6 +117,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   })
 
   const selectedBrandId = watch('brand_id')
+  const selectedModelId = watch('model_id')
 
   React.useEffect(() => {
     if (selectedBrandId) {
@@ -127,6 +130,16 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
       setValue('version_id', undefined)
     }
   }, [selectedBrandId, setModelParams, setValue])
+
+  React.useEffect(() => {
+    if (selectedModelId) {
+      setVersionParams({ model_id: selectedModelId })
+      setValue('version_id', undefined)
+    } else {
+      setVersionParams({})
+      setValue('version_id', undefined)
+    }
+  }, [selectedModelId, setVersionParams, setValue])
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
@@ -342,20 +355,39 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{ required: 'La versión es requerida' }}
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.version_id}>
-                    <InputLabel>Versión</InputLabel>
-                    <Select {...field} label='Versión' value={field.value ?? ''}>
-                      <MenuItem value=''>
-                        <em>Seleccionar versión</em>
-                      </MenuItem>
-                      {/* TODO: Cargar versiones basadas en el modelo seleccionado */}
-                    </Select>
-                    {errors.version_id && (
-                      <Typography variant='caption' color='error' sx={{ mt: 0.5, ml: 1.75 }}>
-                        {errors.version_id.message}
-                      </Typography>
+                  <Autocomplete
+                    options={versions || []}
+                    loading={versionsLoading}
+                    disabled={!selectedModelId}
+                    getOptionLabel={option => option.name}
+                    value={versions?.find(version => version.id === field.value) || null}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue ? newValue.id : undefined)
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setVersionParams({ q: newInputValue, model_id: selectedModelId })
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Versión'
+                        error={!!errors.version_id}
+                        helperText={
+                          errors.version_id?.message ||
+                          versionsError ||
+                          (!selectedModelId ? 'Selecciona un modelo primero' : '')
+                        }
+                        placeholder={selectedModelId ? 'Buscar versión...' : 'Selecciona un modelo primero'}
+                      />
                     )}
-                  </FormControl>
+                    renderOption={(props, option) => (
+                      <Box component='li' {...props}>
+                        <Typography variant='body1'>{option.name}</Typography>
+                      </Box>
+                    )}
+                    noOptionsText={versionsLoading ? 'Cargando...' : 'No se encontraron versiones'}
+                    loadingText='Buscando versiones...'
+                  />
                 )}
               />
             </Grid>
