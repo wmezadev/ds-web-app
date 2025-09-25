@@ -31,6 +31,7 @@ import { useVersions } from '@/app/(dashboard)/vehicles/hooks/useVersions'
 
 import { useSnackbar } from '@/hooks/useSnackbar'
 import { useCatalogs, type CatalogsResponse } from '@/hooks/useCatalogs'
+import { useApi } from '@/hooks/useApi'
 
 interface VehicleFormData {
   license_plate: string
@@ -39,6 +40,17 @@ interface VehicleFormData {
   version_id: number | undefined
   year: number | undefined
   circulation_city_id: number | undefined
+  color: string
+  has_gps: boolean
+}
+
+interface VehicleApiPayload {
+  license_plate: string
+  brand_id: number
+  model_id: number
+  version_id: number
+  year: number
+  circulation_city_id: number
   color: string
   has_gps: boolean
 }
@@ -89,6 +101,53 @@ const getColorCode = (colorName: string): string => {
   return colorMap[colorName] || '#CCCCCC'
 }
 
+const convertToApiPayload = (formData: VehicleFormData): VehicleApiPayload => {
+  const errors: string[] = []
+
+  if (!formData.license_plate?.trim()) {
+    errors.push('La placa es requerida')
+  }
+
+  if (!formData.brand_id) {
+    errors.push('La marca es requerida')
+  }
+
+  if (!formData.model_id) {
+    errors.push('El modelo es requerido')
+  }
+
+  if (!formData.version_id) {
+    errors.push('La versión es requerida')
+  }
+
+  if (!formData.year || formData.year < 1900) {
+    errors.push('El año debe ser mayor o igual a 1900')
+  }
+
+  if (!formData.circulation_city_id) {
+    errors.push('El lugar de circulación es requerido')
+  }
+
+  if (!formData.color?.trim()) {
+    errors.push('El color es requerido')
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join(', '))
+  }
+
+  return {
+    license_plate: formData.license_plate.trim().toUpperCase(),
+    brand_id: formData.brand_id!,
+    model_id: formData.model_id!,
+    version_id: formData.version_id!,
+    year: formData.year!,
+    circulation_city_id: formData.circulation_city_id!,
+    color: formData.color.trim(),
+    has_gps: formData.has_gps
+  }
+}
+
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
@@ -96,6 +155,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
 
   const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs()
+  const { fetchApi } = useApi()
 
   const { showSuccess, showError } = useSnackbar()
 
@@ -148,8 +208,19 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
     try {
       setIsSubmitting(true)
 
-      console.log('Vehicle data to save:', data)
+      const apiPayload = convertToApiPayload(data)
 
+      console.log('Vehicle API payload:', apiPayload)
+
+      const response = await fetchApi<any>('vehicles', {
+        method: 'POST',
+        body: apiPayload,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log('Vehicle created successfully:', response)
       showSuccess('Vehículo creado exitosamente')
 
       reset()
@@ -160,8 +231,17 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
       onClose()
     } catch (err: any) {
-      showError('Error al crear el vehículo')
       console.error('Error creating vehicle:', err)
+      console.error('Full error object:', JSON.stringify(err, null, 2))
+
+      if (err?.response?.data) {
+        console.error('API Error Response:', err.response.data)
+        showError(`Error al crear el vehículo: ${JSON.stringify(err.response.data)}`)
+      } else if (err?.message) {
+        showError(`Error al crear el vehículo: ${err.message}`)
+      } else {
+        showError('Error al crear el vehículo. Por favor, verifica los datos e intenta nuevamente.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -175,7 +255,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const currentYear = new Date().getFullYear() + 1
   const yearOptions: number[] = []
 
-  for (let year = currentYear; year >= 1940; year--) {
+  for (let year = currentYear; year >= 1900; year--) {
     yearOptions.push(year)
   }
 
@@ -225,7 +305,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
               <Controller
                 name='color'
                 control={control}
-                rules={{ required: 'El color es requerido' }}
+                rules={{
+                  required: 'El color es requerido',
+                  minLength: { value: 2, message: 'El color debe tener al menos 2 caracteres' }
+                }}
                 render={({ field }) => (
                   <Autocomplete
                     {...field}
@@ -402,7 +485,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
                 control={control}
                 rules={{
                   required: 'El año es requerido',
-                  min: { value: 1940, message: 'El año debe ser mayor a 1940' },
+                  min: { value: 1900, message: 'El año debe ser mayor o igual a 1900' },
                   max: { value: currentYear, message: `El año no puede ser mayor a ${currentYear}` }
                 }}
                 render={({ field }) => (
