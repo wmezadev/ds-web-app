@@ -555,7 +555,9 @@ export default function PolicyForm() {
           </Grid>
 
           {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
-          {paymentMode === 'I' && <InstallmentPlan onCalculate={handleInstallmentCalculate} />}
+          {paymentMode === 'I' && (
+            <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
+          )}
 
           <Box mt={3}>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>

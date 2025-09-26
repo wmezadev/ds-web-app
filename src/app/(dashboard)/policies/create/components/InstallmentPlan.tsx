@@ -2,21 +2,25 @@
 
 import React, { useState } from 'react'
 
+import { useForm, Controller } from 'react-hook-form'
+
 import {
   Box,
-  Paper,
   Typography,
   Grid,
   TextField,
+  MenuItem,
+  Button,
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
-  Button,
-  InputAdornment
+  InputAdornment,
+  Paper
 } from '@mui/material'
 
-import { useForm, Controller } from 'react-hook-form'
+import { useSnackbar } from '@/hooks/useSnackbar'
+import { calculateInstallments } from '../utils/installmentCalculations'
+import InstallmentTable from './InstallmentTable'
 
 interface InstallmentFormData {
   period_months: number
@@ -26,15 +30,23 @@ interface InstallmentFormData {
 
 interface InstallmentPlanProps {
   onCalculate?: (data: InstallmentFormData) => void
+  effectiveDate?: string // Fecha de vigencia de la póliza
+}
+
+interface InstallmentRow {
+  numero: number
+  desde: string
+  hasta: string
+  monto: number
 }
 
 const PERIOD_OPTIONS = [
-  { value: 1, label: '1 mes' },
-  { value: 2, label: '2 meses' },
-  { value: 3, label: '3 meses' },
-  { value: 4, label: '4 meses' },
-  { value: 6, label: '6 meses' },
-  { value: 12, label: '12 meses' }
+  { value: 1, label: 'Mensual' },
+  { value: 2, label: 'Bimensual' },
+  { value: 3, label: 'Trimestral' },
+  { value: 4, label: 'Cuatrimestral' },
+  { value: 6, label: 'Semestral' },
+  { value: 12, label: 'Anual' }
 ]
 
 const INSTALLMENTS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
@@ -42,15 +54,12 @@ const INSTALLMENTS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
   label: `${i + 1} cuota${i + 1 === 1 ? '' : 's'}`
 }))
 
-const InstallmentPlan = ({ onCalculate }: InstallmentPlanProps) => {
+const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) => {
+  const [calculatedInstallments, setCalculatedInstallments] = useState<InstallmentRow[]>([])
   const [isCalculating, setIsCalculating] = useState(false)
+  const { showError, showWarning } = useSnackbar()
 
-  const {
-    control,
-    handleSubmit,
-    getValues,
-    formState: { errors }
-  } = useForm<InstallmentFormData>({
+  const { control, getValues } = useForm<InstallmentFormData>({
     defaultValues: {
       period_months: 12,
       installments_count: 1,
@@ -58,14 +67,67 @@ const InstallmentPlan = ({ onCalculate }: InstallmentPlanProps) => {
     }
   })
 
+  const handleInstallmentChange = (index: number, field: keyof InstallmentRow, value: string | number) => {
+    const updatedInstallments = [...calculatedInstallments]
+
+    updatedInstallments[index] = {
+      ...updatedInstallments[index],
+
+      [field]: value
+    }
+    setCalculatedInstallments(updatedInstallments)
+  }
+
   const handleCalculate = async () => {
     const data = getValues()
+
     setIsCalculating(true)
 
     try {
+      // Validar que tenemos todos los datos necesarios
+      if (!data.annual_premium || data.annual_premium.trim() === '') {
+        console.error('❌ Prima anual no proporcionada')
+        showWarning('Por favor ingrese la prima anual')
+
+        setIsCalculating(false)
+
+        return
+      }
+
+      if (!effectiveDate || effectiveDate.trim() === '') {
+        console.error('❌ Fecha efectiva no proporcionada')
+
+        showWarning('Por favor seleccione una fecha de inicio de vigencia en el formulario principal')
+        setIsCalculating(false)
+
+        return
+      }
+
+      const annualPremium = parseFloat(data.annual_premium.replace(/,/g, ''))
+
+      if (isNaN(annualPremium) || annualPremium <= 0) {
+        showError('Por favor ingrese una prima anual válida (mayor a 0)')
+        setIsCalculating(false)
+
+        return
+      }
+
+      // Calcular las cuotas
+      const installments = calculateInstallments({
+        startDate: effectiveDate,
+        periodMonths: data.period_months,
+        installmentsCount: data.installments_count,
+        annualPremium: annualPremium
+      })
+
+      setCalculatedInstallments(installments)
+
       if (onCalculate) {
         await onCalculate(data)
       }
+    } catch (error) {
+      console.error('❌ Error en el cálculo:', error)
+      showError('Error al calcular las cuotas. Revise los datos ingresados.')
     } finally {
       setIsCalculating(false)
     }
@@ -177,27 +239,31 @@ const InstallmentPlan = ({ onCalculate }: InstallmentPlanProps) => {
           Plan de Fraccionamiento
         </Typography>
 
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 300,
-            color: 'text.secondary',
-            border: '1px dashed',
-            borderColor: 'divider',
-            borderRadius: 1,
-            backgroundColor: 'grey.50'
-          }}
-        >
-          <Typography variant='body1' align='center'>
-            Los resultados del cálculo aparecerán aquí
-            <br />
-            <Typography variant='body2' sx={{ mt: 1 }}>
-              Complete los campos y presione "Calcular"
+        {calculatedInstallments.length > 0 ? (
+          <InstallmentTable installments={calculatedInstallments} onInstallmentChange={handleInstallmentChange} />
+        ) : (
+          <Paper
+            variant='outlined'
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              backgroundColor: 'grey.50',
+              borderStyle: 'dashed',
+              minHeight: 200,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <Typography variant='body1' color='text.secondary' sx={{ mb: 1 }}>
+              Plan de Fraccionamiento
             </Typography>
-          </Typography>
-        </Box>
+            <Typography variant='body2' color='text.disabled'>
+              Complete los datos del fraccionamiento y presione "Calcular" para ver el plan de cuotas
+            </Typography>
+          </Paper>
+        )}
       </Grid>
     </Grid>
   )
