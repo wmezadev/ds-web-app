@@ -134,16 +134,16 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
   }
 
   return (
-    <Grid container spacing={3} sx={{ mt: 2 }}>
-      {/* Panel Izquierdo */}
-      <Grid item xs={12} md={2}>
-        <Typography variant='h6' sx={{ mb: 3, fontWeight: 600 }}>
+    <Box sx={{ mt: 2, height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Panel Superior - Fraccionamiento */}
+      <Paper variant='outlined' sx={{ p: 2, mb: 2, flexShrink: 0 }}>
+        <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
           Fraccionamiento
         </Typography>
 
-        <Grid container spacing={2}>
+        <Grid container spacing={2} alignItems='end'>
           {/* Período */}
-          <Grid item xs={12}>
+          <Grid item xs={6} sm={3} md={2.5}>
             <Controller
               name='period_months'
               control={control}
@@ -169,7 +169,7 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
           </Grid>
 
           {/* Cuotas */}
-          <Grid item xs={12}>
+          <Grid item xs={6} sm={3} md={2.5}>
             <Controller
               name='installments_count'
               control={control}
@@ -195,7 +195,7 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
           </Grid>
 
           {/* Prima Anual */}
-          <Grid item xs={12}>
+          <Grid item xs={8} sm={4} md={5}>
             <Controller
               name='annual_premium'
               control={control}
@@ -223,49 +223,57 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <Box sx={{ mt: 2 }}>
-              <Button variant='outlined' onClick={handleCalculate} disabled={isCalculating} size='small' fullWidth>
-                {isCalculating ? 'Calculando...' : 'Calcular'}
-              </Button>
-            </Box>
+          {/* Botón Calcular */}
+          <Grid item xs={4} sm={2} md={2}>
+            <Button
+              variant='outlined'
+              onClick={handleCalculate}
+              disabled={isCalculating}
+              size='small'
+              fullWidth
+              sx={{ height: 40 }}
+            >
+              {isCalculating ? 'Calculando...' : 'Calcular'}
+            </Button>
           </Grid>
         </Grid>
-      </Grid>
+      </Paper>
 
-      {/* Panel Derecho - Plan de Fraccionamiento */}
-      <Grid item xs={12} md={10}>
-        <Typography variant='h6' sx={{ mb: 3, fontWeight: 600 }}>
+      {/* Panel Inferior - Plan de Fraccionamiento */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <Typography variant='h6' sx={{ mb: 2, fontWeight: 600, flexShrink: 0 }}>
           Plan de Fraccionamiento
         </Typography>
 
         {calculatedInstallments.length > 0 ? (
-          <InstallmentTable installments={calculatedInstallments} onInstallmentChange={handleInstallmentChange} />
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <InstallmentTable installments={calculatedInstallments} onInstallmentChange={handleInstallmentChange} />
+          </Box>
         ) : (
           <Paper
             variant='outlined'
             sx={{
-              p: 4,
-              textAlign: 'center',
-              backgroundColor: 'grey.50',
-              borderStyle: 'dashed',
-              minHeight: 200,
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
+              textAlign: 'center',
+              backgroundColor: 'grey.50',
+              borderStyle: 'dashed',
+              minHeight: 150
             }}
           >
             <Typography variant='body1' color='text.secondary' sx={{ mb: 1 }}>
               Plan de Fraccionamiento
             </Typography>
             <Typography variant='body2' color='text.disabled'>
-              Complete los datos del fraccionamiento y presione "Calcular" para ver el plan de cuotas
+              Complete los datos del fraccionamiento y presione &quot;Calcular&quot; para ver el plan de cuotas
             </Typography>
           </Paper>
         )}
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   )
 }
 
