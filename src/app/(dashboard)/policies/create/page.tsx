@@ -36,6 +36,7 @@ import { useCollectors } from './hooks/useCollectors'
 import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
+import InstallmentPlan from './components/InstallmentPlan'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -91,6 +92,7 @@ export default function PolicyForm() {
   const effectiveDate = watch('effective_date')
   const holderId = watch('holder_id')
   const lineId = watch('line_id')
+  const paymentMode = watch('payment_mode')
 
   const policyPeriod = watch('policy_period')
 
@@ -115,6 +117,11 @@ export default function PolicyForm() {
     // y se seleccionará el vehículo recién creado
     console.log('Vehicle created:', vehicleData)
     showSuccess('Vehículo creado exitosamente')
+  }
+
+  const handleInstallmentCalculate = async (data: any) => {
+    // TODO: Implementar lógica de cálculo de cuotas
+    console.log('Calculating installments:', data)
   }
 
   useEffect(() => {
@@ -546,6 +553,9 @@ export default function PolicyForm() {
               />
             </Grid>
           </Grid>
+
+          {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
+          {paymentMode === 'I' && <InstallmentPlan onCalculate={handleInstallmentCalculate} />}
 
           <Box mt={3}>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>

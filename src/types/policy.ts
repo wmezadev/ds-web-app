@@ -30,7 +30,7 @@ export type PolicyStatus = 'A' | 'C' | 'E'
 
 export const PAYMENT_MODE_OPTIONS: { value: PaymentMode; label: string }[] = [
   { value: 'O', label: 'Pago Único' },
-  { value: 'I', label: 'Cuotas' }
+  { value: 'I', label: 'Fraccionado' }
 ]
 
 export const POLICY_MODALITY_OPTIONS: { value: PolicyModality; label: string }[] = [
