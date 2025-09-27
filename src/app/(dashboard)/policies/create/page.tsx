@@ -29,7 +29,7 @@ import AddIcon from '@mui/icons-material/Add'
 import { useApi } from '@/hooks/useApi'
 import { useSnackbar } from '@/hooks/useSnackbar'
 
-import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs } from '@/types/policy'
+import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs, type InstallmentPlanData } from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
@@ -54,6 +54,7 @@ export default function PolicyForm() {
   const { showSuccess, showError } = useSnackbar()
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
+  const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -112,16 +113,12 @@ export default function PolicyForm() {
     setIsVehicleModalOpen(false)
   }
 
-  const handleVehicleCreated = (vehicleData: any) => {
-    // TODO: Cuando se conecte a la API, aquí se actualizará el autocomplete de vehículos
-    // y se seleccionará el vehículo recién creado
-    console.log('Vehicle created:', vehicleData)
+  const handleVehicleCreated = () => {
     showSuccess('Vehículo creado exitosamente')
   }
 
-  const handleInstallmentCalculate = async (data: any) => {
-    // TODO: Implementar lógica de cálculo de cuotas
-    console.log('Calculating installments:', data)
+  const handleInstallmentCalculate = async (data: InstallmentPlanData) => {
+    setInstallmentPlanData(data)
   }
 
   useEffect(() => {
@@ -145,7 +142,12 @@ export default function PolicyForm() {
     if (!shouldShowVehicle) {
       setValue('vehicle_id', null)
     }
-  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle])
+
+    // Limpiar datos de fraccionamiento si cambia a modo de pago único
+    if (paymentMode !== 'I') {
+      setInstallmentPlanData(null)
+    }
+  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle, paymentMode])
 
   const onSubmit = async (data: PolicyFormInputs) => {
     const payload: any = {
@@ -172,11 +174,15 @@ export default function PolicyForm() {
     }
 
     if (data.payment_mode === 'I') {
-      payload.installment_plan = {
-        period_months: data.policy_period || 12,
-        installments_count: 0,
-        annual_premium: '0.00',
-        installments: []
+      if (installmentPlanData) {
+        payload.installment_plan = installmentPlanData
+      } else {
+        payload.installment_plan = {
+          period_months: data.policy_period || 12,
+          installments_count: 0,
+          annual_premium: '0.00',
+          installments: []
+        }
       }
     }
 
@@ -192,8 +198,8 @@ export default function PolicyForm() {
       showSuccess('Póliza creada exitosamente')
       router.push('/policies')
     } catch (error) {
-      showError('Error al crear la póliza')
       console.error('Error creating policy:', error)
+      showError('Error al crear la póliza')
     }
   }
 

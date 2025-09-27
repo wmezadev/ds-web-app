@@ -21,16 +21,21 @@ export function calculateInstallments({
   const installments: InstallmentRow[] = []
   const premiumPerInstallment = annualPremium / installmentsCount
 
+  // Calcular meses por cuota: período total / número de cuotas
+  const monthsPerInstallment = periodMonths / installmentsCount
+
   const baseDate = new Date(startDate)
 
   for (let i = 0; i < installmentsCount; i++) {
     const fromDate = new Date(baseDate)
 
-    fromDate.setMonth(baseDate.getMonth() + i * periodMonths)
+    fromDate.setMonth(baseDate.getMonth() + i * monthsPerInstallment)
 
     const toDate = new Date(fromDate)
 
-    toDate.setMonth(fromDate.getMonth() + periodMonths)
+    toDate.setMonth(fromDate.getMonth() + monthsPerInstallment)
+
+    toDate.setDate(toDate.getDate() - 1)
 
     const formatDate = (date: Date): string => {
       const day = date.getDate().toString().padStart(2, '0')

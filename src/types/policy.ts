@@ -44,6 +44,27 @@ export const POLICY_STATUS_OPTIONS: { value: PolicyStatus; label: string }[] = [
   { value: 'E', label: 'Vencida' }
 ]
 
+export interface InstallmentData {
+  installment_number: number
+  from_date: string
+  to_date: string
+  amount: string
+  receipt_number?: string
+  receipt_type?: string
+  receipt_status?: string
+  currency?: string
+  premium?: string
+  igtf_tax?: string
+  premium_to_charge?: string
+}
+
+export interface InstallmentPlanData {
+  period_months: number
+  installments_count: number
+  annual_premium: string
+  installments: InstallmentData[]
+}
+
 export interface PolicyFormInputs {
   id?: number
   policy_number: string
@@ -64,4 +85,5 @@ export interface PolicyFormInputs {
   insured_interest: string
   collector_id: number | null
   vehicle_id: number | null
+  installment_plan?: InstallmentPlanData
 }

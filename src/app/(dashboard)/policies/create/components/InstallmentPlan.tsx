@@ -22,6 +22,8 @@ import { useSnackbar } from '@/hooks/useSnackbar'
 import { calculateInstallments } from '../utils/installmentCalculations'
 import InstallmentTable from './InstallmentTable'
 
+import type { InstallmentPlanData } from '@/types/policy'
+
 interface InstallmentFormData {
   period_months: number
   installments_count: number
@@ -29,7 +31,7 @@ interface InstallmentFormData {
 }
 
 interface InstallmentPlanProps {
-  onCalculate?: (data: InstallmentFormData) => void
+  onCalculate?: (data: InstallmentPlanData) => void
   effectiveDate?: string // Fecha de vigencia de la póliza
 }
 
@@ -72,10 +74,28 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
 
     updatedInstallments[index] = {
       ...updatedInstallments[index],
-
       [field]: value
     }
     setCalculatedInstallments(updatedInstallments)
+
+    // Actualizar datos en el formulario principal cuando cambian las cuotas
+    if (onCalculate && updatedInstallments.length > 0) {
+      const formData = getValues()
+
+      const installmentPlanData: InstallmentPlanData = {
+        period_months: formData.period_months,
+        installments_count: formData.installments_count,
+        annual_premium: formData.annual_premium,
+        installments: updatedInstallments.map((installment, idx) => ({
+          installment_number: idx + 1,
+          from_date: installment.desde,
+          to_date: installment.hasta,
+          amount: installment.monto.toString()
+        }))
+      }
+
+      onCalculate(installmentPlanData)
+    }
   }
 
   const handleCalculate = async () => {
@@ -120,10 +140,23 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
         annualPremium: annualPremium
       })
 
+      console.log('✅ Cuotas calculadas:', installments)
       setCalculatedInstallments(installments)
 
       if (onCalculate) {
-        await onCalculate(data)
+        const installmentPlanData: InstallmentPlanData = {
+          period_months: data.period_months,
+          installments_count: data.installments_count,
+          annual_premium: data.annual_premium,
+          installments: installments.map((installment, index) => ({
+            installment_number: index + 1,
+            from_date: installment.desde,
+            to_date: installment.hasta,
+            amount: installment.monto.toString()
+          }))
+        }
+
+        await onCalculate(installmentPlanData)
       }
     } catch (error) {
       console.error('❌ Error en el cálculo:', error)
