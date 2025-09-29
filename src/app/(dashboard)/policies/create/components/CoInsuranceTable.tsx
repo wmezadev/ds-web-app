@@ -52,7 +52,7 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
   const handleCalculate = () => {
     const newEntry: CoInsuranceEntry = {
       insurance_company_id: null,
-      percentage: '0.00',
+      percentage: '0',
       sum_insured: sumInsured || '0.00',
       retention_percentage: '0.00',
       premium: premium || '0.00',
@@ -76,7 +76,7 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
   const handleAddInsurer = () => {
     const newEntry: CoInsuranceEntry = {
       insurance_company_id: null,
-      percentage: '0.00',
+      percentage: '0',
       sum_insured: '0.00',
       retention_percentage: '0.00',
       premium: '0.00',
@@ -114,6 +114,20 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
       ...updatedEntries[index],
       [field]: value
     }
+
+    if (field === 'percentage' && typeof value === 'string') {
+      const percentageInput = parseFloat(value) || 0
+
+      const percentage = percentageInput / 100
+      const totalSumInsured = parseFloat(sumInsured) || 0
+      const totalPremium = parseFloat(premium) || 0
+      const totalCommission = parseFloat(commission) || 0
+
+      updatedEntries[index].sum_insured = (totalSumInsured * percentage).toFixed(2)
+      updatedEntries[index].premium = (totalPremium * percentage).toFixed(2)
+      updatedEntries[index].commission = (totalCommission * percentage).toFixed(2)
+    }
+
     setEntries(updatedEntries)
 
     if (onEntriesChange) {
@@ -262,13 +276,24 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                       value={entry.percentage}
                       onChange={e => handleFieldChange(index, 'percentage', e.target.value)}
                       size='small'
-                      inputProps={{ step: '0.01', min: '0', max: '1' }}
+                      inputProps={{ step: '0.01', min: '0', max: '100' }}
                       sx={{
                         width: '100%',
                         '& .MuiInputBase-input': {
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
@@ -286,6 +311,17 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
@@ -296,13 +332,24 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                       value={entry.retention_percentage}
                       onChange={e => handleFieldChange(index, 'retention_percentage', e.target.value)}
                       size='small'
-                      inputProps={{ step: '0.01', min: '0', max: '1' }}
+                      inputProps={{ step: '0.01', min: '0', max: '100' }}
                       sx={{
                         width: '100%',
                         '& .MuiInputBase-input': {
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
@@ -320,6 +367,17 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
@@ -337,6 +395,17 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
@@ -354,6 +423,17 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
                           fontSize: '0.75rem',
                           p: '4px 8px',
                           textAlign: 'right'
+                        },
+                        '& input[type=number]': {
+                          '-moz-appearance': 'textfield'
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          '-webkit-appearance': 'none',
+                          margin: 0
                         }
                       }}
                     />
