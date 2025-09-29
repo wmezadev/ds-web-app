@@ -203,48 +203,46 @@ const CoInsuranceTable = ({ insuranceCompanies, onEntriesChange }: CoInsuranceTa
           sx={{
             maxHeight: 'calc(100vh - 450px)',
             overflowY: 'auto',
-            overflowX: 'auto'
+            overflowX: 'hidden'
           }}
         >
-          <Table size='small' stickyHeader>
+          <Table size='small' stickyHeader sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 150, p: 1 }}>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '12%', p: 0.5, fontSize: '0.7rem' }}>
                   Aseguradoras
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 100, p: 1 }}>
-                  % CoAseguro
+                <TableCell align='center' sx={{ fontWeight: 600, width: '7%', p: 0.5, fontSize: '0.7rem' }}>
+                  % CoAseg.
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 120, p: 1 }}>
-                  Suma Asegurada
+                <TableCell align='center' sx={{ fontWeight: 600, width: '9%', p: 0.5, fontSize: '0.7rem' }}>
+                  S. Asegurada
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 100, p: 1 }}>
-                  % Retención
+                <TableCell align='center' sx={{ fontWeight: 600, width: '7%', p: 0.5, fontSize: '0.7rem' }}>
+                  % Retenc.
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 100, p: 1 }}>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '8%', p: 0.5, fontSize: '0.7rem' }}>
                   Prima
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 100, p: 1 }}>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '8%', p: 0.5, fontSize: '0.7rem' }}>
                   Comisión
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 100, p: 1 }}>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '7%', p: 0.5, fontSize: '0.7rem' }}>
                   Bono
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 120, p: 1 }}>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '8%', p: 0.5, fontSize: '0.7rem' }}>
                   Recibo
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 130, p: 1 }}>
-                  F.Pago Prima
+                <TableCell align='center' sx={{ fontWeight: 600, width: '10%', p: 0.5, fontSize: '0.7rem' }}>
+                  F.P. Prima
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 150, p: 1 }}>
-                  F.Pago Comisión
+                <TableCell align='center' sx={{ fontWeight: 600, width: '10%', p: 0.5, fontSize: '0.7rem' }}>
+                  F.P. Comis.
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 130, p: 1 }}>
-                  F.Pago Bono
+                <TableCell align='center' sx={{ fontWeight: 600, width: '10%', p: 0.5, fontSize: '0.7rem' }}>
+                  F.P. Bono
                 </TableCell>
-                <TableCell align='center' sx={{ fontWeight: 600, minWidth: 80, p: 1 }}>
-                  Acciones
-                </TableCell>
+                <TableCell align='center' sx={{ fontWeight: 600, width: '4%', p: 0.5, fontSize: '0.7rem' }}></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
