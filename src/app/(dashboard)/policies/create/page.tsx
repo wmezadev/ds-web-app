@@ -559,7 +559,20 @@ export default function PolicyForm() {
               />
             </Grid>
           </Grid>
-
+          <Grid item xs={12} md={3}>
+            <Controller
+              name='has_co_insurance'
+              control={control}
+              render={({ field }) => (
+                <FormControl component='fieldset'>
+                  <FormControlLabel
+                    control={<Switch checked={!!field.value} onChange={e => field.onChange(e.target.checked)} />}
+                    label='¿Tiene coaseguro?'
+                  />
+                </FormControl>
+              )}
+            />
+          </Grid>
           {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
           {paymentMode === 'I' && (
             <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
