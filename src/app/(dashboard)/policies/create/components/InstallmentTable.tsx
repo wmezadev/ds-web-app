@@ -39,7 +39,7 @@ const InstallmentTable = ({ installments, onInstallmentChange }: InstallmentTabl
         Los resultados del cálculo aparecerán aquí
         <br />
         <Typography variant='body2' sx={{ mt: 1 }}>
-          Complete los campos y presione "Calcular"
+          Complete los campos y presione &quot;Calcular&quot;
         </Typography>
       </Typography>
     )
