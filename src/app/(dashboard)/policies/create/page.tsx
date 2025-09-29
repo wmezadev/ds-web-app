@@ -195,7 +195,21 @@ export default function PolicyForm() {
     }
 
     if (data.has_co_insurance) {
-      payload.co_insurance_entries = coInsuranceEntries
+      payload.co_insurance_entries = coInsuranceEntries.map(entry => ({
+        insurance_company_id: entry.insurance_company_id,
+
+        // Convertir porcentajes de 0-100 a decimal con 4 decimales
+        percentage: ((parseFloat(entry.percentage) || 0) / 100).toFixed(4),
+        sum_insured: parseFloat(entry.sum_insured || '0').toFixed(2),
+        retention_percentage: ((parseFloat(entry.retention_percentage) || 0) / 100).toFixed(4),
+        premium: parseFloat(entry.premium || '0').toFixed(2),
+        commission: parseFloat(entry.commission || '0').toFixed(2),
+        bonus: parseFloat(entry.bonus || '0').toFixed(2),
+        receipt_number: entry.receipt_number || '',
+        premium_payment_date: entry.premium_payment_date || null,
+        commission_payment_date: entry.commission_payment_date || null,
+        bonus_payment_date: entry.bonus_payment_date || null
+      }))
     }
 
     try {
