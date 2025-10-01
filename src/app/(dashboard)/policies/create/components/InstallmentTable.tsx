@@ -144,8 +144,13 @@ const InstallmentTable = ({ installments, onInstallmentChange }: InstallmentTabl
               <TableCell align='center' sx={{ p: 0.5 }}>
                 <TextField
                   type='number'
-                  value={row.monto}
-                  onChange={e => handleFieldChange(index, 'monto', parseFloat(e.target.value) || 0)}
+                  value={row.monto.toFixed(2)}
+                  onChange={e => {
+                    const value = parseFloat(e.target.value) || 0
+                    const rounded = Math.round(value * 100) / 100
+
+                    handleFieldChange(index, 'monto', rounded)
+                  }}
                   size='small'
                   variant='outlined'
                   inputProps={{ step: '0.01', min: '0' }}

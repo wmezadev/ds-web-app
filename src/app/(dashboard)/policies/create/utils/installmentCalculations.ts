@@ -19,7 +19,7 @@ export function calculateInstallments({
   annualPremium
 }: CalculateInstallmentsParams): InstallmentRow[] {
   const installments: InstallmentRow[] = []
-  const premiumPerInstallment = annualPremium / installmentsCount
+  const premiumPerInstallment = Math.round((annualPremium / installmentsCount) * 100) / 100
 
   // Calcular meses por cuota: período total / número de cuotas
   const monthsPerInstallment = periodMonths / installmentsCount

@@ -90,7 +90,7 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
           installment_number: idx + 1,
           from_date: installment.desde,
           to_date: installment.hasta,
-          amount: installment.monto.toString()
+          amount: installment.monto.toFixed(2)
         }))
       }
 
@@ -152,7 +152,7 @@ const InstallmentPlan = ({ onCalculate, effectiveDate }: InstallmentPlanProps) =
             installment_number: index + 1,
             from_date: installment.desde,
             to_date: installment.hasta,
-            amount: installment.monto.toString()
+            amount: installment.monto.toFixed(2)
           }))
         }
 
