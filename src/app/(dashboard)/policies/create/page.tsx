@@ -190,7 +190,14 @@ export default function PolicyForm() {
     }
 
     if (data.dependents && data.dependents.length > 0) {
-      payload.dependents = data.dependents
+      payload.dependents = data.dependents.map(dep => ({
+        full_name: dep.full_name.trim(),
+        gender: dep.gender,
+        birth_date: dep.birth_date,
+        national_id: dep.national_id.trim().toUpperCase(),
+        relationship: dep.relationship,
+        current_premium: String(dep.current_premium)
+      }))
     }
 
     if (data.payment_mode === 'I') {
@@ -209,6 +216,8 @@ export default function PolicyForm() {
     if (data.has_co_insurance) {
       payload.co_insurance_entries = []
     }
+
+    console.log('📤 Payload enviado al API:', JSON.stringify(payload, null, 2))
 
     try {
       await fetchApi('policies', {

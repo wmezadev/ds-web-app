@@ -232,9 +232,11 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
                       {...field}
                       fullWidth
                       label='Prima Actual'
-                      placeholder='0.00'
+                      placeholder='50.00'
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
+                      type='text'
+                      inputMode='decimal'
                       InputProps={{
                         startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>
                       }}
