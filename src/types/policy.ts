@@ -65,6 +65,16 @@ export interface InstallmentPlanData {
   installments: InstallmentData[]
 }
 
+export interface Dependent {
+  id?: number
+  full_name: string
+  gender: 'M' | 'F' | ''
+  birth_date: string
+  national_id: string
+  relationship: string
+  current_premium: string
+}
+
 export interface PolicyFormInputs {
   id?: number
   policy_number: string
@@ -85,5 +95,6 @@ export interface PolicyFormInputs {
   insured_interest: string
   collector_id: number | null
   vehicle_id: number | null
+  dependents?: Dependent[]
   installment_plan?: InstallmentPlanData
 }

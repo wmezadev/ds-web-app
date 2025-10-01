@@ -37,6 +37,7 @@ import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
+import DependentsForm from './components/ListForm'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -65,7 +66,7 @@ export default function PolicyForm() {
     handleSubmit,
     watch,
     setValue,
-    formState: { isSubmitting, isValid }
+    formState: { isSubmitting, isValid, errors }
   } = useForm<PolicyFormInputs>({
     mode: 'onChange',
     defaultValues: {
@@ -86,7 +87,8 @@ export default function PolicyForm() {
       payment_mode: 'O',
       insured_interest: '',
       collector_id: null,
-      vehicle_id: null
+      vehicle_id: null,
+      dependents: []
     }
   })
 
@@ -104,6 +106,7 @@ export default function PolicyForm() {
   }, [lineId, insuranceLines])
 
   const shouldShowVehicle = selectedLine?.entity === 'A'
+  const shouldShowDependents = selectedLine?.entity === 'PER' || selectedLine?.entity === 'PAT'
 
   const handleAddVehicle = () => {
     setIsVehicleModalOpen(true)
@@ -143,11 +146,24 @@ export default function PolicyForm() {
       setValue('vehicle_id', null)
     }
 
+    if (!shouldShowDependents) {
+      setValue('dependents', [])
+    }
+
     // Limpiar datos de fraccionamiento si cambia a modo de pago único
     if (paymentMode !== 'I') {
       setInstallmentPlanData(null)
     }
-  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle, paymentMode])
+  }, [
+    effectiveDate,
+    policyPeriod,
+    setValue,
+    isHolderDifferent,
+    holderId,
+    shouldShowVehicle,
+    shouldShowDependents,
+    paymentMode
+  ])
 
   const onSubmit = async (data: PolicyFormInputs) => {
     const payload: any = {
@@ -171,6 +187,10 @@ export default function PolicyForm() {
 
     if (data.vehicle_id) {
       payload.vehicle_id = Number(data.vehicle_id)
+    }
+
+    if (data.dependents && data.dependents.length > 0) {
+      payload.dependents = data.dependents
     }
 
     if (data.payment_mode === 'I') {
@@ -563,6 +583,13 @@ export default function PolicyForm() {
           {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
           {paymentMode === 'I' && (
             <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
+          )}
+
+          {/* Mostrar DependentsForm cuando la entidad sea 'PER' o 'PAT' */}
+          {shouldShowDependents && (
+            <Box mt={3}>
+              <DependentsForm control={control} errors={errors} />
+            </Box>
           )}
 
           <Box mt={3}>
