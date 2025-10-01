@@ -155,7 +155,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
       setValue('model_id', undefined)
       setValue('version_id', undefined)
     } else {
-      setModelParams({})
+      // No limpiar params para evitar peticiones innecesarias
       setValue('model_id', undefined)
       setValue('version_id', undefined)
     }
@@ -166,7 +166,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
       setVersionParams({ model_id: selectedModelId })
       setValue('version_id', undefined)
     } else {
-      setVersionParams({})
+      // No limpiar params para evitar peticiones innecesarias
       setValue('version_id', undefined)
     }
   }, [selectedModelId, setVersionParams, setValue])
@@ -202,6 +202,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
   const handleClose = () => {
     reset()
+    // Limpiar parámetros de búsqueda para evitar peticiones innecesarias
+    setBrandParams({})
+    setModelParams({})
+    setVersionParams({})
     onClose()
   }
 

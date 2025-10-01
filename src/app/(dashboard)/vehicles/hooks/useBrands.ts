@@ -23,6 +23,7 @@ export function useBrands() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [params, setParams] = useState<{ q?: string }>({})
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
 
   const fetchAllBrands = useCallback(
     async (currentParams: { q?: string }) => {
@@ -63,6 +64,7 @@ export function useBrands() {
         }
 
         setBrands(allBrands)
+        setHasInitialLoad(true)
       } catch (err: any) {
         setError(err.message || 'Error al cargar las marcas.')
         setBrands([])
@@ -74,8 +76,11 @@ export function useBrands() {
   )
 
   useEffect(() => {
-    fetchAllBrands(params)
-  }, [params, fetchAllBrands])
+    // Solo hacer la carga inicial una vez, o cuando hay una búsqueda específica
+    if (!hasInitialLoad || params.q) {
+      fetchAllBrands(params)
+    }
+  }, [params, fetchAllBrands, hasInitialLoad])
 
   return {
     data: brands,

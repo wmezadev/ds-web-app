@@ -78,7 +78,14 @@ export function useModels() {
   )
 
   useEffect(() => {
-    fetchAllModels(params)
+    // Solo hacer peticiones si hay un brand_id presente
+    if (params.brand_id) {
+      fetchAllModels(params)
+    } else {
+      // Limpiar modelos si no hay brand_id
+      setModels([])
+      setError(null)
+    }
   }, [params, fetchAllModels])
 
   return {

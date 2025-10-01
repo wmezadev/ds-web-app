@@ -78,7 +78,14 @@ export function useVersions() {
   )
 
   useEffect(() => {
-    fetchAllVersions(params)
+    // Solo hacer peticiones si hay un model_id presente
+    if (params.model_id) {
+      fetchAllVersions(params)
+    } else {
+      // Limpiar versiones si no hay model_id
+      setVersions([])
+      setError(null)
+    }
   }, [params, fetchAllVersions])
 
   return {
