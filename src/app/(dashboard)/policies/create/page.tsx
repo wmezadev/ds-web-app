@@ -37,7 +37,8 @@ import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
-import DependentsForm from './components/ListForm'
+import DependentsForm from './components/DependentsListForm'
+import BeneficiariesForm from './components/BeneficiariesForm'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -88,7 +89,8 @@ export default function PolicyForm() {
       insured_interest: '',
       collector_id: null,
       vehicle_id: null,
-      dependents: []
+      dependents: [],
+      beneficiaries: []
     }
   })
 
@@ -197,6 +199,17 @@ export default function PolicyForm() {
         national_id: dep.national_id.trim().toUpperCase(),
         relationship: dep.relationship,
         current_premium: String(dep.current_premium)
+      }))
+    }
+
+    if (data.beneficiaries && data.beneficiaries.length > 0) {
+      payload.beneficiaries = data.beneficiaries.map(ben => ({
+        full_name: ben.full_name.trim(),
+        gender: ben.gender,
+        birth_date: ben.birth_date,
+        national_id: ben.national_id.trim().toUpperCase(),
+        relationship: ben.relationship,
+        percentage: String(ben.percentage)
       }))
     }
 
@@ -594,11 +607,16 @@ export default function PolicyForm() {
             <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
           )}
 
-          {/* Mostrar DependentsForm cuando la entidad sea 'PER' o 'PAT' */}
+          {/* Mostrar formularios de Dependientes y Beneficiarios cuando la entidad sea 'PER' o 'PAT' */}
           {shouldShowDependents && (
-            <Box mt={3}>
-              <DependentsForm control={control} errors={errors} />
-            </Box>
+            <>
+              <Box mt={3}>
+                <DependentsForm control={control} errors={errors} />
+              </Box>
+              <Box mt={3}>
+                <BeneficiariesForm control={control} errors={errors} />
+              </Box>
+            </>
           )}
 
           <Box mt={3}>

@@ -22,9 +22,30 @@ import { useFieldArray, Controller, Control, FieldErrors } from 'react-hook-form
 
 import type { PolicyFormInputs } from '@/types/policy'
 
-interface DependentsFormProps {
+type FormType = 'dependents' | 'beneficiaries'
+
+interface ListFormProps {
   control: Control<PolicyFormInputs>
   errors: FieldErrors<PolicyFormInputs>
+  type: FormType
+}
+
+interface FormConfig {
+  title: string
+  addButtonLabel: string
+  itemLabel: string
+  emptyMessage: string
+  deleteMessage: string
+  fieldName: 'dependents' | 'beneficiaries'
+  lastFieldConfig: {
+    name: string
+    label: string
+    placeholder: string
+    prefix?: string
+    suffix?: string
+    pattern: RegExp
+    errorMessage: string
+  }
 }
 
 const GENDER_OPTIONS = [
@@ -34,37 +55,74 @@ const GENDER_OPTIONS = [
 
 const RELATIONSHIP_OPTIONS = ['Cónyuge', 'Hijo/a', 'Padre', 'Madre', 'Hermano/a', 'Abuelo/a', 'Nieto/a', 'Otro']
 
-const DependentsForm = ({ control, errors }: DependentsFormProps) => {
+const FORM_CONFIGS: Record<FormType, FormConfig> = {
+  dependents: {
+    title: 'Carga Familiar',
+    addButtonLabel: 'Agregar Dependiente',
+    itemLabel: 'Dependiente',
+    emptyMessage: 'No hay dependientes añadidos. Haz clic en "Agregar Dependiente" para comenzar.',
+    deleteMessage: 'Dependiente eliminado',
+    fieldName: 'dependents',
+    lastFieldConfig: {
+      name: 'current_premium',
+      label: 'Prima Actual',
+      placeholder: '50.00',
+      prefix: '$',
+      pattern: /^\d+(\.\d{1,2})?$/,
+      errorMessage: 'Debe ser un número válido (Ej: 100.00)'
+    }
+  },
+  beneficiaries: {
+    title: 'Beneficiarios en Caso de Fallecimiento',
+    addButtonLabel: 'Agregar Beneficiario',
+    itemLabel: 'Beneficiario',
+    emptyMessage: 'No hay beneficiarios añadidos. Haz clic en "Agregar Beneficiario" para comenzar.',
+    deleteMessage: 'Beneficiario eliminado',
+    fieldName: 'beneficiaries',
+    lastFieldConfig: {
+      name: 'percentage',
+      label: 'Porcentaje',
+      placeholder: '25',
+      suffix: '%',
+      pattern: /^(100|[1-9]?\d)$/,
+      errorMessage: 'Debe ser un número entre 0 y 100'
+    }
+  }
+}
+
+const ListForm = ({ control, errors, type }: ListFormProps) => {
+  const config = FORM_CONFIGS[type]
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: 'dependents'
+    name: config.fieldName
   })
 
-  const handleAddDependent = () => {
-    append({
+  const handleAddItem = () => {
+    const newItem: any = {
       full_name: '',
       gender: '',
       birth_date: '',
       national_id: '',
-      relationship: '',
-      current_premium: ''
-    })
+      relationship: ''
+    }
+    newItem[config.lastFieldConfig.name] = ''
+    append(newItem)
   }
 
-  const handleDeleteDependent = (index: number) => {
+  const handleDeleteItem = (index: number) => {
     remove(index)
-    setDeleteMessage('Dependiente eliminado')
+    setDeleteMessage(config.deleteMessage)
     setTimeout(() => setDeleteMessage(null), 2000)
   }
 
   return (
     <Box>
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
-        <Typography variant='h6'>Carga Familiar</Typography>
-        <Button variant='outlined' onClick={handleAddDependent} startIcon={<Add />} size='small'>
-          Agregar Dependiente
+        <Typography variant='h6'>{config.title}</Typography>
+        <Button variant='outlined' onClick={handleAddItem} startIcon={<Add />} size='small'>
+          {config.addButtonLabel}
         </Button>
       </Stack>
 
@@ -76,7 +134,7 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
 
       {fields.length === 0 ? (
         <Typography variant='body2' color='text.secondary' sx={{ p: 2, textAlign: 'center' }}>
-          No hay dependientes añadidos. Haz clic en "Agregar Dependiente" para comenzar.
+          {config.emptyMessage}
         </Typography>
       ) : (
         fields.map((field, index) => (
@@ -87,8 +145,8 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
             sx={{ border: '1px solid #e0e0e0', borderRadius: 2, position: 'relative', backgroundColor: '#fafafa' }}
           >
             <IconButton
-              aria-label='Eliminar dependiente'
-              onClick={() => handleDeleteDependent(index)}
+              aria-label={`Eliminar ${config.itemLabel.toLowerCase()}`}
+              onClick={() => handleDeleteItem(index)}
               size='small'
               sx={{ position: 'absolute', top: 8, right: 8 }}
               color='error'
@@ -97,14 +155,14 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
             </IconButton>
 
             <Typography variant='subtitle2' color='primary' sx={{ mb: 2, fontWeight: 600 }}>
-              Dependiente #{index + 1}
+              {config.itemLabel} #{index + 1}
             </Typography>
 
             <Grid container spacing={2}>
               {/* Nombre Completo */}
               <Grid item xs={12} md={6}>
                 <Controller
-                  name={`dependents.${index}.full_name`}
+                  name={`${config.fieldName}.${index}.full_name` as any}
                   control={control}
                   rules={{ required: 'El nombre completo es requerido' }}
                   render={({ field, fieldState }) => (
@@ -123,7 +181,7 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
               {/* Género */}
               <Grid item xs={12} md={3}>
                 <Controller
-                  name={`dependents.${index}.gender`}
+                  name={`${config.fieldName}.${index}.gender` as any}
                   control={control}
                   rules={{ required: 'El género es requerido' }}
                   render={({ field, fieldState }) => (
@@ -148,7 +206,7 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
               {/* Fecha de Nacimiento */}
               <Grid item xs={12} md={3}>
                 <Controller
-                  name={`dependents.${index}.birth_date`}
+                  name={`${config.fieldName}.${index}.birth_date` as any}
                   control={control}
                   rules={{ required: 'La fecha de nacimiento es requerida' }}
                   render={({ field, fieldState }) => (
@@ -168,7 +226,7 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
               {/* Cédula/ID */}
               <Grid item xs={12} md={4}>
                 <Controller
-                  name={`dependents.${index}.national_id`}
+                  name={`${config.fieldName}.${index}.national_id` as any}
                   control={control}
                   rules={{
                     required: 'La cédula es requerida',
@@ -193,7 +251,7 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
               {/* Parentesco */}
               <Grid item xs={12} md={4}>
                 <Controller
-                  name={`dependents.${index}.relationship`}
+                  name={`${config.fieldName}.${index}.relationship` as any}
                   control={control}
                   rules={{ required: 'El parentesco es requerido' }}
                   render={({ field, fieldState }) => (
@@ -215,30 +273,35 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
                 />
               </Grid>
 
-              {/* Prima Actual */}
+              {/* Campo dinámico (Prima Actual o Porcentaje) */}
               <Grid item xs={12} md={4}>
                 <Controller
-                  name={`dependents.${index}.current_premium`}
+                  name={`${config.fieldName}.${index}.${config.lastFieldConfig.name}` as any}
                   control={control}
                   rules={{
-                    required: 'La prima actual es requerida',
+                    required: `${config.lastFieldConfig.label} es requerido`,
                     pattern: {
-                      value: /^\d+(\.\d{1,2})?$/,
-                      message: 'Debe ser un número válido (Ej: 100.00)'
+                      value: config.lastFieldConfig.pattern,
+                      message: config.lastFieldConfig.errorMessage
                     }
                   }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       fullWidth
-                      label='Prima Actual'
-                      placeholder='50.00'
+                      label={config.lastFieldConfig.label}
+                      placeholder={config.lastFieldConfig.placeholder}
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
                       type='text'
                       inputMode='decimal'
                       InputProps={{
-                        startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>
+                        startAdornment: config.lastFieldConfig.prefix ? (
+                          <Typography sx={{ mr: 1 }}>{config.lastFieldConfig.prefix}</Typography>
+                        ) : undefined,
+                        endAdornment: config.lastFieldConfig.suffix ? (
+                          <Typography sx={{ ml: 1 }}>{config.lastFieldConfig.suffix}</Typography>
+                        ) : undefined
                       }}
                     />
                   )}
@@ -252,4 +315,4 @@ const DependentsForm = ({ control, errors }: DependentsFormProps) => {
   )
 }
 
-export default DependentsForm
+export default ListForm
