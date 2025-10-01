@@ -117,6 +117,7 @@ const convertToApiPayload = (formData: VehicleFormData): VehicleApiPayload => {
 
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+
   const {
     data: brands,
     loading: brandsLoading,
@@ -125,6 +126,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
     enable: enableBrands,
     disable: disableBrands
   } = useBrands()
+
   const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
   const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
 
@@ -218,11 +220,9 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
   const handleClose = () => {
     reset()
-    // Limpiar parámetros de búsqueda para evitar peticiones innecesarias
     setBrandParams({})
     setModelParams({})
     setVersionParams({})
-    // Deshabilitar hooks para evitar peticiones
     disableBrands()
     onClose()
   }

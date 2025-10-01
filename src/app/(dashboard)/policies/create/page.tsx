@@ -67,7 +67,7 @@ export default function PolicyForm() {
     handleSubmit,
     watch,
     setValue,
-    formState: { isSubmitting, isValid, errors }
+    formState: { isSubmitting, isValid }
   } = useForm<PolicyFormInputs>({
     mode: 'onChange',
     defaultValues: {
@@ -611,10 +611,10 @@ export default function PolicyForm() {
           {shouldShowDependents && (
             <>
               <Box mt={3}>
-                <DependentsForm control={control} errors={errors} />
+                <DependentsForm control={control} />
               </Box>
               <Box mt={3}>
-                <BeneficiariesForm control={control} errors={errors} />
+                <BeneficiariesForm control={control} />
               </Box>
             </>
           )}

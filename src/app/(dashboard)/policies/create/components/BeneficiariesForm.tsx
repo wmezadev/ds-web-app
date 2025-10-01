@@ -1,6 +1,6 @@
 'use client'
 
-import { Control, FieldErrors } from 'react-hook-form'
+import type { Control } from 'react-hook-form'
 
 import type { PolicyFormInputs } from '@/types/policy'
 
@@ -8,11 +8,10 @@ import ListForm from './ListForm'
 
 interface BeneficiariesFormProps {
   control: Control<PolicyFormInputs>
-  errors: FieldErrors<PolicyFormInputs>
 }
 
-const BeneficiariesForm = ({ control, errors }: BeneficiariesFormProps) => {
-  return <ListForm control={control} errors={errors} type='beneficiaries' />
+const BeneficiariesForm = ({ control }: BeneficiariesFormProps) => {
+  return <ListForm control={control} type='beneficiaries' />
 }
 
 export default BeneficiariesForm

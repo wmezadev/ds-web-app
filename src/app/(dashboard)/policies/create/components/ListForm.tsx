@@ -18,7 +18,7 @@ import {
   FormHelperText
 } from '@mui/material'
 import { Add, Close } from '@mui/icons-material'
-import { useFieldArray, Controller, Control, FieldErrors } from 'react-hook-form'
+import { useFieldArray, Controller, type Control } from 'react-hook-form'
 
 import type { PolicyFormInputs } from '@/types/policy'
 
@@ -26,7 +26,6 @@ type FormType = 'dependents' | 'beneficiaries'
 
 interface ListFormProps {
   control: Control<PolicyFormInputs>
-  errors: FieldErrors<PolicyFormInputs>
   type: FormType
 }
 
@@ -90,7 +89,7 @@ const FORM_CONFIGS: Record<FormType, FormConfig> = {
   }
 }
 
-const ListForm = ({ control, errors, type }: ListFormProps) => {
+const ListForm = ({ control, type }: ListFormProps) => {
   const config = FORM_CONFIGS[type]
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
 
@@ -107,6 +106,7 @@ const ListForm = ({ control, errors, type }: ListFormProps) => {
       national_id: '',
       relationship: ''
     }
+
     newItem[config.lastFieldConfig.name] = ''
     append(newItem)
   }
