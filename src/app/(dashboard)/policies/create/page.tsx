@@ -619,7 +619,7 @@ export default function PolicyForm() {
             </>
           )}
 
-          <Box mt={3}>
+          <Box mt={3} display='flex' justifyContent='flex-end'>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>
               Guardar Póliza
             </Button>
