@@ -37,6 +37,7 @@ import { ClientAutocomplete } from './components/ClientAutocomplete'
 import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
+import CoInsuranceTable, { type CoInsuranceEntry } from './components/CoInsuranceTable'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -55,6 +56,7 @@ export default function PolicyForm() {
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
+  const [coInsuranceEntries, setCoInsuranceEntries] = React.useState<CoInsuranceEntry[]>([])
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -94,6 +96,7 @@ export default function PolicyForm() {
   const holderId = watch('holder_id')
   const lineId = watch('line_id')
   const paymentMode = watch('payment_mode')
+  const hasCoInsurance = watch('has_co_insurance')
 
   const policyPeriod = watch('policy_period')
 
@@ -147,6 +150,11 @@ export default function PolicyForm() {
     if (paymentMode !== 'I') {
       setInstallmentPlanData(null)
     }
+
+    // Limpiar datos de coaseguro si se desactiva
+    if (!hasCoInsurance) {
+      setCoInsuranceEntries([])
+    }
   }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle, paymentMode])
 
   const onSubmit = async (data: PolicyFormInputs) => {
@@ -187,7 +195,21 @@ export default function PolicyForm() {
     }
 
     if (data.has_co_insurance) {
-      payload.co_insurance_entries = []
+      payload.co_insurance_entries = coInsuranceEntries.map(entry => ({
+        insurance_company_id: entry.insurance_company_id,
+
+        // Convertir porcentajes de 0-100 a decimal con 4 decimales
+        percentage: ((parseFloat(entry.percentage) || 0) / 100).toFixed(4),
+        sum_insured: parseFloat(entry.sum_insured || '0').toFixed(2),
+        retention_percentage: ((parseFloat(entry.retention_percentage) || 0) / 100).toFixed(4),
+        premium: parseFloat(entry.premium || '0').toFixed(2),
+        commission: parseFloat(entry.commission || '0').toFixed(2),
+        bonus: parseFloat(entry.bonus || '0').toFixed(2),
+        receipt_number: entry.receipt_number || '',
+        premium_payment_date: entry.premium_payment_date || null,
+        commission_payment_date: entry.commission_payment_date || null,
+        bonus_payment_date: entry.bonus_payment_date || null
+      }))
     }
 
     try {
@@ -559,10 +581,29 @@ export default function PolicyForm() {
               />
             </Grid>
           </Grid>
+          <Grid item xs={12} md={3}>
+            <Controller
+              name='has_co_insurance'
+              control={control}
+              render={({ field }) => (
+                <FormControl component='fieldset'>
+                  <FormControlLabel
+                    control={<Switch checked={!!field.value} onChange={e => field.onChange(e.target.checked)} />}
+                    label='¿Tiene coaseguro?'
+                  />
+                </FormControl>
+              )}
+            />
+          </Grid>
 
           {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
           {paymentMode === 'I' && (
             <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
+          )}
+
+          {/* Mostrar CoInsuranceTable cuando tiene coaseguro */}
+          {hasCoInsurance && (
+            <CoInsuranceTable insuranceCompanies={insuranceCompanies} onEntriesChange={setCoInsuranceEntries} />
           )}
 
           <Box mt={3}>
