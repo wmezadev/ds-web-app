@@ -85,6 +85,14 @@ export interface Beneficiary {
   percentage: string
 }
 
+export interface PoliciesListResponse {
+  policies: Policy[]
+  total?: number
+  page?: number
+  per_page?: number
+  pages?: number
+}
+
 export interface PolicyFormInputs {
   id?: number
   policy_number: string

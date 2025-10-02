@@ -29,7 +29,12 @@ import AddIcon from '@mui/icons-material/Add'
 import { useApi } from '@/hooks/useApi'
 import { useSnackbar } from '@/hooks/useSnackbar'
 
-import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs, type InstallmentPlanData } from '@/types/policy'
+import {
+  PAYMENT_MODE_OPTIONS,
+  type PolicyFormInputs,
+  type InstallmentPlanData,
+  type PoliciesListResponse
+} from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
@@ -57,6 +62,7 @@ export default function PolicyForm() {
   const [isHolderDifferent, setIsHolderDifferent] = React.useState(false)
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
+  const [isCheckingPolicyNumber, setIsCheckingPolicyNumber] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -120,6 +126,35 @@ export default function PolicyForm() {
 
   const handleVehicleCreated = () => {
     showSuccess('Vehículo creado exitosamente')
+  }
+
+  const validatePolicyNumber = async (policyNumber: string): Promise<boolean | string> => {
+    if (!policyNumber || policyNumber.trim() === '') {
+      return true
+    }
+
+    try {
+      setIsCheckingPolicyNumber(true)
+
+      const response = await fetchApi<PoliciesListResponse>(
+        `policies?policy_number=${encodeURIComponent(policyNumber.trim())}`,
+        {
+          method: 'GET'
+        }
+      )
+
+      if (response && Array.isArray(response.policies) && response.policies.length > 0) {
+        return 'Número de póliza ya registrado'
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error validating policy number:', error)
+
+      return true
+    } finally {
+      setIsCheckingPolicyNumber(false)
+    }
   }
 
   const handleInstallmentCalculate = async (data: InstallmentPlanData) => {
@@ -316,14 +351,20 @@ export default function PolicyForm() {
                 <Controller
                   name='policy_number'
                   control={control}
-                  rules={{ required: 'Número de póliza requerido' }}
+                  rules={{
+                    required: 'Número de póliza requerido',
+                    validate: validatePolicyNumber
+                  }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       label='Número de Póliza'
                       fullWidth
                       error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
+                      helperText={
+                        fieldState.error?.message || (isCheckingPolicyNumber ? 'Verificando disponibilidad...' : '')
+                      }
+                      disabled={isCheckingPolicyNumber}
                     />
                   )}
                 />
