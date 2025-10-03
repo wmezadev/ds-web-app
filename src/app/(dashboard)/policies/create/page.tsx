@@ -38,6 +38,7 @@ import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
 import CoInsuranceTable, { type CoInsuranceEntry } from './components/CoInsuranceTable'
+import Coverages from './components/Coverages'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -57,6 +58,7 @@ export default function PolicyForm() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
   const [coInsuranceEntries, setCoInsuranceEntries] = React.useState<CoInsuranceEntry[]>([])
+  const [selectedCoverageIds, setSelectedCoverageIds] = React.useState<number[]>([])
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -88,7 +90,8 @@ export default function PolicyForm() {
       payment_mode: 'O',
       insured_interest: '',
       collector_id: null,
-      vehicle_id: null
+      vehicle_id: null,
+      coverage_ids: []
     }
   })
 
@@ -151,7 +154,6 @@ export default function PolicyForm() {
       setInstallmentPlanData(null)
     }
 
-    // Limpiar datos de coaseguro si se desactiva
     if (!hasCoInsurance) {
       setCoInsuranceEntries([])
     }
@@ -211,6 +213,13 @@ export default function PolicyForm() {
         bonus_payment_date: entry.bonus_payment_date || null
       }))
     }
+
+    // Add selected coverage IDs
+    if (selectedCoverageIds.length > 0) {
+      payload.coverage_ids = selectedCoverageIds
+    }
+
+    console.log('📤 Payload enviado al API:', JSON.stringify(payload, null, 2))
 
     try {
       await fetchApi('policies', {
@@ -605,6 +614,13 @@ export default function PolicyForm() {
           {hasCoInsurance && (
             <CoInsuranceTable insuranceCompanies={insuranceCompanies} onEntriesChange={setCoInsuranceEntries} />
           )}
+
+          {/* Mostrar Coberturas cuando se selecciona un ramo */}
+          <Coverages
+            insuranceLineId={lineId}
+            selectedCoverageIds={selectedCoverageIds}
+            onSelectionChange={setSelectedCoverageIds}
+          />
 
           <Box mt={3}>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>

@@ -85,5 +85,6 @@ export interface PolicyFormInputs {
   insured_interest: string
   collector_id: number | null
   vehicle_id: number | null
+  coverage_ids?: number[]
   installment_plan?: InstallmentPlanData
 }
