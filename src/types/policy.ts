@@ -65,6 +65,12 @@ export interface InstallmentPlanData {
   installments: InstallmentData[]
 }
 
+export interface PolicyCoverage {
+  coverage_id: number
+  status: boolean
+  sum_insured: string
+}
+
 export interface PolicyFormInputs {
   id?: number
   policy_number: string
@@ -85,5 +91,6 @@ export interface PolicyFormInputs {
   insured_interest: string
   collector_id: number | null
   vehicle_id: number | null
+  policy_coverages?: PolicyCoverage[]
   installment_plan?: InstallmentPlanData
 }

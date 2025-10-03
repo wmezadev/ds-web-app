@@ -29,7 +29,12 @@ import AddIcon from '@mui/icons-material/Add'
 import { useApi } from '@/hooks/useApi'
 import { useSnackbar } from '@/hooks/useSnackbar'
 
-import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs, type InstallmentPlanData } from '@/types/policy'
+import {
+  PAYMENT_MODE_OPTIONS,
+  type PolicyFormInputs,
+  type InstallmentPlanData,
+  type PolicyCoverage
+} from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
@@ -38,6 +43,7 @@ import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
 import CoInsuranceTable, { type CoInsuranceEntry } from './components/CoInsuranceTable'
+import Coverages from './components/Coverages'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -57,6 +63,7 @@ export default function PolicyForm() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
   const [coInsuranceEntries, setCoInsuranceEntries] = React.useState<CoInsuranceEntry[]>([])
+  const [selectedCoverages, setSelectedCoverages] = React.useState<PolicyCoverage[]>([])
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -88,7 +95,8 @@ export default function PolicyForm() {
       payment_mode: 'O',
       insured_interest: '',
       collector_id: null,
-      vehicle_id: null
+      vehicle_id: null,
+      policy_coverages: []
     }
   })
 
@@ -151,7 +159,6 @@ export default function PolicyForm() {
       setInstallmentPlanData(null)
     }
 
-    // Limpiar datos de coaseguro si se desactiva
     if (!hasCoInsurance) {
       setCoInsuranceEntries([])
     }
@@ -211,6 +218,17 @@ export default function PolicyForm() {
         bonus_payment_date: entry.bonus_payment_date || null
       }))
     }
+
+    // Add selected coverages with sum_insured
+    if (selectedCoverages.length > 0) {
+      payload.policy_coverages = selectedCoverages.map(coverage => ({
+        coverage_id: coverage.coverage_id,
+        status: coverage.status,
+        sum_insured: parseFloat(coverage.sum_insured || '0').toFixed(2)
+      }))
+    }
+
+    console.log('📤 Payload enviado al API:', JSON.stringify(payload, null, 2))
 
     try {
       await fetchApi('policies', {
@@ -605,6 +623,13 @@ export default function PolicyForm() {
           {hasCoInsurance && (
             <CoInsuranceTable insuranceCompanies={insuranceCompanies} onEntriesChange={setCoInsuranceEntries} />
           )}
+
+          {/* Mostrar Coberturas cuando se selecciona un ramo */}
+          <Coverages
+            insuranceLineId={lineId}
+            selectedCoverages={selectedCoverages}
+            onSelectionChange={setSelectedCoverages}
+          />
 
           <Box mt={3}>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>
