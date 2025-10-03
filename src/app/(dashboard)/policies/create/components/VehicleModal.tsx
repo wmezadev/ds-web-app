@@ -117,7 +117,16 @@ const convertToApiPayload = (formData: VehicleFormData): VehicleApiPayload => {
 
 const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { data: brands, loading: brandsLoading, error: brandsError, setParams: setBrandParams } = useBrands()
+
+  const {
+    data: brands,
+    loading: brandsLoading,
+    error: brandsError,
+    setParams: setBrandParams,
+    enable: enableBrands,
+    disable: disableBrands
+  } = useBrands()
+
   const { data: models, loading: modelsLoading, error: modelsError, setParams: setModelParams } = useModels()
   const { data: versions, loading: versionsLoading, error: versionsError, setParams: setVersionParams } = useVersions()
 
@@ -149,13 +158,22 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
   const selectedBrandId = watch('brand_id')
   const selectedModelId = watch('model_id')
 
+  // Habilitar/deshabilitar hooks basado en si el modal está abierto
+  React.useEffect(() => {
+    if (open) {
+      enableBrands()
+    } else {
+      disableBrands()
+    }
+  }, [open, enableBrands, disableBrands])
+
   React.useEffect(() => {
     if (selectedBrandId) {
       setModelParams({ brand_id: selectedBrandId })
       setValue('model_id', undefined)
       setValue('version_id', undefined)
     } else {
-      setModelParams({})
+      // No limpiar params para evitar peticiones innecesarias
       setValue('model_id', undefined)
       setValue('version_id', undefined)
     }
@@ -166,7 +184,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
       setVersionParams({ model_id: selectedModelId })
       setValue('version_id', undefined)
     } else {
-      setVersionParams({})
+      // No limpiar params para evitar peticiones innecesarias
       setValue('version_id', undefined)
     }
   }, [selectedModelId, setVersionParams, setValue])
@@ -202,6 +220,10 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
 
   const handleClose = () => {
     reset()
+    setBrandParams({})
+    setModelParams({})
+    setVersionParams({})
+    disableBrands()
     onClose()
   }
 
@@ -534,12 +556,7 @@ const VehicleModal = ({ open, onClose, onSuccess }: VehicleModalProps) => {
         <Button onClick={handleClose} variant='outlined' disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button
-          onClick={handleSubmit(onSubmit)}
-          variant='contained'
-          disabled={isSubmitting}
-          startIcon={<i className='ri-save-line' />}
-        >
+        <Button onClick={handleSubmit(onSubmit)} variant='contained' disabled={isSubmitting}>
           {isSubmitting ? 'Guardando...' : 'Guardar Vehículo'}
         </Button>
       </DialogActions>

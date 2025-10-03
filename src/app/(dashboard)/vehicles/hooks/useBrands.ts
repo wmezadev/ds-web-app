@@ -23,6 +23,7 @@ export function useBrands() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [params, setParams] = useState<{ q?: string }>({})
+  const [isEnabled, setIsEnabled] = useState(false)
 
   const fetchAllBrands = useCallback(
     async (currentParams: { q?: string }) => {
@@ -74,13 +75,18 @@ export function useBrands() {
   )
 
   useEffect(() => {
-    fetchAllBrands(params)
-  }, [params, fetchAllBrands])
+    // Solo hacer peticiones cuando esté habilitado
+    if (isEnabled) {
+      fetchAllBrands(params)
+    }
+  }, [params, fetchAllBrands, isEnabled])
 
   return {
     data: brands,
     loading,
     error,
-    setParams
+    setParams,
+    enable: () => setIsEnabled(true),
+    disable: () => setIsEnabled(false)
   }
 }

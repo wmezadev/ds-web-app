@@ -29,7 +29,12 @@ import AddIcon from '@mui/icons-material/Add'
 import { useApi } from '@/hooks/useApi'
 import { useSnackbar } from '@/hooks/useSnackbar'
 
-import { PAYMENT_MODE_OPTIONS, type PolicyFormInputs, type InstallmentPlanData } from '@/types/policy'
+import {
+  PAYMENT_MODE_OPTIONS,
+  type PolicyFormInputs,
+  type InstallmentPlanData,
+  type PoliciesListResponse
+} from '@/types/policy'
 import { useInsuranceLines } from '@/app/(dashboard)/policies/create/hooks/useInsuranceLines'
 import { useInsuranceCompanies } from './hooks/useInsuranceCompanies'
 import { useCollectors } from './hooks/useCollectors'
@@ -38,6 +43,8 @@ import { VehicleAutocomplete } from './components/VehicleAutocomplete'
 import VehicleModal from './components/VehicleModal'
 import InstallmentPlan from './components/InstallmentPlan'
 import CoInsuranceTable, { type CoInsuranceEntry } from './components/CoInsuranceTable'
+import DependentsForm from './components/DependentsListForm'
+import BeneficiariesForm from './components/BeneficiariesForm'
 
 const POLICY_PERIOD_OPTIONS = [
   { value: 1, label: 'Mensual' },
@@ -57,6 +64,7 @@ export default function PolicyForm() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = React.useState(false)
   const [installmentPlanData, setInstallmentPlanData] = React.useState<InstallmentPlanData | null>(null)
   const [coInsuranceEntries, setCoInsuranceEntries] = React.useState<CoInsuranceEntry[]>([])
+  const [isCheckingPolicyNumber, setIsCheckingPolicyNumber] = React.useState(false)
   const { lines: insuranceLines, loading: linesLoading, error: linesError } = useInsuranceLines()
   const { companies: insuranceCompanies, loading: companiesLoading, error: companiesError } = useInsuranceCompanies()
   const { collectors, loading: collectorsLoading, error: collectorsError } = useCollectors()
@@ -88,7 +96,9 @@ export default function PolicyForm() {
       payment_mode: 'O',
       insured_interest: '',
       collector_id: null,
-      vehicle_id: null
+      vehicle_id: null,
+      dependents: [],
+      beneficiaries: []
     }
   })
 
@@ -107,6 +117,7 @@ export default function PolicyForm() {
   }, [lineId, insuranceLines])
 
   const shouldShowVehicle = selectedLine?.entity === 'A'
+  const shouldShowDependents = selectedLine?.entity === 'PER' || selectedLine?.entity === 'PAT'
 
   const handleAddVehicle = () => {
     setIsVehicleModalOpen(true)
@@ -118,6 +129,35 @@ export default function PolicyForm() {
 
   const handleVehicleCreated = () => {
     showSuccess('Vehículo creado exitosamente')
+  }
+
+  const validatePolicyNumber = async (policyNumber: string): Promise<boolean | string> => {
+    if (!policyNumber || policyNumber.trim() === '') {
+      return true
+    }
+
+    try {
+      setIsCheckingPolicyNumber(true)
+
+      const response = await fetchApi<PoliciesListResponse>(
+        `policies?policy_number=${encodeURIComponent(policyNumber.trim())}`,
+        {
+          method: 'GET'
+        }
+      )
+
+      if (response && Array.isArray(response.policies) && response.policies.length > 0) {
+        return 'Número de póliza ya registrado'
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error validating policy number:', error)
+
+      return true
+    } finally {
+      setIsCheckingPolicyNumber(false)
+    }
   }
 
   const handleInstallmentCalculate = async (data: InstallmentPlanData) => {
@@ -146,16 +186,28 @@ export default function PolicyForm() {
       setValue('vehicle_id', null)
     }
 
-    // Limpiar datos de fraccionamiento si cambia a modo de pago único
+    if (!shouldShowDependents) {
+      setValue('dependents', [])
+    }
+
     if (paymentMode !== 'I') {
       setInstallmentPlanData(null)
     }
 
-    // Limpiar datos de coaseguro si se desactiva
     if (!hasCoInsurance) {
       setCoInsuranceEntries([])
     }
-  }, [effectiveDate, policyPeriod, setValue, isHolderDifferent, holderId, shouldShowVehicle, paymentMode])
+  }, [
+    effectiveDate,
+    policyPeriod,
+    setValue,
+    isHolderDifferent,
+    holderId,
+    shouldShowVehicle,
+    shouldShowDependents,
+    paymentMode,
+    hasCoInsurance
+  ])
 
   const onSubmit = async (data: PolicyFormInputs) => {
     const payload: any = {
@@ -179,6 +231,28 @@ export default function PolicyForm() {
 
     if (data.vehicle_id) {
       payload.vehicle_id = Number(data.vehicle_id)
+    }
+
+    if (data.dependents && data.dependents.length > 0) {
+      payload.dependents = data.dependents.map(dep => ({
+        full_name: dep.full_name.trim(),
+        gender: dep.gender,
+        birth_date: dep.birth_date,
+        national_id: dep.national_id.trim().toUpperCase(),
+        relationship: dep.relationship,
+        current_premium: String(dep.current_premium)
+      }))
+    }
+
+    if (data.beneficiaries && data.beneficiaries.length > 0) {
+      payload.beneficiaries = data.beneficiaries.map(ben => ({
+        full_name: ben.full_name.trim(),
+        gender: ben.gender,
+        birth_date: ben.birth_date,
+        national_id: ben.national_id.trim().toUpperCase(),
+        relationship: ben.relationship,
+        percentage: String(ben.percentage)
+      }))
     }
 
     if (data.payment_mode === 'I') {
@@ -296,14 +370,20 @@ export default function PolicyForm() {
                 <Controller
                   name='policy_number'
                   control={control}
-                  rules={{ required: 'Número de póliza requerido' }}
+                  rules={{
+                    required: 'Número de póliza requerido',
+                    validate: validatePolicyNumber
+                  }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       label='Número de Póliza'
                       fullWidth
                       error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
+                      helperText={
+                        fieldState.error?.message || (isCheckingPolicyNumber ? 'Verificando disponibilidad...' : '')
+                      }
+                      disabled={isCheckingPolicyNumber}
                     />
                   )}
                 />
@@ -596,15 +676,23 @@ export default function PolicyForm() {
             />
           </Grid>
 
-          {/* Mostrar InstallmentPlan cuando el modo de pago sea 'Fraccionado' */}
           {paymentMode === 'I' && (
             <InstallmentPlan onCalculate={handleInstallmentCalculate} effectiveDate={effectiveDate} />
           )}
 
-          {/* Mostrar CoInsuranceTable cuando tiene coaseguro */}
           {hasCoInsurance && (
             <CoInsuranceTable insuranceCompanies={insuranceCompanies} onEntriesChange={setCoInsuranceEntries} />
           )}
+
+          {shouldShowDependents && (
+            <Box mt={3}>
+              <DependentsForm control={control} />
+            </Box>
+          )}
+
+          <Box mt={3}>
+            <BeneficiariesForm control={control} />
+          </Box>
 
           <Box mt={3}>
             <Button type='submit' variant='contained' disabled={isSubmitting || !isValid}>
